@@ -1,6 +1,6 @@
 #include <iostream>
 #include <math.h>
-
+#include <Eigen/Dense>
 
 // Discretization
 
@@ -31,7 +31,7 @@ double CFL=0.5;
 double isenP(double pt, double M);
 double isenT(double Tt, double M);
 
-int main()
+int quasiOneD()
 {
 	double x[nx],A[nx],V[nx];
 	double rho[nx], u[nx], e[nx];
@@ -68,15 +68,15 @@ int main()
 	// Flow Properties Initialization
 	for(int i=1; i<nx; i++)
 	{
-		T[i]=T[0]
+		T[i]=T[0];
 		rho[i]=p[i]/(R*T[i]);
-		c[i]=sqrt(gamma*p[i]/rho[i]);
+		c[i]=sqrt(gam*p[i]/rho[i]);
 		u[i]=c[i]*Mach[i];
-		e[i]=rho[i]*(Cv*T[i]+0.5*pow(u[i],2]));
+		e[i]=rho[i]*(Cv*T[i]+0.5*pow(u[i],2));
 	}
 
 	// State and Flux Vectors Initialization
-	for(int=0; i<nx; i++)
+	for(int i=0; i<nx; i++)
 	{
 		W[1][i]=rho[i];
 		W[2][i]=rho[i]*u[i];
@@ -84,8 +84,11 @@ int main()
 
 		F[1][i]=rho[i]*u[i];
 		F[2][i]=rho[i]*u[i]*u[i]+p[i];
-		F[3][i]=(e[i]
+//		F[3][i]=(e[i]
 	}
+
+
+	return 0;
 }
 
 double isenP(double pt, double M)

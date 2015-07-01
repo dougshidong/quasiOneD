@@ -1,17 +1,21 @@
-CC	= g++
-INCLUDE	= ../eigen
+CXX	= g++
+INCL	= ./eigen
 DEBUG	= -g
-CPPOBJ	= quasiOneD.o
+CPPOBJ	= main.o quasiOneD.o
+CPPH	= quasiOneD.h
 CFLAGS	= -Wall -c $(DEBUG)
 LFLAGS  = -Wall $(DEBUG)
 
 EXEC	= p1.exe
 
 $(EXEC) : $(CPPOBJ)
-	$(CC) $(LFLAGS) $(CPPOBJS) -o $(EXEC)
+	$(CXX) $(LFLAGS) $(CPPOBJ) -o $(EXEC)
 
-quasiOneD.o : quasiOneD.cpp
-	$(CC) $(CFLAGS) quasiOneD.cpp
+main.o: main.cpp quasiOneD.h
+	$(CC) $(CFLAGS) main.cpp
+
+quasiOneD.o : quasiOneD.h quasiOneD.cpp
+	$(CC) $(CFLAGS) -I $(INCL) quasiOneD.cpp
 
 clean:
-	\rm *.o p1
+	\rm *.o p1.*
