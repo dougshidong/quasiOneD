@@ -1,7 +1,7 @@
 #ifndef QUASIONED_H
 #define QUASIONED_H
 
-int main();
+int quasiOneD();
 
 double isenP(double pt, double M);
 double isenT(double Tt, double M);
