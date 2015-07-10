@@ -24,7 +24,13 @@ double Cv=R/(gam-1);
 double Ttin=295.11;
 double ptin=101192.6;
 double pexit=0.8*ptin;
+
+// Convergence Settings
 double CFL=0.5;
+double normR=1;
+double conv=1e-6;
+double iterations=0;
+double maxIt=20;
 
 
 
@@ -33,10 +39,13 @@ double isenT(double Tt, double M);
 
 int quasiOneD()
 {
-	double x[nx],A[nx],V[nx];
+	double x[nx],S[nx],V[nx];
 	double rho[nx], u[nx], e[nx];
 	double T[nx], p[nx], c[nx], Mach[nx];
 	double W[3][nx], F[3][nx], Q[3][nx];
+
+	double dt[nx];
+	double maxUc;
 
 
 	// Initialize grid
@@ -46,10 +55,10 @@ int quasiOneD()
 		x[i]=dx/2+dx*(i-1);
 		
 	for(int i=0; i<nx; i++)
-		A[i]=1-h*pow((sin(M_PI*pow(x[i],t1))),t2);
+		S[i]=1-h*pow((sin(M_PI*pow(x[i],t1))),t2);
 
 	for(int i=0; i<nx; i++)
-		V[i]=(A[i]+A[i+1])/2 * dx;
+		V[i]=(S[i]+S[i+1])/2 * dx;
 
 
 	// Inlet flow properties
@@ -78,15 +87,37 @@ int quasiOneD()
 	// State and Flux Vectors Initialization
 	for(int i=0; i<nx; i++)
 	{
-		W[1][i]=rho[i];
-		W[2][i]=rho[i]*u[i];
-		W[3][i]=e[i];
+		W[0][i]=rho[i];
+		W[1][i]=rho[i]*u[i];
+		W[2][i]=e[i];
 
-		F[1][i]=rho[i]*u[i];
-		F[2][i]=rho[i]*u[i]*u[i]+p[i];
-//		F[3][i]=(e[i]
+		F[0][i]=rho[i]*u[i];
+		F[1][i]=rho[i]*u[i]*u[i]+p[i];
+		F[2][i]=(e[i]+p[i])*u[i];
+
+		Q[0][i]=0;
+		Q[2][i]=0;
 	}
+        Q[1][0]=0;
+	Q[1][nx-1]=0;
+	for(int i=1;i<nx-1;i++)
+		Q[1][i]=p[i]*(S[i]-S[i-1]);
 
+
+	while(normR>conv && iterations<maxIt)
+	{
+		iterations++;
+		if(iterations%10==0) std::cout<<"Iteration "<<iterations<<std::endl;
+
+		maxUc=0;
+		for(int i=0;i<nx;i++)
+			if(fabs(u[i]+c[i]>maxUc))
+				maxUC=fabs(u[i]+c[i];
+		for(int i=0;i<nx;i++)
+			dt[i]=(CFL*dx)/maxUc;
+
+		Flux_StegerWarming(Flux,F,U,C,W);
+	}
 
 	return 0;
 }

@@ -3,5 +3,6 @@
 
 int main()
 {
-	std::cout<<quasiOneD();
+	std::cout<<quasiOneD()<<std::endl;
+	std::cout<<"Test\n";
 }
