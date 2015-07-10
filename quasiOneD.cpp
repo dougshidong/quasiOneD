@@ -29,13 +29,14 @@ double pexit=0.8*ptin;
 double CFL=0.5;
 double normR=1;
 double conv=1e-6;
-double iterations=0;
-double maxIt=20;
+int iterations=0;
+int maxIt=20;
 
 
 
 double isenP(double pt, double M);
 double isenT(double Tt, double M);
+void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[])
 
 int quasiOneD()
 {
@@ -44,8 +45,12 @@ int quasiOneD()
 	double T[nx], p[nx], c[nx], Mach[nx];
 	double W[3][nx], F[3][nx], Q[3][nx];
 
+	double Flux[3][nx-1];
+	double Resi[3][nx];
+	double Resi1[3][nx],Resi2[3][nx],Resi3[3][nx];
+
 	double dt[nx];
-	double maxUc;
+	double maxUC;
 
 
 	// Initialize grid
@@ -98,7 +103,7 @@ int quasiOneD()
 		Q[0][i]=0;
 		Q[2][i]=0;
 	}
-        Q[1][0]=0;
+	Q[1][0]=0;
 	Q[1][nx-1]=0;
 	for(int i=1;i<nx-1;i++)
 		Q[1][i]=p[i]*(S[i]-S[i-1]);
@@ -109,14 +114,14 @@ int quasiOneD()
 		iterations++;
 		if(iterations%10==0) std::cout<<"Iteration "<<iterations<<std::endl;
 
-		maxUc=0;
+		maxUC=0;
 		for(int i=0;i<nx;i++)
-			if(fabs(u[i]+c[i]>maxUc))
-				maxUC=fabs(u[i]+c[i];
+			if(fabs(u[i]+c[i]>maxUC))
+				maxUC=fabs(u[i]+c[i]);
 		for(int i=0;i<nx;i++)
-			dt[i]=(CFL*dx)/maxUc;
+			dt[i]=(CFL*dx)/maxUC;
 
-		Flux_StegerWarming(Flux,F,U,C,W);
+		Flux_StegerWarming(Flux,F,u,c,W);
 	}
 
 	return 0;
@@ -132,8 +137,64 @@ double isenT(double Tt, double M)
 	return Tt*pow((1+(gam-1)/2*pow(M,2)),-1);
 }
 
-//void scalarF(double **Flux, double **F, double U[], double c[], double W[][])
-//{
-//}
+void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[])
+{
+	double S[nx-1][3][3],Sinv[nx-1][3][3],C[nx-1][3][3],Cinv[nx-1][3][3];
+	double lambaP[nx-1][3][3],lambdaN[nx-1][3][3];
+
+	double Ap[3][3],An[3][3];
+	double beta=gamma-1;
+	double lambdaa[nx-1][3];
+
+
+	memset(Flux,0,sizeof(Flux[0][0])*3*nx-1);
+	memset(S,0,sizeof(S[0][0][0])*2*3*3);
+	memset(Sinv,0,sizeof(Sinv[0][0][0])2*3*3);
+	memset(C,0,sizeof(C[0][0][0])*2*3*3);
+	memset(Cinv,0,sizeof(Cinv[0][0][0])2*3*3);
+	memset(lambdaP,0,sizeof(lambdaP[0][0][0])*2*3*3);
+	memset(lambdaN,0,sizeof(lambdaN[0][0][0])*2*3*3);
+
+
+	for(i=0;i<nx-1;i++)
+	{
+		S[i][0][0]=1;
+		S[i][1][0]=-u[i]/rho[i];
+		S[i][2][0]=0.5*u[i]*u[i]*beta;
+		S[i][1][1]=1/rho[i];
+		S[i][2][1]=-u[i]*beta;
+		S[i][2][2]=beta;
+		Sinv[i][0][0]=1;
+		Sinv[i][1][0]=u[i];
+		Sinv[i][2][0]=0.5*u[i]*u[i]
+		Sinv[i][1][1]=rho[i];
+		Sinv[i][2][1]=u[i]*rho[i];
+		Sinv[i][2][2]=1/beta;
+		C[i][0][0]=1;
+		C[i][1][1]=rho[i]*c[i];
+		C[i][2][1]=-rho[i]*c[i];
+		C[i][0][2]=-1/(c[i]*c[i]);
+		C[i][1][2]=1;
+		C[i][2][2]=1;
+		Cinv[i][0][0]=1;
+		Cinv[i][0][1]=1/(2*c[i]*c[i]);
+		Cinv[i][0][2]=1/(2*c[i]*c[i]);
+		Cinv[i][1][1]=1/(2*rho[i]*c[i]);
+		Cinv[i][1][2]=-1/(2*rho[i]*c[i]);
+		Cinv[i][2][1]=0.5;
+		Cinv[i][2][2]=0.5;
+		eigenvalue[i][0]=u[i];
+		eigenvalue[i][1]=u[i]+c[i];
+		eigenvalue[i][2]=u[i]-c[i];
+
+		for(int k=0;k<3;k++)
+			if(lambdaa[i][k]>0)
+				lambdaP[i][k][k]=lambdaa[k]*sqrt(pow(lambdaa[i][k],2)+pow(eps,2))/2;
+			else
+				lambdaN[i][k][k]=lambdaa[k]*sqrt(pow(lambdaa[i][k],2)+pow(eps,2))/2;
+
+
+	}
+}
 
 
