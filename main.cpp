@@ -4,5 +4,5 @@
 int main()
 {
 	std::cout<<quasiOneD()<<std::endl;
-	std::cout<<"Test\n";
+	std::cout<<"Test2222\n";
 }
