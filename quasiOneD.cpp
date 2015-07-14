@@ -24,14 +24,16 @@ double Cv=R/(gam-1);
 double Ttin=295.11;
 double ptin=101192.6;
 double pexit=0.8*ptin;
+double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
+
 
 // Convergence Settings
-double CFL=0.5;
+double CFL=0.1;
 double eps=0.3;
-double normR=1;
+double normR=1.0;
 double conv=1e-6;
 int iterations=0;
-int maxIt=20;
+int maxIt=1;
 
 
 
@@ -52,6 +54,13 @@ int quasiOneD()
 
 	double dt[nx];
 	double maxUC;
+
+	double dpdu;
+	double eigenvalues[3];
+	double charRel[3];
+	double dp, drho, du;
+	double MachBound;
+
 
 
 	// Initialize grid
@@ -109,11 +118,11 @@ int quasiOneD()
 	for(int i=1;i<nx-1;i++)
 		Q[1][i]=p[i]*(S[i]-S[i-1]);
 
-
 	while(normR>conv && iterations<maxIt)
 	{
 		iterations++;
-		if(iterations%10==0) std::cout<<"Iteration "<<iterations<<std::endl;
+		if(iterations%1==0) std::cout<<"Iteration "<<iterations<<std::endl;
+		if(iterations%1==0) std::cout<<"NormR "<<normR<<std::endl;		
 
 		maxUC=0;
 		for(int i=0;i<nx;i++)
@@ -123,6 +132,17 @@ int quasiOneD()
 			dt[i]=(CFL*dx)/maxUC;
 
 		Flux_StegerWarming(Flux,W,u,c,rho);
+/*
+		for(int i=0;i<nx;i++)
+		{
+			std::cout<<"rho "<<rho[i]<<std::endl;
+			std::cout<<"u "<<u[i]<<std::endl;
+			std::cout<<"p "<<p[i]<<std::endl;
+			std::cout<<"e "<<e[i]<<std::endl;
+			std::cout<<"c "<<c[i]<<std::endl;
+		}
+*/
+
 
 		// Euler Explicit
 		//
@@ -136,6 +156,88 @@ int quasiOneD()
 		for(int k=0;k<3;k++)
 			for(int i=0;i<nx-1;i++)
 				W[k][i]=W[k][i]-(dt[i]/V[i-1])*Resi[k][i];
+		// Inlet Boundary Condition
+		//
+		if(Mach[0]<1)
+		{
+			dpdu=ptin*(gam/(gam-1))
+				*pow(1-((gam-1)/(gam+1))
+				*u[0]*u[0]/a2,1/(gam-1))
+				*(-2*((gam-1)/(gam+1))*u[0]/a2);
+			eigenvalues[0]=((u[1]+u[0]-c[1]-c[0])/2)*(dt[0]/dx);
+			du=(-eigenvalues[0]*(p[1]-p[0]-rho[0]*c[0]*(u[1]-u[0])))
+				/(dpdu-rho[0]*c[0]);
+
+			u[0]=u[0]+du;
+			T[0]=Ttin*(1-((gam-1)/(gam+1))*u[0]*u[0]/a2);
+			p[0]=ptin*pow(T[0]/Ttin,gam/(gam-1));
+			rho[0]=p[0]/(R*T[0]);
+			e[0]=rho[0]*(Cv*T[0]+0.5*u[0]*u[0]);
+			c[0]=sqrt(gam*p[0]/rho[0]);
+			Mach[0]=u[0]/c[0];
+		}
+
+		// Exit boundary condition
+		// NOTE NOT SURE IF DX IS FULL DX OR DX/2
+		eigenvalues[0]=((u[nx-1]+u[nx-2])/2)*(dt[nx-1]/(dx));
+		eigenvalues[1]=((u[nx-1]+u[nx-2])/2+(c[nx-1]+c[nx-2])/2)*(dt[nx-1]/(dx));
+		eigenvalues[2]=((u[nx-1]+u[nx-2])/2-(c[nx-1]+c[nx-2])/2)*(dt[nx-1]/(dx));
+		charRel[0]=-eigenvalues[0]*(rho[nx-1]-rho[nx-2]
+				-(1/(c[nx-1]*c[nx-1]))*(p[nx-1]-p[nx-2]));
+		charRel[1]=-eigenvalues[1]*(p[nx-1]-p[nx-2]+rho[nx-1]*c[nx-1]*(u[nx-1]-u[nx-2]));
+		charRel[2]=-eigenvalues[2]*(p[nx-1]-p[nx-2]-rho[nx-1]*c[nx-1]*(u[nx-1]-u[nx-2]));
+
+		MachBound=((u[nx-1]+u[nx-2])/2)/((c[nx-1]+c[nx-2])/2);
+		//MachBound=(u[nx-1]/(c[nx-1]));
+		if(MachBound>1)
+		    dp=0.5*(charRel[1]+charRel[2]);
+		else
+		    dp=0;
+	
+		drho=charRel[0]+dp/(pow(c[nx-1],2));
+		du=(charRel[1]-dp)/(rho[nx-1]*c[nx-1]);
+	
+		u[nx-1]=u[nx-1]+du;
+		rho[nx-1]=rho[nx-1]+drho;
+		p[nx-1]=p[nx-1]+dp;
+		T[nx-1]=p[nx-1]/(rho[nx-1]*R);
+		e[nx-1]=rho[nx-1]*(Cv*T[nx-1]+0.5*pow(u[nx-1],2));
+		c[nx-1]=sqrt((gam*p[nx-1])/rho[nx-1]);
+		Mach[nx-1]=u[nx-1]/c[nx-1];
+
+		// Update flow properties
+		//
+		for(int i=1;i<nx-1;i++)
+		{
+		    rho[i]=W[0][i];				 // rho
+		    u[i]=W[1][i]/W[0][i];			   // U
+		    p[i]=(gam-1)*(W[2][i]-rho[i]*pow(u[i],2)/2);  // Pressure
+		    T[i]=p[i]/(rho[i]*R);			   // Temperature
+		    e[i]=W[2][i];				   // Energy
+		    c[i]=sqrt((gam*p[i])/rho[i]);		 // Speed of sound
+		    Mach[i]=u[i]/c[i];			      // Mach number
+		}
+		// Update vectors
+		for(int i=0;i<nx;i++)
+		{
+		    W[0][i]=rho[i];
+		    F[0][i]=rho[i]*u[i];
+		    Q[0][i]=0;
+		    W[1][i]=rho[i]*u[i];
+		    F[1][i]=rho[i]*pow(u[i],2)+p[i];
+		    W[2][i]=e[i];
+		    F[2][i]=(e[i]+p[i])*u[i];
+		    Q[2][i]=0;
+		}
+	
+		for(int i=1;i<nx-1;i++)
+		    Q[1][i]=p[i]*(S[i]-S[i-1]);
+	
+		// Calculating the norm of the density residual
+		normR=0;
+		for(int i=0;i<nx;i++)
+		    normR=normR+Resi[0][i]*Resi[0][i];
+		normR=sqrt(normR);
 	}
 
 	return 0;
@@ -156,27 +258,35 @@ void matrixMult(double A[3][3], double B[3][3], double result[3][3])
 {
     double temp[3][3];
     for(int row=0;row<3;row++)
-        for(int col=0;col<3;col++)
-            temp[row][col]=0;
+	for(int col=0;col<3;col++)
+	    temp[row][col]=0;
 
     for(int row=0;row<3;row++)
-        for(int col=0;col<3;col++)
-        {
-            for(int k=0;k<3;k++)
-                temp[row][col]+=A[row][k]*B[k][col];
-        }
+	for(int col=0;col<3;col++)
+	{
+	    for(int k=0;k<3;k++)
+		temp[row][col]+=A[row][k]*B[k][col];
+	}
     for(int row=0;row<3;row++)
-        for(int col=0;col<3;col++)
-            result[row][col]=temp[row][col];
+	for(int col=0;col<3;col++)
+	    result[row][col]=temp[row][col];
 }
 
 void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[])
 {
-	double S[nx-1][3][3],Sinv[nx-1][3][3],C[nx-1][3][3],Cinv[nx-1][3][3];
-	double lambdaP[nx-1][3][3],lambdaN[nx-1][3][3];
+	double S[nx-1][3][3];
+	double Sinv[nx-1][3][3];
+	double C[nx-1][3][3];
+	double Cinv[nx-1][3][3];
+	double lambdaP[nx-1][3][3];
+	double lambdaN[nx-1][3][3];
 
-	double Ap[nx-1][3][3],An[nx-1][3][3];
-	double tempP[3][3], tempN[3][3], prefixM[3][3],suffixM[3][3];
+	double Ap[nx-1][3][3];
+	double An[nx-1][3][3];
+	double tempP[3][3];
+	double tempN[3][3];
+	double prefixM[3][3];
+	double suffixM[3][3];
 	double beta=gam-1;
 	double lambdaa[nx-1][3];
 
@@ -188,7 +298,6 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 	memset(Cinv,0,sizeof(Cinv[0][0][0])*2*3*3);
 	memset(lambdaP,0,sizeof(lambdaP[0][0][0])*2*3*3);
 	memset(lambdaN,0,sizeof(lambdaN[0][0][0])*2*3*3);
-
 
 	for(int i=0;i<nx-1;i++)
 	{
@@ -234,23 +343,26 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 	{
 		memset(Ap,0,sizeof(Ap[0][0])*3*3);
 		memset(An,0,sizeof(Ap[0][0])*3*3);
+		memset(prefixM,0,sizeof(prefixM[0][0])*3*3);
+		memset(suffixM,0,sizeof(suffixM[0][0])*3*3);
+
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
-			for(int k=0;i<3;k++)
+			for(int k=0;k<3;k++)
 			{
 				prefixM[row][col]+=Sinv[i][row][k]*Cinv[i][k][col];
 				suffixM[row][col]+=C[i][row][k]*S[i][k][col];
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
-			for(int k=0;i<3;k++)
+			for(int k=0;k<3;k++)
 			{
 				tempP[row][col]=prefixM[row][k]*lambdaP[i][k][col];
 				tempN[row][col]=prefixM[row][k]*lambdaN[i][k][col];
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
-			for(int k=0;i<3;k++)
+			for(int k=0;k<3;k++)
 			{
 				Ap[i][row][col]=tempP[row][k]*suffixM[k][col];
 				An[i][row][col]=tempN[row][k]*suffixM[k][col];
