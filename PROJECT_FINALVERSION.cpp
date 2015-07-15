@@ -6,7 +6,7 @@ const double PI = atan(1.0)*4;
 // Problem definition
 double h=0.15;
 double t1=0.8;
-double t2=3;
+double t2=3.0;
 
 double gam=1.4;
 double Tt=531.2;
@@ -18,10 +18,11 @@ double Cv=R/(gam-1);
 double a2=2*gam*Cv*Tt*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 double a=0,b=1;         // Bounds on x
-const int nx=100;        // Number of grid points
+const int nx=50;        // Number of grid points
 
 double eps=0.3; // Epsilon
 double CFL=0.4; // CFL
+int maxIt=2;
 
 // Geometry areas
 double shape(double x)
@@ -550,7 +551,7 @@ int main()
     fprintf(test2,"\n");
 
     // ITERATIONS
-    while(normm>conv && iterations<20)
+    while(normm>conv && iterations<maxIt)
     {
         iterations++;
 

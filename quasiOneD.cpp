@@ -2,17 +2,19 @@
 #include <math.h>
 #include <Eigen/Dense>
 
+
+const double PI=atan(1.0)*4.0;
 // Discretization
 
 const int nx=50;
 double a=0, b=1;
-double dx=(b-a)/(nx-1);
+double dx=(b-a)/(nx-2);
 
 // Geometry
 
 double h=0.15;
 double t1=0.8;
-double t2=3;
+double t2=3.0;
 
 // Constants
 double gam=1.4;
@@ -28,13 +30,13 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 
 // Convergence Settings
-double CFL=0.4;
+double CFL=0.1;
 double eps=0.3;
 double normR=1.0;
 double conv=1e-6;
 int iterations=0;
-int maxIt=20;
-
+int maxIt=2000;
+int printIt=20;
 
 
 double isenP(double pt, double M);
@@ -70,7 +72,7 @@ int quasiOneD()
 		x[i]=dx/2+dx*(i-1);
 		
 	for(int i=0; i<nx; i++)
-		S[i]=1-h*pow((sin(M_PI*pow(x[i],t1))),t2);
+		S[i]=1-h*pow(sin(PI*pow(i*dx,t1)),t2);
 
 	for(int i=0; i<nx; i++)
 		V[i]=(S[i]+S[i+1])/2 * dx;
@@ -121,8 +123,8 @@ int quasiOneD()
 	while(normR>conv && iterations<maxIt)
 	{
 		iterations++;
-		if(iterations%1==0) std::cout<<"Iteration "<<iterations<<std::endl;
-		if(iterations%1==0) std::cout<<"NormR "<<normR<<std::endl;		
+		if(iterations%printIt==0) std::cout<<"Iteration "<<iterations<<std::endl;
+		if(iterations%printIt==0) std::cout<<"NormR "<<normR<<std::endl;		
 
 		maxUC=0;
 		for(int i=0;i<nx;i++)
@@ -240,6 +242,8 @@ int quasiOneD()
 		normR=sqrt(normR);
 	}
 
+
+
 	return 0;
 }
 
@@ -272,6 +276,11 @@ void matrixMult(double A[3][3], double B[3][3], double result[3][3])
 	    result[row][col]=temp[row][col];
 }
 
+
+
+
+
+
 void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[])
 {
 	double S[nx-1][3][3];
@@ -285,19 +294,23 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 	double An[nx-1][3][3];
 	double tempP[3][3];
 	double tempN[3][3];
-	double prefixM[3][3];
-	double suffixM[3][3];
+	double prefixMP[3][3];
+	double suffixMP[3][3];
+	double prefixMN[3][3];
+	double suffixMN[3][3];
+
 	double beta=gam-1;
 	double lambdaa[nx-1][3];
 
 
-	memset(Flux,0,sizeof(Flux[0][0])*3*nx-1);
-	memset(S,0,sizeof(S[0][0][0])*2*3*3);
-	memset(Sinv,0,sizeof(Sinv[0][0][0])*2*3*3);
-	memset(C,0,sizeof(C[0][0][0])*2*3*3);
-	memset(Cinv,0,sizeof(Cinv[0][0][0])*2*3*3);
-	memset(lambdaP,0,sizeof(lambdaP[0][0][0])*2*3*3);
-	memset(lambdaN,0,sizeof(lambdaN[0][0][0])*2*3*3);
+	memset(Flux,0,sizeof(Flux[0][0])*3*(nx-1));
+	memset(S,0,sizeof(S[0][0][0])*(nx-1)*3*3);
+	memset(Sinv,0,sizeof(Sinv[0][0][0])*(nx-1)*3*3);
+	memset(C,0,sizeof(C[0][0][0])*(nx-1)*3*3);
+	memset(Cinv,0,sizeof(Cinv[0][0][0])*(nx-1)*3*3);
+	memset(lambdaP,0,sizeof(lambdaP[0][0][0])*(nx-1)*3*3);
+	memset(lambdaN,0,sizeof(lambdaN[0][0][0])*(nx-1)*3*3);
+	memset(lambdaa,0,sizeof(lambdaa[0][0])*(nx-1)*3);
 
 	for(int i=0;i<nx-1;i++)
 	{
@@ -332,10 +345,10 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 
 		for(int k=0;k<3;k++)
 			if(lambdaa[i][k]>0)
-				lambdaP[i][k][k]=lambdaa[i][k]*
+				lambdaP[i][k][k]=lambdaa[i][k]+
 					sqrt(pow(lambdaa[i][k],2)+pow(eps,2))/2;
 			else
-				lambdaN[i][k][k]=lambdaa[i][k]*
+				lambdaN[i][k][k]=lambdaa[i][k]-
 					sqrt(pow(lambdaa[i][k],2)+pow(eps,2))/2;
 	}
 
@@ -343,29 +356,34 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 	{
 		memset(Ap,0,sizeof(Ap[0][0])*3*3);
 		memset(An,0,sizeof(Ap[0][0])*3*3);
-		memset(prefixM,0,sizeof(prefixM[0][0])*3*3);
-		memset(suffixM,0,sizeof(suffixM[0][0])*3*3);
+		memset(prefixMP,0,sizeof(prefixMP[0][0])*3*3);
+		memset(suffixMP,0,sizeof(suffixMP[0][0])*3*3);
+		memset(prefixMN,0,sizeof(prefixMN[0][0])*3*3);
+		memset(suffixMN,0,sizeof(suffixMN[0][0])*3*3);
 
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
 			for(int k=0;k<3;k++)
 			{
-				prefixM[row][col]+=Sinv[i][row][k]*Cinv[i][k][col];
-				suffixM[row][col]+=C[i][row][k]*S[i][k][col];
+				prefixMP[row][col]+=Sinv[i][row][k]*Cinv[i][k][col];
+				suffixMP[row][col]+=C[i][row][k]*S[i][k][col];
+				prefixMN[row][col]+=Sinv[i+1][row][k]*Cinv[i+1][k][col];
+				suffixMN[row][col]+=C[i+1][row][k]*S[i+1][k][col];
+
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
 			for(int k=0;k<3;k++)
 			{
-				tempP[row][col]=prefixM[row][k]*lambdaP[i][k][col];
-				tempN[row][col]=prefixM[row][k]*lambdaN[i][k][col];
+				tempP[row][col]=prefixMP[row][k]*lambdaP[i][k][col];
+				tempN[row][col]=prefixMN[row][k]*lambdaN[i+1][k][col];
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
 			for(int k=0;k<3;k++)
 			{
-				Ap[i][row][col]=tempP[row][k]*suffixM[k][col];
-				An[i][row][col]=tempN[row][k]*suffixM[k][col];
+				Ap[i][row][col]=tempP[row][k]*suffixMP[k][col];
+				An[i][row][col]=tempN[row][k]*suffixMN[k][col];
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
