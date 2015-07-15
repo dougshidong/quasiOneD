@@ -1,5 +1,6 @@
 CXX	= g++
-INCL	= ./eigen
+INCLEI	= ./eigen 
+INCLGN  = ./gnuplot-iostream
 DEBUG	= -g
 CPPOBJ	= main.o quasiOneD.o
 CPPH	= quasiOneD.h
@@ -15,7 +16,7 @@ main.o: main.cpp quasiOneD.h
 	$(CC) $(CFLAGS) main.cpp
 
 quasiOneD.o : quasiOneD.h quasiOneD.cpp
-	$(CC) $(CFLAGS) -I $(INCL) quasiOneD.cpp
+	$(CC) $(CFLAGS) -I $(INCLEI) quasiOneD.cpp 
 
 clean:
 	\rm *.o p1.*

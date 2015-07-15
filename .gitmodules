@@ -1,6 +1,3 @@
 [submodule "eigen"]
 	path = eigen
 	url = https://github.com/RLovelett/eigen
-[submodule "gnuplot-iostream"]
-	path = gnuplot-iostream
-	url = https://github.com/dstahlke/gnuplot-iostream.git

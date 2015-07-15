@@ -36,7 +36,7 @@ double normR=1.0;
 double conv=1e-6;
 int iterations=0;
 int maxIt=2000;
-int printIt=20;
+int printIt=1;
 
 
 double isenP(double pt, double M);
@@ -355,7 +355,9 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 	for(int i=0;i<nx-1;i++)
 	{
 		memset(Ap,0,sizeof(Ap[0][0])*3*3);
-		memset(An,0,sizeof(Ap[0][0])*3*3);
+		memset(An,0,sizeof(An[0][0])*3*3);
+		memset(tempP,0,sizeof(tempP[0][0])*3*3);
+		memset(tempN,0,sizeof(tempN[0][0])*3*3);
 		memset(prefixMP,0,sizeof(prefixMP[0][0])*3*3);
 		memset(suffixMP,0,sizeof(suffixMP[0][0])*3*3);
 		memset(prefixMN,0,sizeof(prefixMN[0][0])*3*3);
@@ -375,15 +377,15 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 		for(int col=0;col<3;col++)
 			for(int k=0;k<3;k++)
 			{
-				tempP[row][col]=prefixMP[row][k]*lambdaP[i][k][col];
-				tempN[row][col]=prefixMN[row][k]*lambdaN[i+1][k][col];
+				tempP[row][col]+=prefixMP[row][k]*lambdaP[i][k][col];
+				tempN[row][col]+=prefixMN[row][k]*lambdaN[i+1][k][col];
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
 			for(int k=0;k<3;k++)
 			{
-				Ap[i][row][col]=tempP[row][k]*suffixMP[k][col];
-				An[i][row][col]=tempN[row][k]*suffixMN[k][col];
+				Ap[i][row][col]+=tempP[row][k]*suffixMP[k][col];
+				An[i][row][col]+=tempN[row][k]*suffixMN[k][col];
 			}
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
