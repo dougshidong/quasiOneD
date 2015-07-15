@@ -16,24 +16,24 @@ double t2=3;
 
 // Constants
 double gam=1.4;
-double R=286.9;
+double R=1716;
 double Cv=R/(gam-1);
 
 // Problem parameters
 
-double Ttin=295.11;
-double ptin=101192.6;
-double pexit=0.8*ptin;
+double Ttin=531.2;
+double ptin=2117;
+double pexit=0.72*ptin;
 double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 
 // Convergence Settings
-double CFL=0.1;
+double CFL=0.4;
 double eps=0.3;
 double normR=1.0;
 double conv=1e-6;
 int iterations=0;
-int maxIt=1;
+int maxIt=20;
 
 
 
