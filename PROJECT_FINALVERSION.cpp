@@ -695,7 +695,8 @@ int main()
         //correctedModifiedStegerWarmingF(Flux,W,U,c,rho,p);
         //scalarF(Flux,F,U,c,W);
         //RoeF(Flux,W,F,U,c,rho,p);
-
+	for(int i=0;i<nx;i++)
+		printf("%f\n",Flux[1][i]);
         // Residual
         for(int k=0;k<3;k++)
         {

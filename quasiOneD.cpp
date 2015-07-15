@@ -33,10 +33,10 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 double CFL=0.1;
 double eps=0.3;
 double normR=1.0;
-double conv=1e-6;
+double conv=1e-13;
 int iterations=0;
-int maxIt=2000;
-int printIt=1;
+int maxIt=200000;
+int printIt=20;
 
 
 double isenP(double pt, double M);
@@ -134,6 +134,8 @@ int quasiOneD()
 			dt[i]=(CFL*dx)/maxUC;
 
 		Flux_StegerWarming(Flux,W,u,c,rho);
+//		for(int i=0;i<nx;i++)
+//			std::cout<<Flux[1][i]<<std::endl;
 /*
 		for(int i=0;i<nx;i++)
 		{
@@ -354,8 +356,8 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 
 	for(int i=0;i<nx-1;i++)
 	{
-		memset(Ap,0,sizeof(Ap[0][0])*3*3);
-		memset(An,0,sizeof(An[0][0])*3*3);
+		memset(Ap,0,sizeof(Ap[0][0][0])*(nx-1)*3*3);
+		memset(An,0,sizeof(An[0][0][0])*(nx-1)*3*3);
 		memset(tempP,0,sizeof(tempP[0][0])*3*3);
 		memset(tempN,0,sizeof(tempN[0][0])*3*3);
 		memset(prefixMP,0,sizeof(prefixMP[0][0])*3*3);
