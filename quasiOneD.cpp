@@ -260,29 +260,6 @@ double isenT(double Tt, double M)
 }
 
 
-void matrixMult(double A[3][3], double B[3][3], double result[3][3])
-{
-    double temp[3][3];
-    for(int row=0;row<3;row++)
-	for(int col=0;col<3;col++)
-	    temp[row][col]=0;
-
-    for(int row=0;row<3;row++)
-	for(int col=0;col<3;col++)
-	{
-	    for(int k=0;k<3;k++)
-		temp[row][col]+=A[row][k]*B[k][col];
-	}
-    for(int row=0;row<3;row++)
-	for(int col=0;col<3;col++)
-	    result[row][col]=temp[row][col];
-}
-
-
-
-
-
-
 void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[])
 {
 	double S[nx-1][3][3];
