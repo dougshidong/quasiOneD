@@ -1,0 +1,230 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% <PRE>
+\def\MapleNameDef $#1: #2.#3${\expandafter\gdef\csname Maple@#1\endcsname{#2}}
+\def\MapleInfoDef $#1: #2 #3${\expandafter\gdef\csname Maple@#1\endcsname{#2}}
+\MapleNameDef $RCSfile: maple2e.sty,v $
+\MapleInfoDef $Revision: 1.15 $
+\MapleInfoDef $Date: 1998/09/21 15:58:14 $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\typeout{Package: \Maple@RCSfile\space \Maple@Date\space v\Maple@Revision}
+\ProvidesPackage{maple2e}[\Maple@Date\space\Maple@RCSfile
+Maple Latex Style Package -- \Maple@Date\space\Maple@RCSfile]
+% 
+% Copyright (c) 1994--2003 by Waterloo Maple Inc., all rights reserved.
+%
+% Permission is granted to use this package without charge. It may
+% be redistributed providing that it is distributed as is
+% and without charge.  You may modify these macros for your own use,
+% and redistribute them, subject to the following conditions.
+%
+% 1. The package name used for any modified version of this file is 
+%    different from maple2e and the file name used is different from
+%    maple2e.sty
+%
+% 2. You acknowledge this copyright notice and this file as the source.
+%
+% 3. The new file is redistributed under the same terms and conditions 
+%    as indicated here, including a version of this notice modified to
+%    refer to the new file and/or package name.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%
+% Package:  maple2e 
+%
+% This package defines the latex macros used by "Export to LaTeX" and 
+% "Export to techexplorer".  It makes use of several sub-packages.
+% 
+% mapleenv - Maple Environments used to mark mapleinput, mapleoutput,
+% mapletab - Maple Macros to display tables (spreadsheets)
+% mapleplots - Maple macros to display plots.
+%
+% See the comments in maplenv.sty for a more detailed discussion of
+% the special environments such as
+%
+%	\begin{mapleinput} ... \end{mapleinput}
+%	\begin{maplelatex} ... \end{maplelatex}
+%
+% and for details about macros such as
+%
+%	\mapleinline <status> <type> <verbatim code> <latex code>
+%	\maplemultiline{ ... }
+%
+% which are used to control style and to embed raw Maple data.
+% 
+% USAGE:
+%
+%	To use this package, add the line  
+%
+%	\usepackage{maple2e} to 
+%
+%	your document preamble.  If you are using a specific plot
+%	driver such as dvipsone, then add its name as an option as
+%	in:
+%
+%	\usepackage[dvipsone]{maple2e}
+%
+%	The default option value is "dvips".
+%
+%	If you wish to preview your document, ignoring plots, use
+%	the "noplots" option.
+%
+%	The only options available are precisely those needed to
+%	control plotting.  Plots are handled by the standard LaTeX2e
+%	graphics package and for LaTeX are restricted to postscript.
+%	 
+% NOTES:
+%
+%	It is an easy extension of this code to other plot file formats.
+%	All that is needed is a new definition of \mapleplot
+%	to invoke the graphics code of your choice.
+%
+%	To adjust the spacing around the Maple environemnts, edit
+% 	change the entries in the file mapleenv.def
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% Package Options
+%
+\newif\ifnoplots\noplotsfalse
+\DeclareOption{noplots}{
+    % \PassOptionsToPackage{dvips}{epsfig}
+    \noplotstrue
+}
+\DeclareOption{dvips}{
+    % \PassOptionsToPackage{dvips}{epsfig}
+    \edef\Driver{dvips}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dvips driver}
+      \usepackage[dvips]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dvi2ps}{
+    \edef\Driver{dvi2ps}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dvips driver}
+      \usepackage[dvi2ps]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dvilaser}{
+    \edef\Driver{dvilaser}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dvilaser driver}
+      \usepackage[dvilaser]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dvipsone}{
+    \edef\Driver{dvipsone}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dvipsone driver}
+      \usepackage[dvipsone]{epsfig}
+      %%% \let\mapleplot\mapleplotname %%%
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dvitops}{
+    \edef\Driver{dvitops}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dvitops driver}
+      \usepackage[dvitops]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dviwindo}{
+    \edef\Driver{dviwindo}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dviwindo driver}
+      \usepackage[dviwindo]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{emtex}{
+    \edef\Driver{emtex}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for emtex driver}
+      \usepackage[emtex]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{pubps}{
+    \edef\Driver{pubps}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for pubps driver}
+      \usepackage[pubps]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{textures}{
+    \edef\Driver{textures}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for textures driver}
+      \usepackage[textures]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{xdvi}{
+    \edef\Driver{xdvi}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for xdvi driver}
+      \usepackage[xdvi]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dvitps}{
+    \edef\Driver{dvitps}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dvitps driver}
+      \usepackage[dvitps]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{dviwin}{
+    \edef\Driver{dviwin}
+    \AtEndOfPackage{
+      \typeout{ ...configuring graphics for dviwin driver}
+      \usepackage[dviwin]{epsfig}
+      \let\mapleplot\epsfigmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+\DeclareOption{oztex}{
+    \edef\Driver{oztex}
+    \AtEndOfPackage{
+      \typeout{ ...Configuring graphics for OzTex, rotation not supported}
+      \usepackage[oztex]{epsfig}
+      \let\mapleplot\oztexmapleplot
+      \let\imapleplot\mapleplot
+    }%
+}
+\DeclareOption{SWP}{
+    \edef\Driver{SWP}
+    \AtEndOfPackage{
+      \typeout{ ...Configuring graphics for Scientific Work Place}
+      \let\mapleplot\swpmapleplot
+      \let\imapleplot\mapleplot
+    }
+}
+% \ExecuteOptions{dvips}  % default's to dvips driver
+\ProcessOptions*
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Utilities and Environments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{mapleenv}   %%% Standard Maple Environments
+\usepackage{mapletab}   %%% Maple Macros for tables and spreadsheets
+\usepackage{mapleplots} %%% Maple Macros for Plots
+\usepackage{maplestyle} %%% Macros supporting Automatic Paragraph Styles
+\endinput %%%% The End %%%%%
+%%% </PRE>
