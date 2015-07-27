@@ -1,13 +1,12 @@
 #include<iostream>
 #include<math.h>
 
-int getGradient(int type)
+int optimizer(int descentType, int gradientType)
 {
-	//FINITE DIFFERENCES
-	f(type==1)
-	{
+	// 4 = QUASI-NEWTON (BFGS)
+	//
+	
 
-	}
 
 
 
@@ -25,3 +24,8 @@ int getGradient(int type)
 
 }
 
+
+void finiteD1(double [] y, double h)
+{
+	current=
+}
