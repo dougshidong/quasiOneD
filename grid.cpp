@@ -10,21 +10,34 @@ void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx, s
 	double a=0, b=1;
 	double dxConst=(b-a)/nx;
 	
+	// Define X
 	for(int i=0; i<nx; i++)
 		x.push_back(dxConst/2+dxConst*i);
 
+	// Define dx
 	dx.push_back(x[1]-x[0]);
-
 	for(int i=1; i<x.size()-1; i++)
 	{
 		dx.push_back( (x[i]-x[i-1])/2 + (x[i+1]-x[i])/2 );
 	}
 	dx.push_back(x[x.size()-1]-x[x.size()-2]);
 
-	for(int i=0; i<x.size()-1; i++)
-		S.push_back(1-h*pow(sin(M_PI*pow(x[i]-dx[i]/2,t1)),t2));
+	// Define Area
+	for(int i=0; i<x.size(); i++)
+		S.push_back(1-h*pow(sin(M_PI*pow(fabs(x[i]-dx[i]/2),t1)),t2));
 	
 	S.push_back(1-h*pow(sin(M_PI*pow(x[x.size()]+dx[x.size()]/2,t1)),t2));
 
 	return;
+}
+
+// Define Volume
+std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
+{
+	std::vector <double> V;
+
+	for(int i=0; i<dx.size(); i++)
+		V.push_back((S[i]+S[i+1])/2*dx[i]);
+
+	return V;
 }
