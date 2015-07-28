@@ -363,36 +363,31 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 
 void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<std::vector<double> > W, std::vector<double> u, std::vector<double> c, std::vector<double> rho)
 {
-	std::vector <std::vector <double> > S (3,std::vector <double> (3)),
-	       				    Sinv (3,std::vector <double> (3)),
-					    C (3,std::vector <double> (3)),
-					    Cinv (3,std::vector <double> (3));
-	std::vector <std::vector <double> > lambdaP (3,std::vector <double> (3)),
-					    lambdaN (3,std::vector <double> (3));
-	std::vector <double> lambdaa(3);
-
-	std::vector <std::vector <double> > Ap (3,std::vector <double> (3)),
-	       				    An (3,std::vector <double> (3)),
-					    tempP(3,std::vector <double> (3)),
-					    tempN(3,std::vector <double> (3)),
-					    prefix(3,std::vector <double> (3)),
-					    suffix(3,std::vector <double> (3)),
-					    zeros(3,std::vector <double> (3,0));
+	double S[3][3],Sinv[3][3],C[3][3],Cinv[3][3], lambdaP[3][3],lambdaN[3][3];
+	double lambdaa[3];
+	
+	
+	double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 	
 
-	std::vector <std::vector <std::vector <double> > > Ap_list, An_list;
+	std::vector <double[3][3]> Ap_list, An_list;
 
 	double beta=gam-1;
 
+	memset(S,0,sizeof(S[0][0])*3*3);
+	memset(Sinv,0,sizeof(Sinv[0][0])*3*3);
+	memset(C,0,sizeof(C[0][0])*3*3);
+	memset(Cinv,0,sizeof(Cinv[0][0])*3*3);
+	memset(lambdaa,0,sizeof(lambdaa[0])*3);
 
 	for(int i=0;i<rho.size();i++)
 	{
-		Ap=zeros;
-		An=zeros;
-		tempP=zeros;
-		tempN=zeros;
-		prefix=zeros;
-		suffix=zeros;
+		memset(Ap,0,sizeof(Ap[0][0])*3*3);
+		memset(An,0,sizeof(An[0][0])*3*3);
+		memset(tempP,0,sizeof(tempP[0][0])*3*3);
+		memset(tempN,0,sizeof(tempN[0][0])*3*3);
+		memset(prefix,0,sizeof(prefix[0][0])*3*3);
+		memset(suffix,0,sizeof(suffix[0][0])*3*3);
 
 	
 		S[0][0]=1;
@@ -424,7 +419,8 @@ void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<st
 		lambdaa[1]=u[i]+c[i];
 		lambdaa[2]=u[i]-c[i];
 		
-
+		memset(lambdaP,0,sizeof(lambdaP[0][0])*3*3);
+		memset(lambdaN,0,sizeof(lambdaN[0][0])*3*3);
 		for(int k=0;k<3;k++)
 			if(lambdaa[k]>0)
 				lambdaP[k][k]=lambdaa[k]+
