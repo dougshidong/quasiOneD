@@ -1,7 +1,6 @@
 CXX	= g++
-INCLEI	= ./eigen 
 INCLGN  = ./gnuplot-iostream
-DEBUG	= -g
+DEBUG	= -pg  
 CPPOBJ	= main.o quasiOneD.o grid.o
 CPPH	= quasiOneD.h
 CFLAGS	= -Wall -c $(DEBUG)
@@ -19,7 +18,7 @@ grid.o: grid.h grid.cpp
 	$(CC) $(CFLAGS) grid.cpp
 
 quasiOneD.o : quasiOneD.h quasiOneD.cpp
-	$(CC) $(CFLAGS) -I $(INCLEI) quasiOneD.cpp 
+	$(CC) $(CFLAGS) quasiOneD.cpp 
 
 clean:
 	\rm *.o p1.*

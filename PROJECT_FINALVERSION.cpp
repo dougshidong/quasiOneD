@@ -22,7 +22,7 @@ const int nx=50;        // Number of grid points
 
 double eps=0.3; // Epsilon
 double CFL=0.4; // CFL
-int maxIt=2;
+int maxIt=200000;
 
 // Geometry areas
 double shape(double x)
@@ -481,7 +481,7 @@ int main()
     double maxUc;
     double dt[nx];
     double normm=1;
-    double conv=pow(10,-5);
+    double conv=pow(10,-13);
     int iterations=0;
 
     // Discretization
@@ -555,7 +555,7 @@ int main()
     {
         iterations++;
 
-        if(iterations%1==0)printf("iteration %d normm %f\n",iterations,normm);
+        if(iterations%500==0)printf("iteration %d normm %f\n",iterations,normm);
         fprintf(IterationsData,"%d\n",iterations);
         maxUc=0;
         for(int i=0;i<nx;i++)
@@ -695,8 +695,8 @@ int main()
         //correctedModifiedStegerWarmingF(Flux,W,U,c,rho,p);
         //scalarF(Flux,F,U,c,W);
         //RoeF(Flux,W,F,U,c,rho,p);
-	for(int i=0;i<nx;i++)
-		printf("%f\n",Flux[1][i]);
+//	for(int i=0;i<nx;i++)
+//		printf("%f\n",Flux[1][i]);
         // Residual
         for(int k=0;k<3;k++)
         {

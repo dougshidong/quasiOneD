@@ -1,20 +1,8 @@
 #include <iostream>
 #include <math.h>
-#include <Eigen/Dense>
 #include <vector>
 
 const double PI=atan(1.0)*4.0;
-// Discretization
-
-const int nx=50;
-double a=0, b=1;
-double dx=(b-a)/(nx-2);
-
-// Geometry
-
-double h=0.15;
-double t1=0.8;
-double t2=3.0;
 
 // Constants
 double gam=1.4;
@@ -30,59 +18,50 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 
 // Convergence Settings
-double CFL=0.1;
+double CFL=0.4;
 double eps=0.3;
 double normR=1.0;
 double conv=1e-13;
 int iterations=0;
 int maxIt=200000;
-int printIt=20;
-int printConv=0;
+int printIt=500;
+int printConv=1;
 
 
 
 double isenP(double pt, double M);
 double isenT(double Tt, double M);
-void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[]);
+//void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[]);
 
-void Flux_StegerWarmingV(std::vector<std::vector<double> > Flux, std::vector<std::vector<double> > W, std::vector<double> u, std::vector<double> c, std::vector<double> rho);
+void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<std::vector<double> > W, std::vector<double> u, std::vector<double> c, std::vector<double> rho);
 
 
 
-int quasiOneD()
+int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vector <double> S,
+		std::vector <double> V)
 {
-	double x[nx],S[nx],V[nx];
-	double rho[nx], u[nx], e[nx];
-	double T[nx], p[nx], c[nx], Mach[nx];
-	double W[3][nx], F[3][nx], Q[3][nx];
+	std::vector <double> rho(nx), u(nx), e(nx);
+	std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+	std::vector <std::vector <double> > W(3,std::vector <double> (nx,0)),
+					    F(3,std::vector <double> (nx,0)),
+					    Q(3,std::vector <double> (nx,0));
 
-	double Flux[3][nx-1];
-	double Resi[3][nx];
-	double Resi1[3][nx],Resi2[3][nx],Resi3[3][nx];
+	std::vector <std::vector <double> > Flux(3,std::vector <double> (nx+1));
 
-	double dt[nx];
+	std::vector <std::vector <double> > Resi(3,std::vector <double> (nx,0)),
+	  				    Resi1(3,std::vector <double> (nx,0)),
+					    Resi2(3,std::vector <double> (nx,0)),
+					    Resi3(3,std::vector <double> (nx,0));
+
+	std::vector <double> dt(nx);
 	double maxUC;
 
 	double dpdu;
-	double eigenvalues[3];
-	double charRel[3];
+	std::vector <double> eigenvalues(3);
+	std::vector <double> charRel(3);
 	double dp, drho, du;
 	double MachBound;
 
-
-
-	// Initialize grid
-	x[0]=a;
-	x[nx-1]=b;
-	for(int i=1; i<nx-1; i++)
-		x[i]=dx/2+dx*(i-1);
-	for(int i=0; i<nx; i++)
-		std::cout<<"Index "<<i<<" x: "<<x[i]<<std::endl;
-	for(int i=0; i<nx; i++)
-		S[i]=1-h*pow(sin(PI*pow(i*dx,t1)),t2);
-
-	for(int i=0; i<nx; i++)
-		V[i]=(S[i]+S[i+1])/2 * dx;
 
 
 	// Inlet flow properties
@@ -130,17 +109,16 @@ int quasiOneD()
 	while(normR>conv && iterations<maxIt)
 	{
 		iterations++;
-		if(iterations%printIt==0 && printConv==1) std::cout<<"Iteration "<<iterations<<std::endl;
-		if(iterations%printIt==0 && printConv==1) std::cout<<"NormR "<<normR<<std::endl;		
+		if(iterations%printIt==0 && printConv==1) std::cout<<"Iteration "<<iterations<<"   NormR "<<normR<<std::endl;		
 
 		maxUC=0;
 		for(int i=0;i<nx;i++)
 			if(fabs(u[i]+c[i]>maxUC))
 				maxUC=fabs(u[i]+c[i]);
 		for(int i=0;i<nx;i++)
-			dt[i]=(CFL*dx)/maxUC;
+			dt[i]=(CFL*dx[i])/maxUC;
 
-		Flux_StegerWarming(Flux,W,u,c,rho);
+		Flux_StegerWarmingV(Flux,W,u,c,rho);
 //		for(int i=0;i<nx;i++)
 //			std::cout<<Flux[1][i]<<std::endl;
 /*
@@ -159,8 +137,8 @@ int quasiOneD()
 		//
 		for(int k=0;k<3;k++)
 		{
-			for(int i=0;i<nx-1;i++)
-				Resi[k][i+1]=Flux[k][i+1]*S[i+1]-Flux[k][i]*S[i]-Q[k][i+1];
+			for(int i=1;i<nx-1;i++)
+				Resi[k][i]=Flux[k][i+1]*S[i+1]-Flux[k][i]*S[i]-Q[k][i];
 			Resi[k][0]=0;
 			Resi[k][nx-1]=0;
 		}
@@ -175,7 +153,7 @@ int quasiOneD()
 				*pow(1-((gam-1)/(gam+1))
 				*u[0]*u[0]/a2,1/(gam-1))
 				*(-2*((gam-1)/(gam+1))*u[0]/a2);
-			eigenvalues[0]=((u[1]+u[0]-c[1]-c[0])/2)*(dt[0]/dx);
+			eigenvalues[0]=((u[1]+u[0]-c[1]-c[0])/2)*(dt[0]/dx[0]);
 			du=(-eigenvalues[0]*(p[1]-p[0]-rho[0]*c[0]*(u[1]-u[0])))
 				/(dpdu-rho[0]*c[0]);
 
@@ -190,9 +168,9 @@ int quasiOneD()
 
 		// Exit boundary condition
 		// NOTE NOT SURE IF DX IS FULL DX OR DX/2
-		eigenvalues[0]=((u[nx-1]+u[nx-2])/2)*(dt[nx-1]/(dx));
-		eigenvalues[1]=((u[nx-1]+u[nx-2])/2+(c[nx-1]+c[nx-2])/2)*(dt[nx-1]/(dx));
-		eigenvalues[2]=((u[nx-1]+u[nx-2])/2-(c[nx-1]+c[nx-2])/2)*(dt[nx-1]/(dx));
+		eigenvalues[0]=((u[nx-1]+u[nx-2])/2)*(dt[nx-1]/(dx[nx-1]));
+		eigenvalues[1]=((u[nx-1]+u[nx-2])/2+(c[nx-1]+c[nx-2])/2)*(dt[nx-1]/(dx[nx-1]));
+		eigenvalues[2]=((u[nx-1]+u[nx-2])/2-(c[nx-1]+c[nx-2])/2)*(dt[nx-1]/(dx[nx-1]));
 		charRel[0]=-eigenvalues[0]*(rho[nx-1]-rho[nx-2]
 				-(1/(c[nx-1]*c[nx-1]))*(p[nx-1]-p[nx-2]));
 		charRel[1]=-eigenvalues[1]*(p[nx-1]-p[nx-2]+rho[nx-1]*c[nx-1]*(u[nx-1]-u[nx-2]));
@@ -266,7 +244,7 @@ double isenT(double Tt, double M)
 	return Tt*pow((1+(gam-1)/2*pow(M,2)),-1);
 }
 
-
+/*
 void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[])
 {
 	double S[nx-1][3][3];
@@ -381,120 +359,117 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 
 
 }
+*/
 
 void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<std::vector<double> > W, std::vector<double> u, std::vector<double> c, std::vector<double> rho)
 {
-	double S[nx-1][3][3];
-	double Sinv[nx-1][3][3];
-	double C[nx-1][3][3];
-	double Cinv[nx-1][3][3];
-	double lambdaP[nx-1][3][3];
-	double lambdaN[nx-1][3][3];
+	std::vector <std::vector <double> > S (3,std::vector <double> (3)),
+	       				    Sinv (3,std::vector <double> (3)),
+					    C (3,std::vector <double> (3)),
+					    Cinv (3,std::vector <double> (3));
+	std::vector <std::vector <double> > lambdaP (3,std::vector <double> (3)),
+					    lambdaN (3,std::vector <double> (3));
+	std::vector <double> lambdaa(3);
 
-	double Ap[nx-1][3][3];
-	double An[nx-1][3][3];
-	double tempP[3][3];
-	double tempN[3][3];
-	double prefixMP[3][3];
-	double suffixMP[3][3];
-	double prefixMN[3][3];
-	double suffixMN[3][3];
+	std::vector <std::vector <double> > Ap (3,std::vector <double> (3)),
+	       				    An (3,std::vector <double> (3)),
+					    tempP(3,std::vector <double> (3)),
+					    tempN(3,std::vector <double> (3)),
+					    prefix(3,std::vector <double> (3)),
+					    suffix(3,std::vector <double> (3)),
+					    zeros(3,std::vector <double> (3,0));
+	
+
+	std::vector <std::vector <std::vector <double> > > Ap_list, An_list;
 
 	double beta=gam-1;
-	double lambdaa[nx-1][3];
 
 
-	memset(S,0,sizeof(S[0][0][0])*(nx-1)*3*3);
-	memset(Sinv,0,sizeof(Sinv[0][0][0])*(nx-1)*3*3);
-	memset(C,0,sizeof(C[0][0][0])*(nx-1)*3*3);
-	memset(Cinv,0,sizeof(Cinv[0][0][0])*(nx-1)*3*3);
-	memset(lambdaP,0,sizeof(lambdaP[0][0][0])*(nx-1)*3*3);
-	memset(lambdaN,0,sizeof(lambdaN[0][0][0])*(nx-1)*3*3);
-	memset(lambdaa,0,sizeof(lambdaa[0][0])*(nx-1)*3);
-
-	for(int i=0;i<nx-1;i++)
+	for(int i=0;i<rho.size();i++)
 	{
-		S[i][0][0]=1;
-		S[i][1][0]=-u[i]/rho[i];
-		S[i][2][0]=0.5*u[i]*u[i]*beta;
-		S[i][1][1]=1/rho[i];
-		S[i][2][1]=-u[i]*beta;
-		S[i][2][2]=beta;
-		Sinv[i][0][0]=1;
-		Sinv[i][1][0]=u[i];
-		Sinv[i][2][0]=0.5*u[i]*u[i];
-		Sinv[i][1][1]=rho[i];
-		Sinv[i][2][1]=u[i]*rho[i];
-		Sinv[i][2][2]=1/beta;
-		C[i][0][0]=1;
-		C[i][1][1]=rho[i]*c[i];
-		C[i][2][1]=-rho[i]*c[i];
-		C[i][0][2]=-1/(c[i]*c[i]);
-		C[i][1][2]=1;
-		C[i][2][2]=1;
-		Cinv[i][0][0]=1;
-		Cinv[i][0][1]=1/(2*c[i]*c[i]);
-		Cinv[i][0][2]=1/(2*c[i]*c[i]);
-		Cinv[i][1][1]=1/(2*rho[i]*c[i]);
-		Cinv[i][1][2]=-1/(2*rho[i]*c[i]);
-		Cinv[i][2][1]=0.5;
-		Cinv[i][2][2]=0.5;
-		lambdaa[i][0]=u[i];
-		lambdaa[i][1]=u[i]+c[i];
-		lambdaa[i][2]=u[i]-c[i];
-
-		for(int k=0;k<3;k++)
-			if(lambdaa[i][k]>0)
-				lambdaP[i][k][k]=lambdaa[i][k]+
-					sqrt(pow(lambdaa[i][k],2)+pow(eps,2))/2;
-			else
-				lambdaN[i][k][k]=lambdaa[i][k]-
-					sqrt(pow(lambdaa[i][k],2)+pow(eps,2))/2;
-	}
-
-	for(int i=0;i<nx-1;i++)
-	{
-		memset(Ap,0,sizeof(Ap[0][0][0])*(nx-1)*3*3);
-		memset(An,0,sizeof(An[0][0][0])*(nx-1)*3*3);
-		memset(tempP,0,sizeof(tempP[0][0])*3*3);
-		memset(tempN,0,sizeof(tempN[0][0])*3*3);
-		memset(prefixMP,0,sizeof(prefixMP[0][0])*3*3);
-		memset(suffixMP,0,sizeof(suffixMP[0][0])*3*3);
-		memset(prefixMN,0,sizeof(prefixMN[0][0])*3*3);
-		memset(suffixMN,0,sizeof(suffixMN[0][0])*3*3);
-
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			for(int k=0;k<3;k++)
-			{
-				prefixMP[row][col]+=Sinv[i][row][k]*Cinv[i][k][col];
-				suffixMP[row][col]+=C[i][row][k]*S[i][k][col];
-				prefixMN[row][col]+=Sinv[i+1][row][k]*Cinv[i+1][k][col];
-				suffixMN[row][col]+=C[i+1][row][k]*S[i+1][k][col];
-
-			}
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			for(int k=0;k<3;k++)
-			{
-				tempP[row][col]+=prefixMP[row][k]*lambdaP[i][k][col];
-				tempN[row][col]+=prefixMN[row][k]*lambdaN[i+1][k][col];
-			}
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			for(int k=0;k<3;k++)
-			{
-				Ap[i][row][col]+=tempP[row][k]*suffixMP[k][col];
-				An[i][row][col]+=tempN[row][k]*suffixMN[k][col];
-			}
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			Flux[row][i]=Flux[row][i]+Ap[i][row][col]*W[col][i]
-				+An[i][row][col]*W[col][i+1];
-	}
-
+		Ap=zeros;
+		An=zeros;
+		tempP=zeros;
+		tempN=zeros;
+		prefix=zeros;
+		suffix=zeros;
 
 	
+		S[0][0]=1;
+		S[1][0]=-u[i]/rho[i];
+		S[2][0]=0.5*u[i]*u[i]*beta;
+		S[1][1]=1/rho[i];
+		S[2][1]=-u[i]*beta;
+		S[2][2]=beta;
+		Sinv[0][0]=1;
+		Sinv[1][0]=u[i];
+		Sinv[2][0]=0.5*u[i]*u[i];
+		Sinv[1][1]=rho[i];
+		Sinv[2][1]=u[i]*rho[i];
+		Sinv[2][2]=1/beta;
+		C[0][0]=1;
+		C[1][1]=rho[i]*c[i];
+		C[2][1]=-rho[i]*c[i];
+		C[0][2]=-1/(c[i]*c[i]);
+		C[1][2]=1;
+		C[2][2]=1;
+		Cinv[0][0]=1;
+		Cinv[0][1]=1/(2*c[i]*c[i]);
+		Cinv[0][2]=1/(2*c[i]*c[i]);
+		Cinv[1][1]=1/(2*rho[i]*c[i]);
+		Cinv[1][2]=-1/(2*rho[i]*c[i]);
+		Cinv[2][1]=0.5;
+		Cinv[2][2]=0.5;
+		lambdaa[0]=u[i];
+		lambdaa[1]=u[i]+c[i];
+		lambdaa[2]=u[i]-c[i];
+		
+
+		for(int k=0;k<3;k++)
+			if(lambdaa[k]>0)
+				lambdaP[k][k]=lambdaa[k]+
+					sqrt(pow(lambdaa[k],2)+pow(eps,2))/2;
+			else
+				lambdaN[k][k]=lambdaa[k]-
+					sqrt(pow(lambdaa[k],2)+pow(eps,2))/2;
+
+		for(int row=0;row<3;row++)
+		for(int col=0;col<3;col++)
+			for(int k=0;k<3;k++)
+			{
+				prefix[row][col]+=Sinv[row][k]*Cinv[k][col];
+				suffix[row][col]+=C[row][k]*S[k][col];
+			}
+		for(int row=0;row<3;row++)
+		for(int col=0;col<3;col++)
+			for(int k=0;k<3;k++)
+			{
+				tempP[row][col]+=prefix[row][k]*lambdaP[k][col];
+				tempN[row][col]+=prefix[row][k]*lambdaN[k][col];
+			}
+		for(int row=0;row<3;row++)
+		for(int col=0;col<3;col++)
+			for(int k=0;k<3;k++)
+			{
+				Ap[row][col]+=tempP[row][k]*suffix[k][col];
+				An[row][col]+=tempN[row][k]*suffix[k][col];
+			}
+
+		Ap_list.push_back(Ap);
+		An_list.push_back(An);
+
+	}
+
+	for(int i=1; i<rho.size(); i++)
+	{
+		Flux[0][i]=0;
+		Flux[1][i]=0;
+		Flux[2][i]=0;
+		for(int row=0;row<3;row++)
+		for(int col=0;col<3;col++)
+			Flux[row][i]=Flux[row][i]+Ap_list[i-1][row][col]*W[col][i-1]
+				+An_list[i][row][col]*W[col][i];
+	}
 
 }
 

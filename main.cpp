@@ -12,7 +12,7 @@ int main()
 
 	InitializeGrid(nx, x, dx, S);
 	V=calcVolume(S,dx);
-
+/*
 	std::cout<<"x\n";
 	for(int i=0;i<x.size();i++)
 		std::cout<<i<<" "<<x[i]<<std::endl;
@@ -27,8 +27,8 @@ int main()
 
 	for(int i=0;i<V.size();i++)
 		std::cout<<i<<" "<<V[i]<<std::endl;
-
-
+*/
+	std::cout<<quasiOneD(nx,x,dx,S,V)<<std::endl;
 
 	
 	//std::cout<<quasiOneD()<<std::endl;

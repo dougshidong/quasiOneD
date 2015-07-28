@@ -2,7 +2,8 @@
 #include <math.h>
 #include <vector>
 
-void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx, std::vector <double> &S)
+void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx,
+		std::vector <double> &S)
 {
 	double h=0.15;
 	double t1=0.8;
