@@ -25,7 +25,12 @@ int optimizer(int descentType, int gradientType)
 }
 
 
-void finiteD1(double [] y, double h)
+double TotalPressureLoss(std::vector <std::vector <double>> W)
 {
-	current=
+
+}
+
+void finiteD1(double [] S, double h)
+{
+//	current=i
 }
