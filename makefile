@@ -1,6 +1,6 @@
 CXX	= g++
 INCLGN  = ./gnuplot-iostream
-DEBUG	= -pg  
+DEBUG	= -g
 CPPOBJ	= main.o quasiOneD.o grid.o
 CPPH	= quasiOneD.h
 CFLAGS	= -Wall -c $(DEBUG)

@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include<math.h>
-
+#include<iostream>
 const double PI = atan(1.0)*4;
 
 // Problem definition
@@ -555,7 +555,7 @@ int main()
     {
         iterations++;
 
-        if(iterations%500==0)printf("iteration %d normm %f\n",iterations,normm);
+        if(iterations%500==0)	std::cout<<"iteration"<<iterations<<" normm: "<<normm<<std::endl;
         fprintf(IterationsData,"%d\n",iterations);
         maxUc=0;
         for(int i=0;i<nx;i++)
@@ -821,6 +821,14 @@ int main()
             fprintf(MachDist,"%f,",Mach[i]);
         fprintf(MachDist,"\n");
     }
+	for(int k=0;k<3;k++)
+	{
+		std::cout<<"W"<<k+1<<std::endl;
+		for(int i=0;i<nx;i++)
+			std::cout<<W[k][i]<<std::endl;
+	}
+
+
 
     fprintf(PressureLoss,"%f, %f",dx, (pt-((p[nx-1])/pow(1-(((gam-1)/(gam+1))*(pow(U[nx-1],2))/(a2*T[nx-1]/Tt)),(gam-1)/gam)))/pt);
 

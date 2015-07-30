@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <math.h>
 #include <vector>
 
@@ -63,7 +64,6 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 	double MachBound;
 
 
-
 	// Inlet flow properties
 	Mach[0]=0.5;
 	T[0]=isenT(Ttin,Mach[0]);
@@ -109,7 +109,7 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 	while(normR>conv && iterations<maxIt)
 	{
 		iterations++;
-		if(iterations%printIt==0 && printConv==1) std::cout<<"Iteration "<<iterations<<"   NormR "<<normR<<std::endl;		
+	if(iterations%printIt==0 && printConv==1) std::cout<<"Iteration "<<iterations<<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
 
 		maxUC=0;
 		for(int i=0;i<nx;i++)
@@ -127,7 +127,7 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 			std::cout<<"rho "<<rho[i]<<std::endl;
 			std::cout<<"u "<<u[i]<<std::endl;
 			std::cout<<"p "<<p[i]<<std::endl;
-			std::cout<<"e "<<e[i]<<std::endl;
+			std::cout<<"W "<<W[1][i]<<std::endl;
 			std::cout<<"c "<<c[i]<<std::endl;
 		}
 */
@@ -228,8 +228,12 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 		    normR=normR+Resi[0][i]*Resi[0][i];
 		normR=sqrt(normR);
 	}
-
-
+	for(int k=0;k<3;k++)
+	{
+		std::cout<<"W"<<k+1<<std::endl;
+		for(int i=0;i<nx;i++)
+			std::cout<<W[k][i]<<std::endl;
+	}
 
 	return 0;
 }
@@ -363,32 +367,40 @@ void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double 
 
 void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<std::vector<double> > W, std::vector<double> u, std::vector<double> c, std::vector<double> rho)
 {
-	double S[3][3],Sinv[3][3],C[3][3],Cinv[3][3], lambdaP[3][3],lambdaN[3][3];
-	double lambdaa[3];
+	int nrho=rho.size();
+	double S[3][3]={0},
+	       Sinv[3][3]={0},
+	       C[3][3]={0},
+	       Cinv[3][3]={0},
+	       lambdaP[3][3]={0},
+	       lambdaN[3][3]={0};
+	double lambdaa[3]={0};
 	
 	
 	double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 	
 
-	std::vector <double[3][3]> Ap_list, An_list;
+
+	std::vector <double> Ap_list(nrho*3*3,0), An_list(nrho*3*3,0);
+
 
 	double beta=gam-1;
 
-	memset(S,0,sizeof(S[0][0])*3*3);
-	memset(Sinv,0,sizeof(Sinv[0][0])*3*3);
-	memset(C,0,sizeof(C[0][0])*3*3);
-	memset(Cinv,0,sizeof(Cinv[0][0])*3*3);
-	memset(lambdaa,0,sizeof(lambdaa[0])*3);
 
-	for(int i=0;i<rho.size();i++)
+	for(int i=0;i<nrho;i++)
 	{
-		memset(Ap,0,sizeof(Ap[0][0])*3*3);
-		memset(An,0,sizeof(An[0][0])*3*3);
-		memset(tempP,0,sizeof(tempP[0][0])*3*3);
-		memset(tempN,0,sizeof(tempN[0][0])*3*3);
-		memset(prefix,0,sizeof(prefix[0][0])*3*3);
-		memset(suffix,0,sizeof(suffix[0][0])*3*3);
-
+		for(int row=0;row<3;row++)
+		for(int col=0;col<3;col++)
+		{
+			Ap[row][col]=0;
+			An[row][col]=0;
+			tempP[row][col]=0;
+			tempN[row][col]=0;
+			prefix[row][col]=0;
+			suffix[row][col]=0;
+			lambdaP[row][col]=0;
+			lambdaN[row][col]=0;
+		}
 	
 		S[0][0]=1;
 		S[1][0]=-u[i]/rho[i];
@@ -419,15 +431,13 @@ void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<st
 		lambdaa[1]=u[i]+c[i];
 		lambdaa[2]=u[i]-c[i];
 		
-		memset(lambdaP,0,sizeof(lambdaP[0][0])*3*3);
-		memset(lambdaN,0,sizeof(lambdaN[0][0])*3*3);
 		for(int k=0;k<3;k++)
 			if(lambdaa[k]>0)
-				lambdaP[k][k]=lambdaa[k]+
-					sqrt(pow(lambdaa[k],2)+pow(eps,2))/2;
+				lambdaP[k][k]=(lambdaa[k]+
+					sqrt(pow(lambdaa[k],2)+pow(eps,2)))/2;
 			else
-				lambdaN[k][k]=lambdaa[k]-
-					sqrt(pow(lambdaa[k],2)+pow(eps,2))/2;
+				lambdaN[k][k]=(lambdaa[k]-
+					sqrt(pow(lambdaa[k],2)+pow(eps,2)))/2;
 
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
@@ -450,21 +460,30 @@ void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<st
 				Ap[row][col]+=tempP[row][k]*suffix[k][col];
 				An[row][col]+=tempN[row][k]*suffix[k][col];
 			}
-
-		Ap_list.push_back(Ap);
-		An_list.push_back(An);
+		// could remove above loop and just use aplist and anlist
+		for(int row=0;row<3;row++)
+		for(int col=0;col<3;col++)
+		{
+			int vec_pos=(i*3*3)+(row*3)+col;
+			Ap_list[vec_pos]=Ap[row][col];
+			An_list[vec_pos]=An[row][col];
+		}
 
 	}
 
-	for(int i=1; i<rho.size(); i++)
+	for(int i=1; i<nrho; i++)
 	{
 		Flux[0][i]=0;
 		Flux[1][i]=0;
 		Flux[2][i]=0;
 		for(int row=0;row<3;row++)
 		for(int col=0;col<3;col++)
-			Flux[row][i]=Flux[row][i]+Ap_list[i-1][row][col]*W[col][i-1]
-				+An_list[i][row][col]*W[col][i];
+		{
+			int Ap_pos=((i-1)*3*3)+(row*3)+col;
+			int An_pos=(i*3*3)+(row*3)+col;
+			Flux[row][i]=Flux[row][i]+Ap_list[Ap_pos]*W[col][i-1]
+				+An_list[An_pos]*W[col][i];
+		}
 	}
 
 }

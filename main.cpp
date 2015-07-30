@@ -28,7 +28,8 @@ int main()
 	for(int i=0;i<V.size();i++)
 		std::cout<<i<<" "<<V[i]<<std::endl;
 */
-	std::cout<<quasiOneD(nx,x,dx,S,V)<<std::endl;
+	if(quasiOneD(nx,x,dx,S,V)==0)
+		std::cout<<"Flow Solve Successful"<<std::endl;
 
 	
 	//std::cout<<quasiOneD()<<std::endl;
