@@ -459,6 +459,7 @@ void ioTargetPressure(int io, int nx, std::vector <double> &x, std::vector <doub
 	if(io>1)
 	{
 		TargetP=fopen("targetP.dat","w");
+		fprintf(TargetP,"%d",nx);
 		for(int i=0;i<nx;i++)
 			fprintf(TargetP, "%.15f\n",x[i]);
 		for(int i=0;i<nx;i++)
@@ -467,7 +468,21 @@ void ioTargetPressure(int io, int nx, std::vector <double> &x, std::vector <doub
 	// Input
 	else
 	{
+		int iT, nxT;
+
 		TargetP=fopen("targetP.dat","r");
+		fscanf(TargetP, "%d\n",nxT);
+		std::vector <double> xT(nxT), pT(nxT);
+
+		for(int i=0;i<nxT;i++)
+			fscanf(TargetP, "%.15f\n",xT[i]);
+		for(int i=0;i<nxT;i++)
+			fscanf(TargetP, "%.15f\n",pT[i]);
+
+		for(int i=0;i<nx;i++)
+		{
+			iT=(int)floor((i+1)/200*nxT);
+		}
 	}
 		
 
