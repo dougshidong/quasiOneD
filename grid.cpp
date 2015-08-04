@@ -2,6 +2,51 @@
 #include <math.h>
 #include <vector>
 
+
+// Evaluate X
+std::vector <double> evalX(int nx, double a, double b)
+{
+	std::vector <double> x(nx);
+	double dxConst=(b-a)/nx;
+	
+	for(int i=0; i<nx; i++)
+		x[i]=dxConst/2+dxConst*i;
+
+	return x;
+}
+
+//  Evaluate dx
+
+std::vector <double> evalDx(int nx, std::vector <double> x)
+{
+	std::vector <double> dx(nx);
+	
+	dx[0]=x[1]-x[0];
+	for(int i=1; i<nx; i++)
+	{
+		dx[i]= (x[i]-x[i-1])/2 + (x[i+1]-x[i])/2 ;
+	}
+	dx[nx-1]=x[x.size()-1]-x[x.size()-2];
+
+	return dx;
+}
+
+std::vector <double> evalS(int nx, std::vector <double> geom,
+			std::vector <double> x, std::vector <double> dx)
+{
+	std::vector <double> S(nx+1);
+
+	// Define Area
+	for(int i=0; i<nx; i++)
+		S[i]= 1-geom[0]*pow(sin(M_PI*pow(fabs(x[i]-dx[i]/2),geom[1])),geom[2]);
+	
+	S[nx]= 1-geom[0]*pow(sin(M_PI*pow(x[nx-1]+dx[nx-1]/2,geom[1])),geom[2]);
+
+	return S;
+
+
+}
+
 void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx,
 		std::vector <double> &S)
 {
@@ -17,28 +62,17 @@ void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx,
 
 	// Define dx
 	dx.push_back(x[1]-x[0]);
-	for(int i=1; i<x.size()-1; i++)
+	for(int i=1; i<nx-1; i++)
 	{
 		dx.push_back( (x[i]-x[i-1])/2 + (x[i+1]-x[i])/2 );
 	}
 	dx.push_back(x[x.size()-1]-x[x.size()-2]);
 
 	// Define Area
-	for(int i=0; i<x.size(); i++)
+	for(int i=0; i<nx; i++)
 		S.push_back(1-h*pow(sin(M_PI*pow(fabs(x[i]-dx[i]/2),t1)),t2));
 	
 	S.push_back(1-h*pow(sin(M_PI*pow(x[x.size()]+dx[x.size()]/2,t1)),t2));
 
 	return;
-}
-
-// Define Volume
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
-{
-	std::vector <double> V;
-
-	for(int i=0; i<dx.size(); i++)
-		V.push_back((S[i]+S[i+1])/2*dx[i]);
-
-	return V;
 }

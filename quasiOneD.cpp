@@ -1,4 +1,6 @@
+
 #include <iostream>
+#include <stdio.h>
 #include <iomanip>
 #include <math.h>
 #include <vector>
@@ -11,7 +13,7 @@ double R=1716;
 double Cv=R/(gam-1);
 
 // Problem parameters
-
+double Min=0.5;
 double Ttin=531.2;
 double ptin=2117;
 double pexit=0.72*ptin;
@@ -19,27 +21,27 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 
 // Convergence Settings
-double CFL=0.4;
-double eps=0.3;
-double normR=1.0;
+double CFL=0.9;
+double eps=0.1;
 double conv=1e-13;
-int iterations=0;
 int maxIt=200000;
-int printIt=500;
+int printIt=5000;
 int printConv=1;
-
+int printW=0;
 
 
 double isenP(double pt, double M);
+
 double isenT(double Tt, double M);
-//void Flux_StegerWarming(double Flux[][nx-1], double W[][nx], double u[], double c[], double rho[]);
+
+std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
 
 void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<std::vector<double> > W, std::vector<double> u, std::vector<double> c, std::vector<double> rho);
 
+double TotalPressureLoss(std::vector <std::vector <double> > W);
 
 
-int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vector <double> S,
-		std::vector <double> V)
+double quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vector <double> S)
 {
 	std::vector <double> rho(nx), u(nx), e(nx);
 	std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
@@ -54,7 +56,10 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 					    Resi2(3,std::vector <double> (nx,0)),
 					    Resi3(3,std::vector <double> (nx,0));
 
-	std::vector <double> dt(nx);
+	std::vector <double> dt(nx), V(nx);
+
+	std::vector <int> itV(maxIt/printIt);
+	std::vector <double> normV(maxIt/printIt);
 	double maxUC;
 
 	double dpdu;
@@ -63,9 +68,11 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 	double dp, drho, du;
 	double MachBound;
 
+	V=calcVolume(S,dx);
+
 
 	// Inlet flow properties
-	Mach[0]=0.5;
+	Mach[0]=Min;
 	T[0]=isenT(Ttin,Mach[0]);
 	p[0]=isenP(ptin,Mach[0]);
 	rho[0]=p[0]/(R*T[0]);
@@ -74,7 +81,7 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 	e[0]=rho[0]*(Cv*T[0]+0.5*pow(u[0],2));
 
 	for(int i=1; i<nx; i++)
-		Mach[i]=0.5;
+		Mach[i]=Min;
 	for(int i=1; i<nx; i++)
 		p[i]=pexit;
 	// Flow Properties Initialization
@@ -106,10 +113,22 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 	for(int i=1;i<nx-1;i++)
 		Q[1][i]=p[i]*(S[i]-S[i-1]);
 
+	double normR=1.0;
+	int iterations=0;
 	while(normR>conv && iterations<maxIt)
 	{
 		iterations++;
-	if(iterations%printIt==0 && printConv==1) std::cout<<"Iteration "<<iterations<<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
+
+		if(iterations%printIt==0) 
+		{
+			if(printConv==1)
+			{
+				std::cout<<"Iteration "<<iterations
+				         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
+			}
+			itV[iterations/printIt-1]=iterations;
+			normV[iterations/printIt-1]=normR;
+		}
 
 		maxUC=0;
 		for(int i=0;i<nx;i++)
@@ -228,14 +247,45 @@ int quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vect
 		    normR=normR+Resi[0][i]*Resi[0][i];
 		normR=sqrt(normR);
 	}
-	for(int k=0;k<3;k++)
-	{
-		std::cout<<"W"<<k+1<<std::endl;
-		for(int i=0;i<nx;i++)
-			std::cout<<W[k][i]<<std::endl;
-	}
 
-	return 0;
+	if(printW==1)
+	{
+		for(int k=0;k<3;k++)
+		{
+			std::cout<<"W"<<k+1<<std::endl;
+			for(int i=0;i<nx;i++)
+				std::cout<<W[k][i]<<std::endl;
+		}
+	}
+	std::cout<<"iterations="<<iterations<<"      normR="<<normR<<std::endl;
+	
+
+	FILE *Results;
+	Results=fopen("Results.dat","w");
+	for(int i=0;i<nx;i++)
+		fprintf(Results, "%.15f\n",x[i]);
+	for(int i=0;i<nx;i++)
+		fprintf(Results, "%.15f\n",p[i]/ptin);
+	for(int i=0;i<nx;i++)
+		fprintf(Results, "%.15f\n",rho[i]);
+	for(int i=0;i<nx;i++)
+		fprintf(Results, "%.15f\n",Mach[i]);
+	for(int i=0;i<nx;i++)
+		fprintf(Results, "%.15f\n",x[i]-dx[i]/2);
+	fprintf(Results,"%f\n",x.back()+dx.back()/2);
+
+	for(int i=0;i<nx+1;i++)
+		fprintf(Results, "%.15f\n",S[i]);
+	for(int i=0;i<itV.size();i++)
+		fprintf(Results, "%.15d\n",itV[i]);
+	for(int i=0;i<itV.size();i++)
+		fprintf(Results, "%.15f\n",normV[i]);
+
+
+
+	fclose(Results);
+
+	return TotalPressureLoss(W);
 }
 
 double isenP(double pt, double M)
@@ -369,6 +419,60 @@ void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<st
 				+An_list[An_pos]*W[col][i];
 		}
 	}
+
+}
+
+double TotalPressureLoss(std::vector <std::vector <double> > W)
+{
+	double rhoout=W[0].back();
+	double uout=W[1].back()/rhoout;
+	double pout=(gam-1)*(W[2].back()-rhoout*pow(uout,2)/2);
+	double Tout=pout/(rhoout*R);
+
+	double ptout_normalized;
+
+	double ToverTt=1-pow(uout,2)/a2*(gam-1)/(gam+1);
+
+	double poverpt=pow(ToverTt,(gam/(gam-1)));
+
+	ptout_normalized=1-(pout/poverpt)/ptin;
+
+	return ptout_normalized;
+}
+
+// Define Volume
+std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
+{
+	std::vector <double> V;
+	int ndx=dx.size();
+	for(int i=0; i<ndx; i++)
+		V.push_back((S[i]+S[i+1])/2*dx[i]);
+
+	return V;
+}
+
+void ioTargetPressure(int io, int nx, std::vector <double> &x, std::vector <double> &p)
+{
+
+	FILE *TargetP;
+	// Output
+	if(io>1)
+	{
+		TargetP=fopen("targetP.dat","w");
+		for(int i=0;i<nx;i++)
+			fprintf(TargetP, "%.15f\n",x[i]);
+		for(int i=0;i<nx;i++)
+			fprintf(TargetP, "%.15f\n",p[i]/ptin);
+	}
+	// Input
+	else
+	{
+		TargetP=fopen("targetP.dat","r");
+	}
+		
+
+
+	fclose(TargetP);
 
 }
 

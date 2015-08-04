@@ -499,7 +499,7 @@ int main()
         V[i]=dx*(S[i]+S[i+1])/2;
 
     // Inlet flow properties
-    Mach[0]=0.5;//Minlet;
+    Mach[0]=Minlet;
     T[0]=SubIsenInT(Mach[0]);
     p[0]=SubIsenInP(Mach[0]);
     rho[0]=p[0]/(R*T[0]);
@@ -509,7 +509,7 @@ int main()
 
     // Velocity Initialization
     for(int i=1;i<nx;i++)
-        Mach[i]=0.5;
+        Mach[i]=Minlet;
     for(int i=1;i<nx;i++)
         p[i]=pexit;//SubIsenInP(Mach[i]);                              // Pressure
     p[nx-1]=pexit;
