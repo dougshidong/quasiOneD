@@ -6,10 +6,10 @@
 #include<iomanip>
 
 std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double> dx,
-	       	std::vector <double> S, std::vector <double> designVar,
+	       	std::vector <double> S, std::vector <double> designVar, int fitnessFun,
 		double h, int method, double currentI);
 
-void design(int nx, int descentType, int gradientType,
+void design(int nx, int descentType, int gradientType, int fitnessFun,
 	      std::vector <double> x, std::vector <double> dx,
 	       	std::vector <double> S, std::vector <double> designVar)
 {
@@ -23,7 +23,7 @@ void design(int nx, int descentType, int gradientType,
 
 	int printConv=1;
 
-	double alpha=0.00001;
+	double alpha=0.1;
 
 	// 1 = Steepest Descent
 	// 4 = QUASI-NEWTON (BFGS)
@@ -31,9 +31,8 @@ void design(int nx, int descentType, int gradientType,
 	// 1 = FD Forward
 	// 2 = FD Backward
 	// 3 = FD Centered
-	int GradientMethod=3;
 
-	double h=1e-7;
+	double h=1e-3;
 	std::vector <double> S_optimum;
 	std::vector <double> gradient(nDesVar), pk(nDesVar), searchD(nDesVar);
 
@@ -72,7 +71,7 @@ void design(int nx, int descentType, int gradientType,
 		}
 
 
-		gradient=finiteD(nx,x,dx,S, designVar, h,GradientMethod,-1);
+		gradient=finiteD(nx,x,dx,S,designVar,fitnessFun,h,gradientType,-1);
 
 		if(descentType==1)
 		{
@@ -81,7 +80,9 @@ void design(int nx, int descentType, int gradientType,
 		}
 
 		for(int i=0;i<nDesVar;i++)
+		{
 			searchD[i]=alpha*pk[i];
+		}
 
 		for(int i=0;i<nDesVar;i++)
 			designVar[i]=designVar[i]+searchD[i];
@@ -98,7 +99,7 @@ void design(int nx, int descentType, int gradientType,
 		std::cout<<gradient[i]<<std::endl;
 
 	S=evalS(nx, designVar, x, dx);
-	std::cout<<"PressureLoss: "<<quasiOneD(nx,x,dx,S)<<std::endl;
+	std::cout<<"Fitness: "<<quasiOneD(nx,x,dx,S,fitnessFun)<<std::endl;
 
 
 
@@ -114,7 +115,7 @@ void design(int nx, int descentType, int gradientType,
 
 
 std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double> dx,
-	       	std::vector <double> S, std::vector <double> designVar,
+	       	std::vector <double> S, std::vector <double> designVar, int fitnessFun,
 	       	double h, int method, double currentI)
 {
 	// Method
@@ -132,7 +133,7 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 	if(currentI<0 && method!=3)
 	{
-		I0=quasiOneD(nx,x,dx,S);
+		I0=quasiOneD(nx,x,dx,S,fitnessFun);
 		std::cout<<"I0="<<std::setprecision(15)<<I0<<std::endl;
 	}
 	else
@@ -147,17 +148,18 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 		tempD=designVar;
 
-		for(int k=0;k<nDesVar;k++)
-			std::cout<<tempD[k]<<std::endl;
-
 
 
 		if(method==1)
 		{
 			tempD[i]+=dh;
+			
+			for(int k=0;k<nDesVar;k++)
+				std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+
 			tempS=evalS(nx, tempD, x, dx);
 
-			I1=quasiOneD(nx,x,dx,tempS);
+			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
 			grad[i]=(I1-I0)/dh;
 			std::cout<<"I1="<<std::setprecision(15)<<I1<<std::endl;
 	
@@ -165,9 +167,13 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 		else if(method==2)
 		{
 			tempD[i]-=dh;
+		
+			for(int k=0;k<nDesVar;k++)
+				std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+
 			tempS=evalS(nx, tempD, x, dx);
 
-			I2=quasiOneD(nx,x,dx,tempS);
+			I2=quasiOneD(nx,x,dx,tempS,fitnessFun);
 			grad[i]=(I0-I2)/dh;
 			std::cout<<"I2="<<std::setprecision(15)<<I2<<std::endl;
 
@@ -175,17 +181,25 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 		else if(method==3)
 		{
 			tempD[i]+=dh;
+			for(int k=0;k<nDesVar;k++)
+				std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+
+
 			tempS=evalS(nx, tempD, x, dx);
 
 
-			I1=quasiOneD(nx,x,dx,tempS);
+			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
 			std::cout<<"I1="<<std::setprecision(15)<<I1<<std::endl;
 
 			tempD=designVar;
 			tempD[i]-=dh;
+
+			for(int k=0;k<nDesVar;k++)
+				std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+
 			tempS=evalS(nx, tempD, x, dx);
 
-			I2=quasiOneD(nx,x,dx,tempS);
+			I2=quasiOneD(nx,x,dx,tempS,fitnessFun);
 			std::cout<<"I2="<<std::setprecision(15)<<I2<<std::endl;
 
 			grad[i]=(I1-I2)/(2*dh);
@@ -197,22 +211,46 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 }
 
 double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> pk,
-	       std::vector <double> gradient, double c1, double currentI)
+	       std::vector <double> gradient, double c1, double currentI,
+	       int nx, std::vector <double> x, std::vector <double> dx,
+	       int fitnessFun)
 {
 	double alpha=1;
-	
+	std::vector <double> tempS(nx+1);
 	double newVal;
+
 	double c_pk_grad=0;
+
 	int nDesVar=designVar.size();
+
 	for(int i=0;i<nDesVar;i++)
 		c_pk_grad+=gradient[i]*pk[i];
 
 	c_pk_grad*=c1;
 	
-	newVal=-999;
+	for(int i=0;nDesVar;i++)
+		newVal=1;
+	newVal=999999999999.0;
+
+
+	for(int i=0;i<nDesVar;i++)
+		tempD=designVar[i]+alpha*pk[i];
+	tempS=evalS(nx,tempD,x,dx);
+	newVal=quasiOneD(nx,x,dx,tempS,fitnessFun);
+
 	while(newVal>(currentI+alpha*c_pk_grad))
 	{
     		alpha=alpha*0.9;
+	
+		for(int i=0;i<nDesVar;i++)
+			tempD=designVar[i]+alpha*pk[i];
+		tempS=evalS(nx,tempD,x,dx);
+
+	
 	}
+
+	return alpha;
+
+
 	
 }

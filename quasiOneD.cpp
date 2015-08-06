@@ -23,12 +23,13 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 // Convergence Settings
 double CFL=0.9;
 double eps=0.1;
-double conv=1e-13;
+double conv=1e-14;
 int maxIt=200000;
 int printIt=5000;
 int printConv=1;
 int printW=0;
 
+int createTarget=0;
 
 double isenP(double pt, double M);
 
@@ -40,8 +41,14 @@ void Flux_StegerWarmingV(std::vector<std::vector<double> > &Flux, std::vector<st
 
 double TotalPressureLoss(std::vector <std::vector <double> > W);
 
+void ioTargetPressure(int io, int nx, std::vector <double> &p);
 
-double quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::vector <double> S)
+double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double> ptarget,
+		std::vector <double> dx);
+
+double quasiOneD(int nx, std::vector <double> x, 
+		std::vector <double> dx, std::vector <double> S,
+		int fitnessFun)
 {
 	std::vector <double> rho(nx), u(nx), e(nx);
 	std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
@@ -274,18 +281,34 @@ double quasiOneD(int nx, std::vector <double> x, std::vector <double> dx, std::v
 		fprintf(Results, "%.15f\n",x[i]-dx[i]/2);
 	fprintf(Results,"%f\n",x.back()+dx.back()/2);
 
+	int iterlength=itV.size();
 	for(int i=0;i<nx+1;i++)
 		fprintf(Results, "%.15f\n",S[i]);
-	for(int i=0;i<itV.size();i++)
+	for(int i=0;i<iterlength;i++)
 		fprintf(Results, "%.15d\n",itV[i]);
-	for(int i=0;i<itV.size();i++)
+	for(int i=0;i<iterlength;i++)
 		fprintf(Results, "%.15f\n",normV[i]);
 
 
 
 	fclose(Results);
 
-	return TotalPressureLoss(W);
+	// Create Target Pressure
+	if(createTarget==1) ioTargetPressure(1,nx,p);
+
+
+	if(fitnessFun==0)
+		return TotalPressureLoss(W);
+	else if(fitnessFun==1)
+	{
+		std::vector <double> ptarget(nx,0);
+		ioTargetPressure(-1,nx,ptarget);
+		return inverseFitness(nx, p, ptarget, dx);
+	}
+
+
+
+	
 }
 
 double isenP(double pt, double M)
@@ -427,7 +450,7 @@ double TotalPressureLoss(std::vector <std::vector <double> > W)
 	double rhoout=W[0].back();
 	double uout=W[1].back()/rhoout;
 	double pout=(gam-1)*(W[2].back()-rhoout*pow(uout,2)/2);
-	double Tout=pout/(rhoout*R);
+	//double Tout=pout/(rhoout*R);
 
 	double ptout_normalized;
 
@@ -451,17 +474,18 @@ std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
 	return V;
 }
 
-void ioTargetPressure(int io, int nx, std::vector <double> &x, std::vector <double> &p)
+// Input/Output Target Pressure Distribution
+void ioTargetPressure(int io, int nx, std::vector <double> &p)
 {
 
 	FILE *TargetP;
 	// Output
-	if(io>1)
+	if(io>0)
 	{
 		TargetP=fopen("targetP.dat","w");
-		fprintf(TargetP,"%d",nx);
-		for(int i=0;i<nx;i++)
-			fprintf(TargetP, "%.15f\n",x[i]);
+		fprintf(TargetP,"%d\n",nx);
+//		for(int i=0;i<nx;i++)
+//			fprintf(TargetP, "%.15f\n",x[i]);
 		for(int i=0;i<nx;i++)
 			fprintf(TargetP, "%.15f\n",p[i]/ptin);
 	}
@@ -471,23 +495,34 @@ void ioTargetPressure(int io, int nx, std::vector <double> &x, std::vector <doub
 		int iT, nxT;
 
 		TargetP=fopen("targetP.dat","r");
-		fscanf(TargetP, "%d\n",nxT);
-		std::vector <double> xT(nxT), pT(nxT);
-
-		for(int i=0;i<nxT;i++)
-			fscanf(TargetP, "%.15f\n",xT[i]);
-		for(int i=0;i<nxT;i++)
-			fscanf(TargetP, "%.15f\n",pT[i]);
-
+		rewind(TargetP);
+		fscanf(TargetP, "%d",&nxT);
+//		for(int i=0;i<nx;i++)
+//		{
+//			fscanf(TargetP, "%lf",&temp1);
+//			x[i]=temp1;
+//		}
 		for(int i=0;i<nx;i++)
 		{
-			iT=(int)floor((i+1)/200*nxT);
+			fscanf(TargetP, "%lf",&p[i]);
 		}
-	}
-		
+	}	
 
 
 	fclose(TargetP);
 
+}
+
+// Return Inverse Design Fitness
+
+double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double> ptarget,
+		std::vector <double> dx)
+{
+	double fit=0;
+	for(int i=0;i<nx;i++)
+	{
+		fit+=pow(pcurrent[i]/ptin-ptarget[i],2)*dx[i];
+	}
+	return fit/2;
 }
 
