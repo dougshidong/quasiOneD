@@ -25,11 +25,11 @@ double CFL=0.9;
 double eps=0.1;
 double conv=1e-14;
 int maxIt=200000;
-int printIt=5000;
+int printIt=100;
 int printConv=1;
 int printW=0;
 
-int createTarget=0;
+int createTarget=1;
 
 double isenP(double pt, double M);
 
@@ -264,7 +264,7 @@ double quasiOneD(int nx, std::vector <double> x,
 				std::cout<<W[k][i]<<std::endl;
 		}
 	}
-	std::cout<<"iterations="<<iterations<<"      normR="<<normR<<std::endl;
+	std::cout<<"Flow iterations="<<iterations<<"   Density Residual="<<normR<<std::endl;
 	
 
 	FILE *Results;
@@ -521,8 +521,9 @@ double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double
 	double fit=0;
 	for(int i=0;i<nx;i++)
 	{
-		fit+=pow(pcurrent[i]/ptin-ptarget[i],2)*dx[i];
+		fit+=fabs(pcurrent[i]/ptin-ptarget[i])*dx[i];
 	}
-	return fit/2;
+	std::cout<<"InverseFitness= "<<fit<<std::endl;
+	return fit;
 }
 

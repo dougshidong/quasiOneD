@@ -8,12 +8,11 @@ int main()
 {
 	//Geometry Parameters
 	double a=0, b=1;
-	double h=0.08, t1=1.0, t2=2.0;
-
-	int nx=200;
+	double h=0.08, t1=1.0, t2=2.00;
+	int nx=10000;
 	int fitnessFun=1;
 	int descentType=1;
-	int gradientType=1;
+	int gradientType=2;
 
 	std::vector <double> x(nx), S(nx+1);
 	std::vector <double> dx(nx);
@@ -43,8 +42,8 @@ int main()
 	for(int i=0;i<V.size();i++)
 		std::cout<<i<<" "<<V[i]<<std::endl;
 */
-//	std::cout<<"Pressure Loss: "<<quasiOneD(nx,x,dx,S,fitnessFun)<<std::endl;
+	std::cout<<"Pressure Loss: "<<quasiOneD(nx,x,dx,S,fitnessFun)<<std::endl;
 	
-	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
+//	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
 	return 0;
 }
