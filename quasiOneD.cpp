@@ -1,9 +1,9 @@
-
 #include <iostream>
 #include <stdio.h>
 #include <iomanip>
 #include <math.h>
 #include <vector>
+#include "flux.h"
 
 const double PI=atan(1.0)*4.0;
 
@@ -21,27 +21,22 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 
 // Convergence Settings
-double CFL=0.9;
+double CFL=2;
 double eps=0.1;
 double conv=1e-14;
 int maxIt=200000;
-int printIt=100;
+int printIt=5000;
 int printConv=1;
 int printW=0;
 
-int createTarget=1;
+int StepScheme=1;
+int createTarget=0;
 
 double isenP(double pt, double M);
 
 double isenT(double Tt, double M);
 
 std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
-
-void Flux_StegerWarmingV(int nx, std::vector <double> &Flux,
-	       			std::vector <double> W,
-			       	std::vector<double> u,
-			       	std::vector<double> c,
-			       	std::vector<double> rho);
 
 void EulerExplicitStep(int nx, std::vector <double> S,
 			std::vector <double> V,
@@ -56,7 +51,7 @@ void rk4(int nx, std::vector <double> dx, std::vector <double> S,
 	       	std::vector <double> &W,
 	        std::vector <double> Q,	
 		std::vector <double> &Resi,
-		std::vector <double> Flux);
+		std::vector <double> &Flux);
 
 
 double TotalPressureLoss(int nx, std::vector <double> W);
@@ -66,8 +61,10 @@ void ioTargetPressure(int io, int nx, std::vector <double> &p);
 double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double> ptarget,
 		std::vector <double> dx);
 
-double quasiOneD(int nx, std::vector <double> x, 
-		std::vector <double> dx, std::vector <double> S,
+double quasiOneD(int nx, 
+		std::vector <double> x, 
+		std::vector <double> dx, 
+		std::vector <double> S,
 		int fitnessFun)
 {
 	int ki;
@@ -162,31 +159,15 @@ double quasiOneD(int nx, std::vector <double> x,
 
 		Flux_StegerWarmingV(nx,Flux,W,u,c,rho);
 
-/*
-		// Euler Explicit
-		for(int k=0;k<3;k++)
+		
+		if(StepScheme==0)
 		{
-			for(int i=1;i<nx-1;i++)
-			{
-				ki=k*nx+i;
-				Resi[ki]=Flux[ki+1]*S[i+1]
-						-Flux[ki]*S[i]-Q[ki];
-			}
-			Resi[k*nx+0]=0;
-			Resi[k*nx+(nx-1)]=0;
+			EulerExplicitStep(nx,S,V,dt,Flux,Q,Resi,W);
 		}
-		for(int k=0;k<3;k++)
-		for(int i=0;i<nx-1;i++)
+		else if(StepScheme==1)
 		{
-			ki=k*nx+i;
-			W[ki]=W[ki]-(dt[i]/V[i-1])*Resi[ki];
+			rk4(nx,dx,S,dt,W,Q,Resi,Flux);
 		}
-
-*/
-		//EulerExplicitStep(nx,S,V,dt,Flux,Q,Resi,W);
-
-		rk4(nx,dx,S,dt,W,Q,Resi,Flux);
-
 
 
 		// Inlet Boundary Condition
@@ -287,6 +268,7 @@ double quasiOneD(int nx, std::vector <double> x,
 
 	FILE *Results;
 	Results=fopen("Results.dat","w");
+	fprintf(Results,"%d\n",nx);
 	for(int i=0;i<nx;i++)
 		fprintf(Results, "%.15f\n",x[i]);
 	for(int i=0;i<nx;i++)
@@ -337,134 +319,6 @@ double isenP(double pt, double M)
 double isenT(double Tt, double M)
 {
 	return Tt*pow((1+(gam-1)/2*pow(M,2)),-1);
-}
-
-// StegerWarming
-void Flux_StegerWarmingV(int nx,
-	       		std::vector <double> &Flux,
-		       	std::vector <double> W,
-		       	std::vector <double> u,
-		       	std::vector <double> c,
-		       	std::vector <double> rho)
-{
-	double S[3][3]={0},
-	       Sinv[3][3]={0},
-	       C[3][3]={0},
-	       Cinv[3][3]={0},
-	       lambdaP[3][3]={0},
-	       lambdaN[3][3]={0};
-	double lambdaa[3]={0};
-	
-	
-	double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
-	
-
-
-	std::vector <double> Ap_list(nx*3*3,0), An_list(nx*3*3,0);
-
-
-	double beta=gam-1;
-
-
-	for(int i=0;i<nx;i++)
-	{
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-		{
-			Ap[row][col]=0;
-			An[row][col]=0;
-			tempP[row][col]=0;
-			tempN[row][col]=0;
-			prefix[row][col]=0;
-			suffix[row][col]=0;
-			lambdaP[row][col]=0;
-			lambdaN[row][col]=0;
-		}
-	
-		S[0][0]=1;
-		S[1][0]=-u[i]/rho[i];
-		S[2][0]=0.5*u[i]*u[i]*beta;
-		S[1][1]=1/rho[i];
-		S[2][1]=-u[i]*beta;
-		S[2][2]=beta;
-		Sinv[0][0]=1;
-		Sinv[1][0]=u[i];
-		Sinv[2][0]=0.5*u[i]*u[i];
-		Sinv[1][1]=rho[i];
-		Sinv[2][1]=u[i]*rho[i];
-		Sinv[2][2]=1/beta;
-		C[0][0]=1;
-		C[1][1]=rho[i]*c[i];
-		C[2][1]=-rho[i]*c[i];
-		C[0][2]=-1/(c[i]*c[i]);
-		C[1][2]=1;
-		C[2][2]=1;
-		Cinv[0][0]=1;
-		Cinv[0][1]=1/(2*c[i]*c[i]);
-		Cinv[0][2]=1/(2*c[i]*c[i]);
-		Cinv[1][1]=1/(2*rho[i]*c[i]);
-		Cinv[1][2]=-1/(2*rho[i]*c[i]);
-		Cinv[2][1]=0.5;
-		Cinv[2][2]=0.5;
-		lambdaa[0]=u[i];
-		lambdaa[1]=u[i]+c[i];
-		lambdaa[2]=u[i]-c[i];
-		
-		for(int k=0;k<3;k++)
-			if(lambdaa[k]>0)
-				lambdaP[k][k]=(lambdaa[k]+
-					sqrt(pow(lambdaa[k],2)+pow(eps,2)))/2;
-			else
-				lambdaN[k][k]=(lambdaa[k]-
-					sqrt(pow(lambdaa[k],2)+pow(eps,2)))/2;
-
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			for(int k=0;k<3;k++)
-			{
-				prefix[row][col]+=Sinv[row][k]*Cinv[k][col];
-				suffix[row][col]+=C[row][k]*S[k][col];
-			}
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			for(int k=0;k<3;k++)
-			{
-				tempP[row][col]+=prefix[row][k]*lambdaP[k][col];
-				tempN[row][col]+=prefix[row][k]*lambdaN[k][col];
-			}
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-			for(int k=0;k<3;k++)
-			{
-				Ap[row][col]+=tempP[row][k]*suffix[k][col];
-				An[row][col]+=tempN[row][k]*suffix[k][col];
-			}
-		// could remove above loop and just use aplist and anlist
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-		{
-			int vec_pos=(i*3*3)+(row*3)+col;
-			Ap_list[vec_pos]=Ap[row][col];
-			An_list[vec_pos]=An[row][col];
-		}
-
-	}
-
-	for(int i=1; i<nx; i++)
-	{
-		Flux[0*nx+i]=0;
-		Flux[1*nx+i]=0;
-		Flux[2*nx+i]=0;
-		for(int row=0;row<3;row++)
-		for(int col=0;col<3;col++)
-		{
-			int Ap_pos=((i-1)*3*3)+(row*3)+col;
-			int An_pos=(i*3*3)+(row*3)+col;
-			Flux[row*nx+i]=Flux[row*nx+i]+Ap_list[Ap_pos]*W[col*nx+(i-1)]
-				+An_list[An_pos]*W[col*nx+i];
-		}
-	}
-
 }
 
 double TotalPressureLoss(int nx, std::vector <double> W)
@@ -543,10 +397,10 @@ double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double
 	double fit=0;
 	for(int i=0;i<nx;i++)
 	{
-		fit+=fabs(pcurrent[i]/ptin-ptarget[i])*dx[i];
+		fit+=pow(pcurrent[i]/ptin-ptarget[i],2)*dx[i];
 	}
-	std::cout<<"InverseFitness= "<<fit<<std::endl;
-	return fit;
+	std::cout<<"InverseFitness= "<<fit/2<<std::endl;
+	return fit/2;
 }
 
 // Jameson's 4th order Runge-Kutta Stepping Scheme
@@ -555,12 +409,12 @@ void rk4(int nx, std::vector <double> dx, std::vector <double> S,
 	       	std::vector <double> &W,
 	        std::vector <double> Q,	
 		std::vector <double> &Resi,
-		std::vector <double> Flux)
+		std::vector <double> &Flux)
 {
 	double ki;
-	std::vector <double> Resi0(3*nx), Resi1(3*nx), Resi2(3*nx);
-	std::vector <double> W1(3*nx),W2(3*nx),W3(3*nx);
-	std::vector <double> Q1(3*nx),Q2(3*nx);
+	std::vector <double> Resi0(3*nx,0), Resi1(3*nx,0), Resi2(3*nx,0);
+	std::vector <double> W1(3*nx,0),W2(3*nx,0),W3(3*nx,0);
+	std::vector <double> Q1(3*nx,0),Q2(3*nx,0);
 	std::vector <double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
 
 	// Residual 0
@@ -583,7 +437,7 @@ void rk4(int nx, std::vector <double> dx, std::vector <double> S,
 		W1[k*nx]=W[k*nx+0];
 		W1[k*nx+(nx-1)]=W[k*nx+(nx-1)];
 	}
-	for(int i=1;i<nx;i++)
+	for(int i=0;i<nx;i++)
 	{
 		rhotemp[i]=W1[i];
 		utemp[i]=W1[1*nx+i]/rhotemp[i];
@@ -616,7 +470,7 @@ void rk4(int nx, std::vector <double> dx, std::vector <double> S,
 		W2[k*nx]=W[k*nx+0];
 		W2[k*nx+(nx-1)]=W[k*nx+(nx-1)];
 	}
-	for(int i=1;i<nx;i++)
+	for(int i=0;i<nx;i++)
 	{
 		rhotemp[i]=W1[i];
 		utemp[i]=W1[1*nx+i]/rhotemp[i];
@@ -688,5 +542,7 @@ void EulerExplicitStep(int nx, std::vector <double> S,
 		ki=k*nx+i;
 		W[ki]=W[ki]-(dt[i]/V[i-1])*Resi[ki];
 	}
+
+	return;
 }
 	

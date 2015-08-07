@@ -22,14 +22,14 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 	std::vector <double> normGradList;
 	std::vector <double> B(nDesVar*nDesVar,0);
 	double normGrad=1;
-	double tolGrad=1e-8;
+	double tolGrad=1e-5;
 	double currentI;
 
 	int maxDesign=100;
 
 	int printConv=1;
 
-	double alpha=0.1;
+	double alpha=1;
 
 	// 1 = Steepest Descent
 	// 4 = QUASI-NEWTON (BFGS)
@@ -226,7 +226,7 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 	       int nx, std::vector <double> x, std::vector <double> dx,
 	       int fitnessFun)
 {
-	double alpha=1;
+	double alpha=0.01;
 	double c1=1e-4;
 	std::vector <double> tempS(nx+1);
 	double newVal;

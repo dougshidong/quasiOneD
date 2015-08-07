@@ -1,10 +1,9 @@
 close all;
 
-nx=200;
-
 fid=fopen('Results.dat','r');
 formatSpec='%f';
 
+nx=fscanf(fid,'%d',1);
 x=fscanf(fid,formatSpec,nx);
 pressure=fscanf(fid,formatSpec,nx);
 rho=fscanf(fid,formatSpec,nx);
@@ -15,23 +14,30 @@ S=fscanf(fid,formatSpec,nx+1);
 
 conv=fscanf(fid,formatSpec,inf);
 
-figure(1)
-plot(x,pressure,'-o');
-title('Pressure Distribution');
+fclose(fid);
 
-figure(2)
+fid=fopen('targetP.dat','r');
+nx=fscanf(fid,'%d',1);
+targetp=fscanf(fid,formatSpec,nx);
+fclose(fid);
+
+figure
+plot(x,pressure,'-o',x,targetp,'-x');
+title('Pressure Distribution');
+%%
+figure
 plot(x,rho,'-o');
 title('Density Distribution');
 
-figure(3)
+figure
 plot(x,Mach,'-o');
 title('Mach Distribution');
 
-figure(4)
+figure
 plot(xhalf,S,'-o');
 title('Geom');
 
-figure(5)
+figure
 loglog(conv(1:size(conv,1)/2), conv(size(conv,1)/2+1:size(conv,1)),'-+');
 title('conv')
 
