@@ -3,11 +3,13 @@
 
 #include<vector>
 
-double quasiOneD(int nx, std::vector <double> x, 
-		std::vector <double> dx, std::vector <double> S,
+double quasiOneD(int nx, 
+		std::vector <double> x, 
+		std::vector <double> dx, 
+		std::vector <double> S,
 		int fitnessFun);
 
-double TotalPressureLoss(std::vector <std::vector <double> > W);
+double TotalPressureLoss(int nx, std::vector <double> W);
 
 void ioTargetPressure(int io, int nx, std::vector <double> &p);
 
