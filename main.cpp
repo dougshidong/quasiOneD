@@ -8,12 +8,14 @@ int main()
 {
 	//Geometry Parameters
 	double a=0, b=1;
-	double h=0.15, t1=0.5, t2=1.0;
+	double h=0.1, t1=0.70, t2=1.0;
+//	double h=0.1, t1=0.7, t2=1.4;
+
 	int nx=100;
 	int fitnessFun=1;
 	int descentType=1;
 
-	int gradientType=2;
+	int gradientType=3;
 
 	std::vector <double> x(nx), S(nx+1);
 	std::vector <double> dx(nx);

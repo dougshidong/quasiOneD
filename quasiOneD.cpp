@@ -23,8 +23,8 @@ double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 // Convergence Settings
 double CFL=2;
 double eps=0.1;
-double conv=1e-14;
-int maxIt=200000;
+double conv=1e-13;
+int maxIt=60000;
 int printIt=5000;
 int printConv=1;
 int printW=0;

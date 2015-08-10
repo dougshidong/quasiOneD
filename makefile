@@ -1,9 +1,10 @@
 CXX	= g++
 INCLGN  = ./gnuplot-iostream
-DEBUG	= -g
+INCLEI  = ./eigen/
+DEBUG	= -pg
 CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o
 CPPH	= quasiOneD.h
-CFLAGS	= -Wall -c $(DEBUG)
+CFLAGS	= -Wall -c $(DEBUG) -I $(INCLEI)
 LFLAGS  = -Wall $(DEBUG)
 
 EXEC	= p1.exe
