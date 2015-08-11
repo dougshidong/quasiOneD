@@ -13,7 +13,6 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 	       std::vector <double> gradient, double currentI,
 	       int nx, std::vector <double> x, std::vector <double> dx,
 	       int fitnessFun);
-std::vector <double> matrixMult(int mSize, std::vector <double> A, std::vector <double> B);
 
 std::vector <double> BFGS(int nDesVar, 
 		std::vector <double> oldH, 
@@ -80,7 +79,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 		{
 			std::cout<<"Iteration :"<<iDesign<<
 				"    GradientNorm: "<<normGrad<<std::endl;
-
+			std::cout<<"Current Design:\n";
 			for(int i=0;i<nDesVar;i++)
 				std::cout<<designVar[i]<<std::endl;
 
@@ -119,6 +118,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 				}
 			}
 		}
+		std::cout<<"pk:\n";
 		for(int i=0;i<nDesVar;i++)
 			std::cout<<pk[i]<<std::endl;
 
@@ -174,31 +174,6 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 }
 
 
-std::vector <double> matrixMult(int mSize, std::vector <double> A, std::vector <double> B)
-{
-	double sum;
-	int rc;
-	int Ar=A.size()/mSize;
-	int Bc=B.size()/mSize;
-
-	std::vector <double> C(Ar*Bc,0);
-
-	for(int r=0; r<Ar; r++)
-	{
-		for(int c=0; c<mSize; c++)
-		{
-			sum=0;
-			rc=r*mSize+c;
-			for(int k=0; k<mSize; k++)
-			{
-				C[rc]+=A[r*mSize+k]*B[k*mSize+c];
-			}
-		}
-	}
-
-	return C;
-}
-
 std::vector <double> BFGS(int nDesVar, std::vector <double> oldH, std::vector <double> gradList, std::vector <double> searchD)
 {
 	int ls=gradList.size();
@@ -250,9 +225,17 @@ std::vector <double> BFGS(int nDesVar, std::vector <double> oldH, std::vector <d
 
 
 
-std::vector <double> HessianfiniteD(int nx, std::vector <double> x, std::vector <double> dx,
-	       	std::vector <double> S, std::vector <double> designVar, int fitnessFun,
-	       	double h, int method, double currentI)
+void HessGradfiniteD(int nx, 
+		std::vector <double> x, 
+		std::vector <double> dx,
+	       	std::vector <double> S, 
+		std::vector <double> designVar, 
+		int fitnessFun,
+		double h, 
+		int method, 
+		double currentI, 
+		std::vector <double> &G, 
+		std::vector <double> H)
 {
 	std::vector <double> grad(nx);
 	std::vector <double> tempS(nx+1);
@@ -302,7 +285,6 @@ std::vector <double> HessianfiniteD(int nx, std::vector <double> x, std::vector 
 			std::cout<<"Gradient "<<i+1<<":   "<<grad[i]<<std::endl<<std::endl;
 		}
 
-	return grad;
 }
 
 
@@ -450,7 +432,7 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 
 	while(newVal>(currentI+alpha*c_pk_grad) && alpha>0.0001)
 	{
-    		alpha=alpha*0.5;
+    		alpha=alpha*0.9;
 		std::cout<<"Alpha Reduction: "<<alpha<<std::endl;
 	
 		for(int i=0;i<nDesVar;i++)
