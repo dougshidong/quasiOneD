@@ -33,7 +33,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 	double tolGrad=1e-5;
 	double currentI;
 
-	int maxDesign=10;
+	int maxDesign=10000;
 
 	int printConv=1;
 
@@ -87,7 +87,8 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 
 		}
 		S=evalS(nx,designVar,x,dx);
-		currentI=quasiOneD(nx,x,dx,S,fitnessFun);
+//		currentI=quasiOneD(nx,x,dx,S,fitnessFun);
+		currentI=quasiOneD(nx,x,dx,S,fitnessFun,designVar);
 
 		gradient=finiteD(nx,x,dx,S,designVar,fitnessFun,h,gradientType,currentI);
 		
@@ -148,11 +149,19 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 		std::cout<<"End of Design Iteration: "<<iDesign<<std::endl<<std::endl<<std::endl;
 	}
 
+	std::cout<<"Final Gradient:"<<std::endl;
 	for(int i=0;i<nDesVar;i++)
 		std::cout<<gradient[i]<<std::endl;
 
+	std::cout<<std::endl<<"Final Design:"<<std::endl;
+	for(int i=0;i<nDesVar;i++)
+		std::cout<<designVar[i]<<std::endl;
+
+
 	S=evalS(nx, designVar, x, dx);
-	std::cout<<"Fitness: "<<quasiOneD(nx,x,dx,S,fitnessFun)<<std::endl;
+//	std::cout<<"Fitness: "<<quasiOneD(nx,x,dx,S,fitnessFun)<<std::endl;
+
+	std::cout<<"Fitness: "<<quasiOneD(nx,x,dx,S,fitnessFun,designVar)<<std::endl;
 
 
 
@@ -197,11 +206,11 @@ std::vector <double> BFGS(int nDesVar, std::vector <double> oldH, std::vector <d
 	std::vector <double> newH(nDesVar*nDesVar);
 	double aa;
 	Eigen::VectorXd dg(nDesVar), dx(nDesVar);
-	Eigen::MatrixXd dH(nDesVar,nDesVar);
+	Eigen::MatrixXd dH(nDesVar,nDesVar), a(nDesVar,nDesVar),b(nDesVar,nDesVar);
 
 	for(int i=0;i<nDesVar;i++)
 	{
-		dg(i)=gradList[(ls-1)-nDesVar+i]-gradList[(ls-1)-2*nDesVar+1];
+		dg(i)=gradList[ls-nDesVar+i]-gradList[ls-2*nDesVar+i];
 		dx(i)=searchD[i];
 	}
 	
@@ -210,18 +219,31 @@ std::vector <double> BFGS(int nDesVar, std::vector <double> oldH, std::vector <d
 	Eigen::Map <Eigen::Matrix<double,-1,-1,Eigen::RowMajor> > 
 		cH(oldH.data(), nDesVar, nDesVar);
 
-	aa=( 1 + ((dg.transpose()*cH*dg) / (dg.transpose()*dx))(0) );
+//	aa=( 1 + ((dg.transpose()*cH*dg) / (dg.transpose()*dx))(0) );
 	
-	dH=aa*( (dx*dx.transpose())/(dx.transpose()*dg) )
-		- (cH*dg*dx.transpose() + (cH*dg*dx.transpose()).transpose())/(dg.transpose()*dx);
+//	dH=aa*( (dx*dx.transpose())/(dx.transpose()*dg) )
+//		- (cH*dg*dx.transpose() + (cH*dg*dx.transpose()).transpose())/(dg.transpose()*dx);
 
+
+	a=((dx.transpose()*dg+dg.transpose()*cH*dg)(0)*(dx*dx.transpose()))
+		/((dx.transpose()*dg)(0)*(dx.transpose()*dg)(0));
+	b=(cH*dg*dx.transpose()+dx*dg.transpose()*cH)/(dx.transpose()*dg)(0);
+
+	dH=a-b;
+
+	std::cout<<"Current Inverse Hessian:"<<std::endl;
 	for(int r=0;r<nDesVar;r++)
-	for(int c=0;c<nDesVar;c++)
 	{
-		rc=r*nDesVar+c;
-		newH[rc]=oldH[rc]+dH(r,c);
-		std::cout<<newH[rc]<<std::endl;
+		std::cout<<"\n";
+		for(int c=0;c<nDesVar;c++)
+		{
+			rc=r*nDesVar+c;
+			newH[rc]=oldH[rc]+dH(r,c);
+			std::cout<<newH[rc]<<"\t\t";
+		}
 	}
+
+	std::cout<<"\n\n";
 
 	return newH;
 }
@@ -243,7 +265,9 @@ std::vector <double> HessianfiniteD(int nx, std::vector <double> x, std::vector 
 
 	if(currentI<0)
 	{
-		I0=quasiOneD(nx,x,dx,S,fitnessFun);
+//		I0=quasiOneD(nx,x,dx,S,fitnessFun);
+		I0=quasiOneD(nx,x,dx,S,fitnessFun,designVar);
+
 		std::cout<<"I0="<<std::setprecision(15)<<I0<<std::endl;
 	}
 	else
@@ -268,7 +292,9 @@ std::vector <double> HessianfiniteD(int nx, std::vector <double> x, std::vector 
 				std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 			
 			tempS=evalS(nx, tempD, x, dx);
-			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
+			I1=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 			grad[i]=(I1-I0)/dh1;
 			std::cout<<"I1="<<std::setprecision(15)<<I1<<std::endl;
 		
@@ -301,7 +327,9 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 	if(currentI<0 && method!=3)
 	{
-		I0=quasiOneD(nx,x,dx,S,fitnessFun);
+//		I0=quasiOneD(nx,x,dx,S,fitnessFun);
+		I0=quasiOneD(nx,x,dx,S,fitnessFun,designVar);
+
 		std::cout<<"I0="<<std::setprecision(15)<<I0<<std::endl;
 	}
 	else
@@ -327,7 +355,9 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 			tempS=evalS(nx, tempD, x, dx);
 
-			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
+			I1=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 			grad[i]=(I1-I0)/dh;
 			std::cout<<"I1="<<std::setprecision(15)<<I1<<std::endl;
 	
@@ -341,7 +371,9 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 			tempS=evalS(nx, tempD, x, dx);
 
-			I2=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//			I2=quasiOneD(nx,x,dx,tempS,fitnessFun);
+			I2=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 			grad[i]=(I0-I2)/dh;
 			std::cout<<"I2="<<std::setprecision(15)<<I2<<std::endl;
 
@@ -356,7 +388,9 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 			tempS=evalS(nx, tempD, x, dx);
 
 
-			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//			I1=quasiOneD(nx,x,dx,tempS,fitnessFun);
+			I1=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 			std::cout<<"I1="<<std::setprecision(15)<<I1<<std::endl;
 
 			tempD=designVar;
@@ -367,7 +401,9 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 			tempS=evalS(nx, tempD, x, dx);
 
-			I2=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//			I2=quasiOneD(nx,x,dx,tempS,fitnessFun);
+			I2=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 			std::cout<<"I2="<<std::setprecision(15)<<I2<<std::endl;
 
 			grad[i]=(I1-I2)/(2*dh);
@@ -408,7 +444,9 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 	}
 
 	tempS=evalS(nx,tempD,x,dx);
-	newVal=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//	newVal=quasiOneD(nx,x,dx,tempS,fitnessFun);
+	newVal=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 
 	while(newVal>(currentI+alpha*c_pk_grad) && alpha>0.0001)
 	{
@@ -418,7 +456,9 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 		for(int i=0;i<nDesVar;i++)
 			tempD[i]=designVar[i]+alpha*pk[i];
 		tempS=evalS(nx,tempD,x,dx);
-		newVal=quasiOneD(nx,x,dx,tempS,fitnessFun);
+//		newVal=quasiOneD(nx,x,dx,tempS,fitnessFun);
+		newVal=quasiOneD(nx,x,dx,tempS,fitnessFun,tempD);
+
 	}
 
 	return alpha;

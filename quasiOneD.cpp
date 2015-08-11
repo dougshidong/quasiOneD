@@ -65,9 +65,9 @@ double quasiOneD(int nx,
 		std::vector <double> x, 
 		std::vector <double> dx, 
 		std::vector <double> S,
-		int fitnessFun)
+		int fitnessFun,
+		std::vector <double> designVar)
 {
-	int ki;
 	std::vector <double> rho(nx), u(nx), e(nx);
 	std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
 	std::vector <double> W(3*nx,0), F(3*nx,0),Q(3*nx,0), Resi(3*nx,0);
@@ -91,6 +91,12 @@ double quasiOneD(int nx,
 	std::vector <double> charRel(3);
 	double dp, drho, du;
 	double MachBound;
+
+	int iterlength;
+	double normR=1.0;
+	int iterations=0;
+
+	//goto skipp;
 
 	V=calcVolume(S,dx);
 
@@ -133,8 +139,6 @@ double quasiOneD(int nx,
 		Q[1*nx+i]=p[i]*(S[i]-S[i-1]);
 	}
 
-	double normR=1.0;
-	int iterations=0;
 	while(normR>conv && iterations<maxIt)
 	{
 		iterations++;
@@ -281,7 +285,7 @@ double quasiOneD(int nx,
 		fprintf(Results, "%.15f\n",x[i]-dx[i]/2);
 	fprintf(Results,"%f\n",x.back()+dx.back()/2);
 
-	int iterlength=itV.size();
+	iterlength=itV.size();
 	for(int i=0;i<nx+1;i++)
 		fprintf(Results, "%.15f\n",S[i]);
 	for(int i=0;i<iterlength;i++)
@@ -308,7 +312,12 @@ double quasiOneD(int nx,
 
 
 	return -9999.99;
-	
+
+
+	skipp:
+	return pow(1-designVar[0],2)
+		+100*pow(designVar[1]-pow(designVar[0],2),2)
+		+pow(designVar[2],2);
 }
 
 double isenP(double pt, double M)
