@@ -20,6 +20,7 @@ int main()
 	std::vector <double> x(nx), S(nx+1);
 	std::vector <double> dx(nx);
 	std::vector <double> geom(3);
+	std::vector <double> W(3*nx,0);
 	
 
 	geom[0]=h;
@@ -45,7 +46,7 @@ int main()
 	for(int i=0;i<V.size();i++)
 		std::cout<<i<<" "<<V[i]<<std::endl;
 */
-//	double fitness=quasiOneD(nx,x,dx,S,fitnessFun);
+//	double fitness=quasiOneD(nx,x,dx,S,fitnessFun, W);
 	
 	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
 	return 0;

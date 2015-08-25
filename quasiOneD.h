@@ -8,7 +8,8 @@ double quasiOneD(int nx,
 		std::vector <double> dx, 
 		std::vector <double> S,
 		int fitnessFun,
-		std::vector <double> designVar);
+		std::vector <double> designVar,
+		std::vector <double> &W);
 
 double TotalPressureLoss(int nx, std::vector <double> W);
 

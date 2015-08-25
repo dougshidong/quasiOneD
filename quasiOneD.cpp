@@ -66,11 +66,12 @@ double quasiOneD(int nx,
 		std::vector <double> dx, 
 		std::vector <double> S,
 		int fitnessFun,
-		std::vector <double> designVar)
+		std::vector <double> designVar,
+		std::vector <double> &W)
 {
 	std::vector <double> rho(nx), u(nx), e(nx);
 	std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-	std::vector <double> W(3*nx,0), F(3*nx,0),Q(3*nx,0), Resi(3*nx,0);
+	std::vector <double> W11(3*nx,0), F(3*nx,0),Q(3*nx,0), Resi(3*nx,0);
 	std::vector <double> Flux(3*(nx+1),0);
 //	std::vector <std::vector <double> > W(3,std::vector <double> (nx,0)),
 //					    F(3,std::vector <double> (nx,0)),
@@ -554,4 +555,3 @@ void EulerExplicitStep(int nx, std::vector <double> S,
 
 	return;
 }
-	
