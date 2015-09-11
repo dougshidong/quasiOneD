@@ -30,7 +30,7 @@ int printConv=1;
 int printW=0;
 
 int StepScheme=1;
-int createTarget=0;
+int createTarget=1;
 
 double isenP(double pt, double M);
 

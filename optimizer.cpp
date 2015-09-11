@@ -19,8 +19,11 @@ std::vector <double> BFGS(int nDesVar,
 		std::vector <double> gradList, 
 		std::vector <double> searchD);
 
-
-
+void adjointBC(int nx,
+		std::vector <double> &psi, 
+		std::vector <double> W,
+		std::vector <double> dx,
+		std::vector <double> S);
 
 
 void design(int nx, int descentType, int gradientType, int fitnessFun,
@@ -452,14 +455,12 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 	}
 
 	return alpha;
-
-
-	
 }	
 
 
 std::vector <double> adjointSteger(int nx,
 				std::vector <double> S,
+                                std::vector <double> dx,
 				std::vector <double> W)
 {
 	double eps=0.1;
@@ -468,9 +469,9 @@ std::vector <double> adjointSteger(int nx,
 	       Minv[3][3]={0},
 	       N[3][3]={0},
 	       Ninv[3][3]={0},
-	       lambdaP[3][3]={0},
-	       lambdaN[3][3]={0};
-	double lambdaa[3]={0};
+	       lambdaP[3][3],
+	       lambdaN[3][3];
+	double lambdaa[3];
 	
 	
 	double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
@@ -577,19 +578,35 @@ std::vector <double> adjointSteger(int nx,
 
 	std::vector <double> psi(nx);
 
-	adjointBC();
+        adjointBC(nx, psi, W, dx, S);
 
+/*        
+        for(int i=1; i<nx; i++)
+        {
+		Flux[0*nx+i]=0;
+                Flux[1*nx+i]=0;
+                Flux[2*nx+i]=0;
+                for(int row=0;row<3;row++)
+                for(int col=0;col<3;col++)
+                {
+                        int Ap_pos=((i-1)*3*3)+(row*3)+col;
+                        int An_pos=(i*3*3)+(row*3)+col;
+                        Flux[row*nx+i]=Flux[row*nx+i]+Ap_list[Ap_pos]*W[col*nx+(i-1)]
+                                +An_list[An_pos]*W[col*nx+i];
+                }
+        }
+
+*/
 
 
 }
 
 
 void adjointBC(int nx,
-		std::vector <double> psi, 
+		std::vector <double> &psi, 
 		std::vector <double> W,
 		std::vector <double> dx,
-		std::vector <double> S);
-
+		std::vector <double> S)
 {
 	std::vector <double> pTarget(nx);
 
@@ -604,7 +621,8 @@ void adjointBC(int nx,
 	double pn=(gam-1)*(W[2*nx+nx-1]-rhon*pow(un,2)/2);  // Pressure
 
 
-	psi[0]=p0-pt[0]*dx[0]
+	psi[0]=(p0-pTarget[0])*dx[0]/(S[1]-S[0]);
+        psi[nx-1]=(pn-pTarget[nx-1])*dx[nx-1]/(S[nx]-S[nx-1]);
 }
 
 

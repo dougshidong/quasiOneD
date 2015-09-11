@@ -46,8 +46,8 @@ int main()
 	for(int i=0;i<V.size();i++)
 		std::cout<<i<<" "<<V[i]<<std::endl;
 */
-//	double fitness=quasiOneD(nx,x,dx,S,fitnessFun, W);
+	double fitness=quasiOneD(nx,x,dx,S,fitnessFun,geom, W);
 	
-	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
+//	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
 	return 0;
 }
