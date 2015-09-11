@@ -8,7 +8,7 @@ int main()
 {
 	//Geometry Parameters
 	double a=0, b=1;
-	double h=0.10, t1=0.3, t2=1.7;
+	double h=0.11, t1=0.66, t2=1.34;
 //	double h=0.1, t1=0.7, t2=1.4;
 
 	int nx=100;
@@ -46,8 +46,8 @@ int main()
 	for(int i=0;i<V.size();i++)
 		std::cout<<i<<" "<<V[i]<<std::endl;
 */
-	double fitness=quasiOneD(nx,x,dx,S,fitnessFun,geom, W);
+//	double fitness=quasiOneD(nx,x,dx,S,fitnessFun,geom, W);
 	
-//	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
+	design(nx, descentType, gradientType, fitnessFun, x, dx, S, geom);
 	return 0;
 }

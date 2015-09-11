@@ -53,7 +53,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 	// 2 = FD Backward
 	// 3 = FD Centered
 
-	double h=1e-7;
+	double h=1e-4;
 	std::vector <double> S_optimum;
 	std::vector <double> gradient(nDesVar),
 				pk(nDesVar),
@@ -167,7 +167,6 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 
 
 	S=evalS(nx, designVar, x, dx);
-//	std::cout<<"Fitness: "<<quasiOneD(nx,x,dx,S,fitnessFun)<<std::endl;
 
 	std::cout<<"Fitness: "<<quasiOneD(nx,x,dx,S,fitnessFun,designVar,W)<<std::endl;
 
@@ -443,7 +442,7 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 
 	while(newVal>(currentI+alpha*c_pk_grad) && alpha>0.0001)
 	{
-    		alpha=alpha*0.9;
+    		alpha=alpha*0.5;
 		std::cout<<"Alpha Reduction: "<<alpha<<std::endl;
 	
 		for(int i=0;i<nDesVar;i++)
