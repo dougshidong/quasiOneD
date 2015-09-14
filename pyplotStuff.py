@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''Ploting results'''
 
 import matplotlib.pyplot as plt
