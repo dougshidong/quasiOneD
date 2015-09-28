@@ -575,11 +575,11 @@ std::vector <double> adjointSteger(int nx,
 
 	}
 
-	std::vector <double> psi(nx);
+	std::vector <double> psi(nx*3);
 
         adjointBC(nx, psi, W, dx, S);
 
-/*        
+        
         for(int i=1; i<nx; i++)
         {
 		Flux[0*nx+i]=0;
@@ -595,7 +595,7 @@ std::vector <double> adjointSteger(int nx,
                 }
         }
 
-*/
+
 
 
 }

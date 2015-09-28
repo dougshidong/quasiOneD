@@ -22,7 +22,7 @@ const int nx=50;        // Number of grid points
 
 double eps=0.3; // Epsilon
 double CFL=0.4; // CFL
-int maxIt=200000;
+int maxIt=1;
 
 // Geometry areas
 double shape(double x)
@@ -550,6 +550,12 @@ int main()
         fprintf(test2,"%f,",p[i]/pt);
     fprintf(test2,"\n");
 
+	for(int k=0;k<3;k++)
+	{
+		std::cout<<"W"<<k+1<<std::endl;
+		for(int i=0;i<nx;i++)
+			std::cout<<W[k][i]<<std::endl;
+	}
     // ITERATIONS
     while(normm>conv && iterations<maxIt)
     {
@@ -690,10 +696,10 @@ int main()
         */
         // Beggining of Euler explicit
         // Flux for each CV
-        StegerWarmingF(Flux, W, U, c,rho);
+        //StegerWarmingF(Flux, W, U, c,rho);
         //modifiedStegerWarmingF(Flux, W, U, c,rho);
         //correctedModifiedStegerWarmingF(Flux,W,U,c,rho,p);
-        //scalarF(Flux,F,U,c,W);
+        scalarF(Flux,F,U,c,W);
         //RoeF(Flux,W,F,U,c,rho,p);
 //	for(int i=0;i<nx;i++)
 //		printf("%f\n",Flux[1][i]);
@@ -797,7 +803,7 @@ int main()
         for(int i=0;i<nx;i++)
             fprintf(test,"%f,",Mach[i]);
         fprintf(test,"\n");
-        /*
+        *
         for(int i=0;i<nx;i++)
             fprintf(test2,"%f,",Resi[0][i]);
         fprintf(test2,"\n");
