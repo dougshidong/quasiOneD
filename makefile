@@ -21,11 +21,13 @@ grid.o: grid.h grid.cpp
 quasiOneD.o : quasiOneD.h quasiOneD.cpp flux.h
 	$(CC) $(CFLAGS) quasiOneD.cpp 
 
-optimizer.o : optimizer.h optimizer.cpp quasiOneD.h grid.h
+optimizer.o : optimizer.h optimizer.cpp quasiOneD.h grid.h adjoint.h
 	$(CC) $(CFLAGS) optimizer.cpp
 
 flux.o : flux.h flux.cpp
 	$(CC) $(CFLAGS) flux.cpp
+
+adjoint.o : adjoint.h adjoint.cpp
 
 clean:
 	\rm *.o p1.*

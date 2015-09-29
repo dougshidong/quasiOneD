@@ -13,10 +13,13 @@ double R=1716;
 double Cv=R/(gam-1);
 
 // Problem parameters
-double Min=0.5;
+// Inlet
+double Min=1.2;
 double Ttin=531.2;
 double ptin=2117;
-double pexit=0.72*ptin;
+// Outlet
+double pexit=0.8*ptin;
+// Constant
 double a2=2*gam*Cv*Ttin*((gam-1)/(gam+1)); // used in isentropic nozzle
 
 
@@ -28,8 +31,13 @@ int maxIt=60000;
 int printIt=100; 
 int printConv=0; // 0 to hide real-time convergence
 int printW=0;
-
+// Stepping Scheme
+// 0  -  Euler Explicit
+// 1  -  Runge-Kutta 4th order
 int StepScheme=1;
+// Create Target Pressure
+// 0  -  Do NOT Create Target Pressure
+// 1  -  Create Target Pressure
 int createTarget=0;
 
 double isenP(double pt, double M);

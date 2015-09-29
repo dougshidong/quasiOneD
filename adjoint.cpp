@@ -6,13 +6,15 @@
 #include<iomanip>
 #include<Eigen/Dense>
 
+std::vector <double> adjoint(int nx,
+                             std::vector <double> 1test ,
+                             std::vector <double> 2test)
+{
+    
+}
 
-void adjointBC(int nx,
-        std::vector <double> &psi, 
-        std::vector <double> W,
-        std::vector <double> dx,
-        std::vector <double> S);
 
+// Calculates the costate fluxes
 // Steger-Warming flux splitting scheme
 std::vector <double> adjointSteger(int nx,
                                    std::vector <double> S,
@@ -20,7 +22,6 @@ std::vector <double> adjointSteger(int nx,
                                    std::vector <double> W
                                    std::vector <double> psi,
                                    std::vector <double> &pFlux)
-
 {
     double eps=0.1;
     double gam=1.4;
@@ -148,14 +149,17 @@ std::vector <double> adjointSteger(int nx,
             {
                 int Ap_pos=((i-1)*3*3)+(row*3)+col;
                 int An_pos=(i*3*3)+(row*3)+col;
-                psiF[row*nx+i]=psiF[row*nx+i]+Ap_list[Ap_pos]*W[col*nx+(i-1)]
-                               +An_list[An_pos]*W[col*nx+i];
+                psiF[row*nx+i]=psiF[row*nx+i]
+                                + Ap_list[Ap_pos]
+                                * ( psi[col*nx+(i+1)] - psi[col*nx+i] )
+                                + An_list[An_pos]
+                                * ( psi[col*nx+i] - psi[col*nx+(i-1)] );
             }
         }
     }
 }
 
-
+// Set the adjoint BC for target pressure
 void adjointBC(int nx,
         std::vector <double> &psi, 
         std::vector <double> W,
@@ -167,12 +171,12 @@ void adjointBC(int nx,
     ioTargetPressure(-1,nx,pTarget);
 
     double gam=1.4;
-    double rho0=W[0*nx];        // rho
-    double u0=W[1*nx]/rho0; // U
-    double p0=(gam-1)*(W[2*nx]-rho0*pow(u0,2)/2);  // Pressure
-    double rhon=W[0*nx+nx-1];       // rho
-    double un=W[1*nx+nx-1]/rhon;    // U
-    double pn=(gam-1)*(W[2*nx+nx-1]-rhon*pow(un,2)/2);  // Pressure
+    double rho0=W[0*nx];
+    double u0=W[1*nx]/rho0;
+    double p0=(gam-1)*(W[2*nx]-rho0*pow(u0,2)/2);
+    double rhon=W[0*nx+nx-1];
+    double un=W[1*nx+nx-1]/rhon;
+    double pn=(gam-1)*(W[2*nx+nx-1]-rhon*pow(un,2)/2);
 
 
     psi[2*nx+i]=(p0-pTarget[0])*dx[0]/(S[1]-S[0]);

@@ -1,0 +1,6 @@
+# CSV Files
+
+*.csv
+*.o
+*.exe
+*.swp
