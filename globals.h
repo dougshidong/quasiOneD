@@ -1,9 +1,16 @@
 extern const double PI;
 
-// Gas Constants
-extern const double gam;
-extern const double R;
-extern const double Cv;
-
-// Grid Constant
 extern const int nx;
+
+extern const int opt;
+
+extern const int nDesVar;
+extern const double a_geom, b_geom;
+extern const double h_geom, t1_geom, t2_geom;
+
+extern const int fitnessFun;
+
+extern const int descentType;
+
+extern const int gradientType;
+

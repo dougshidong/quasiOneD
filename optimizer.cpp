@@ -3,30 +3,29 @@
 #include"quasiOneD.h"
 #include"grid.h"
 #include"adjoint.h"
+#include"globals.h"
 #include<vector>
 #include<iomanip>
 #include<Eigen/Dense>
 
-std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar, int fitnessFun,
-        double h, int method, double currentI);
+std::vector <double> finiteD(std::vector <double> x, std::vector <double> dx,
+            std::vector <double> S, std::vector <double> designVar, double h, 
+            double currentI);
+
 double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> pk,
            std::vector <double> gradient, double currentI,
-           int nx, std::vector <double> x, std::vector <double> dx,
-           int fitnessFun);
+           std::vector <double> x, std::vector <double> dx);
 
-std::vector <double> BFGS(int nDesVar, 
+std::vector <double> BFGS( 
         std::vector <double> oldH, 
         std::vector <double> gradList, 
         std::vector <double> searchD);
 
-void design(int nx, int descentType, int gradientType, int fitnessFun,
-          std::vector <double> x, std::vector <double> dx,
+void design(std::vector <double> x, std::vector <double> dx,
             std::vector <double> S, std::vector <double> designVar)
 {
     std::vector <double> W(3 * nx, 0);
 
-    int nDesVar = designVar.size();
     
     std::vector <double> normGradList, gradList;
     std::vector <double> H(nDesVar * nDesVar, 0);
@@ -86,10 +85,10 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 
 
         }
-        S = evalS(nx, designVar, x, dx);
-        currentI = quasiOneD(x, dx, S, fitnessFun, designVar, W);
+        S = evalS(designVar, x, dx);
+        currentI = quasiOneD(x, dx, S, designVar, W);
 
-        gradient = finiteD(nx, x, dx, S, designVar, fitnessFun, h, gradientType, currentI);
+        gradient = finiteD(x, dx, S, designVar, h, currentI);
 
         for(int i = 0; i < nDesVar; i++)
         {
@@ -105,7 +104,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
         {
             if(iDesign > 1)
             {
-                H = BFGS(nDesVar, H, gradList, searchD);
+                H = BFGS(H, gradList, searchD);
             }
 
             for(int r = 0; r < nDesVar; r++)
@@ -123,7 +122,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
             std::cout<<pk[i]<<std::endl;
 
                 alpha = stepBacktrackUncons(designVar, pk, gradient, currentI,
-                      nx, x, dx, fitnessFun);
+                      x, dx);
         std::cout<<"Alpha = "<<alpha<<std::endl;
         for(int i = 0; i < nDesVar; i++)
         {
@@ -158,9 +157,9 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
         std::cout<<designVar[i]<<std::endl;
 
 
-    S = evalS(nx, designVar, x, dx);
+    S = evalS(designVar, x, dx);
 
-    std::cout<<"Fitness: "<<quasiOneD(x, dx, S, fitnessFun, designVar, W)<<std::endl;
+    std::cout<<"Fitness: "<<quasiOneD(x, dx, S, designVar, W)<<std::endl;
 
 
 
@@ -172,7 +171,7 @@ void design(int nx, int descentType, int gradientType, int fitnessFun,
 
 }
 
-std::vector <double> BFGS(int nDesVar, 
+std::vector <double> BFGS(  
                           std::vector <double> oldH,
                           std::vector <double> gradList,
                           std::vector <double> searchD)
@@ -217,15 +216,13 @@ std::vector <double> BFGS(int nDesVar,
 
 
 /*
-void HessGradfiniteD(int nx, 
+void HessGradfiniteD(
         std::vector <double> x, 
         std::vector <double> dx,
         std::vector <double> S, 
-        int nDesVar
         std::vector <double> designVar, 
-        int fitnessFun,
         double h, 
-        int method, 
+        int gradientType, 
         double currentI, 
         std::vector <double> &G)
 {
@@ -236,13 +233,11 @@ void HessGradfiniteD(int nx,
 
     double I0, I1, dh1, dh2;
 
-    int nDesVar = designVar.size();
-
     std::vector <double> tempD(nDesVar);
 
     if(currentI < 0)
     {
-        I0 = quasiOneD(nx, x, dx, S, fitnessFun, designVar, W);
+        I0 = quasiOneD(nx, x, dx, S, designVar, W);
 
         std::cout<<"I0 = "<<std::setprecision(15)<<I0<<std::endl;
     }
@@ -268,8 +263,7 @@ void HessGradfiniteD(int nx,
                 std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
             
             tempS = evalS(nx, tempD, x, dx);
-//          I1 = quasiOneD(nx, x, dx, tempS, fitnessFun);
-            I1 = quasiOneD(nx, x, dx, tempS, fitnessFun, tempD, W);
+            I1 = quasiOneD(nx, x, dx, tempS, tempD, W);
 
             H[i] = (I1 - I0) / (dh1*dh2);
             std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
@@ -295,9 +289,9 @@ void HessGradfiniteD(int nx,
 
 
 
-std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar, int fitnessFun,
-            double h, int method, double currentI)
+std::vector <double> finiteD(std::vector <double> x, std::vector <double> dx,
+            std::vector <double> S, std::vector <double> designVar, 
+            double h, double currentI)
 {
     std::vector <double> W(3 * nx, 0);
 
@@ -310,14 +304,11 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
     
     double I0, I1, I2, dh;
 
-    int nDesVar = designVar.size();
-
     std::vector <double> tempD(nDesVar);
 
-    if(currentI < 0 && method != 3)
+    if(currentI < 0 && gradientType != 3)
     {
-//      I0 = quasiOneD(nx, x, dx, S, fitnessFun);
-        I0 = quasiOneD(x, dx, S, fitnessFun, designVar, W);
+        I0 = quasiOneD(x, dx, S, designVar, W);
 
         std::cout<<"I0 = "<<std::setprecision(15)<<I0<<std::endl;
     }
@@ -335,50 +326,47 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 
 
-        if(method == 1)
+        if(gradientType == 1)
         {
             tempD[i] += dh;
             
             for(int k = 0; k < nDesVar; k++)
                 std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
-            tempS = evalS(nx, tempD, x, dx);
+            tempS = evalS(tempD, x, dx);
 
-//          I1 = quasiOneD(nx, x, dx, tempS, fitnessFun);
-            I1 = quasiOneD(x, dx, tempS, fitnessFun, tempD, W);
+            I1 = quasiOneD(x, dx, tempS, tempD, W);
 
             grad[i] = (I1 - I0) / dh;
             std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
     
         }
-        else if(method == 2)
+        else if(gradientType == 2)
         {
             tempD[i] -= dh;
         
             for(int k = 0; k < nDesVar; k++)
                 std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
-            tempS = evalS(nx, tempD, x, dx);
+            tempS = evalS(tempD, x, dx);
 
-//          I2 = quasiOneD(nx, x, dx, tempS, fitnessFun);
-            I2 = quasiOneD(x, dx, tempS, fitnessFun, tempD, W);
+            I2 = quasiOneD(x, dx, tempS, tempD, W);
 
             grad[i] = (I0 - I2) / dh;
             std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
 
         }
-        else if(method == 3)
+        else if(gradientType == 3)
         {
             tempD[i] += dh;
             for(int k = 0; k < nDesVar; k++)
                 std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
 
-            tempS = evalS(nx, tempD, x, dx);
+            tempS = evalS(tempD, x, dx);
 
 
-//          I1 = quasiOneD(nx, x, dx, tempS, fitnessFun);
-            I1 = quasiOneD(x, dx, tempS, fitnessFun, tempD, W);
+            I1 = quasiOneD(x, dx, tempS, tempD, W);
 
             std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
 
@@ -388,10 +376,9 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
             for(int k = 0; k < nDesVar; k++)
                 std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
-            tempS = evalS(nx, tempD, x, dx);
+            tempS = evalS(tempD, x, dx);
 
-//          I2 = quasiOneD(nx, x, dx, tempS, fitnessFun);
-            I2 = quasiOneD(x, dx, tempS, fitnessFun, tempD, W);
+            I2 = quasiOneD(x, dx, tempS, tempD, W);
 
             std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
 
@@ -407,8 +394,7 @@ std::vector <double> finiteD(int nx, std::vector <double> x, std::vector <double
 
 double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> pk,
            std::vector <double> gradient, double currentI,
-           int nx, std::vector <double> x, std::vector <double> dx,
-           int fitnessFun)
+           std::vector <double> x, std::vector <double> dx)
 {
     std::vector <double> W(3 * nx, 0);
 
@@ -419,7 +405,6 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
 
     double c_pk_grad = 0;
 
-    int nDesVar = designVar.size();
     std::vector <double> tempD(nDesVar);
 
     for(int i = 0; i < nDesVar; i++)
@@ -434,9 +419,8 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
         tempD[i] = designVar[i] + alpha * pk[i];
     }
 
-    tempS = evalS(nx, tempD, x, dx);
-//  newVal = quasiOneD(nx, x, dx, tempS, fitnessFun);
-    newVal = quasiOneD(x, dx, tempS, fitnessFun, tempD, W);
+    tempS = evalS(tempD, x, dx);
+    newVal = quasiOneD(x, dx, tempS, tempD, W);
 
 
     while(newVal > (currentI + alpha * c_pk_grad) && alpha > 0.0001)
@@ -446,9 +430,8 @@ double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> 
     
         for(int i = 0; i < nDesVar; i++)
             tempD[i] = designVar[i] + alpha * pk[i];
-        tempS = evalS(nx, tempD, x, dx);
-//      newVal = quasiOneD(nx, x, dx, tempS, fitnessFun);
-        newVal = quasiOneD(x, dx, tempS, fitnessFun, tempD, W);
+        tempS = evalS(tempD, x, dx);
+        newVal = quasiOneD(x, dx, tempS, tempD, W);
 
     }
 

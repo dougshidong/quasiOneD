@@ -6,40 +6,7 @@
 #include "flux.h"
 #include "timestep.h"
 #include "globals.h"
-
-// Problem parameters
-// Inlet
-double Min = 1.2;
-double Ttin = 531.2;
-double ptin = 2117;
-// Outlet
-double pexit = 0.76 * ptin;
-// Constant
-double a2 = 2 * gam * Cv * Ttin * ((gam - 1) / (gam + 1)); // used in isentropic nozzle
-
-
-// Convergence Settings
-double CFL = 0.7;
-double conv = 1e-15;
-int maxIt = 30000;
-int printIt = 1; 
-int printConv = 1; // 0 to hide real - time convergence
-int printW = 1;
-
-// Stepping Scheme
-// 0   -   Euler Explicit
-// 1   -   Runge - Kutta 4th order
-int StepScheme = 1;
-
-// Flux Scheme
-// 0   -   Steger Warming (SW)
-// 1   -   Scalar Dissipation
-int FluxScheme = 0;
-
-// Create Target Pressure
-// 0   -   Do NOT Create Target Pressure
-// 1   -   Create Target Pressure
-int createTarget = 0;
+#include "flovar.h"
 
 double isenP(double pt, double M);
 
@@ -47,17 +14,16 @@ double isenT(double Tt, double M);
 
 std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
 
-double TotalPressureLoss(int nx, std::vector <double> W);
+double TotalPressureLoss(std::vector <double> W);
 
-void ioTargetPressure(int io, int nx, std::vector <double> &p);
+void ioTargetPressure(int io, std::vector <double> &p);
 
-double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double> ptarget,
+double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
 		std::vector <double> dx);
 
 double quasiOneD(std::vector <double> x, 
 		std::vector <double> dx, 
 		std::vector <double> S,
-		int fitnessFun,
 		std::vector <double> designVar,
 		std::vector <double> &W)
 {
@@ -298,16 +264,16 @@ double quasiOneD(std::vector <double> x,
 	fclose(Results);
 
 	// Create Target Pressure
-	if(createTarget == 1) ioTargetPressure(1, nx, p);
+	if(createTarget == 1) ioTargetPressure(1, p);
 
 
 	if(fitnessFun == 0)
-		return TotalPressureLoss(nx, W);
+		return TotalPressureLoss(W);
 	else if(fitnessFun == 1)
 	{
 		std::vector <double> ptarget(nx, 0);
-		ioTargetPressure( - 1, nx, ptarget);
-		return inverseFitness(nx, p, ptarget, dx);
+		ioTargetPressure(-1, ptarget);
+		return inverseFitness(p, ptarget, dx);
 	}
 
 
@@ -325,7 +291,7 @@ double isenT(double Tt, double M)
 	return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
 }
 
-double TotalPressureLoss(int nx, std::vector <double> W)
+double TotalPressureLoss(std::vector <double> W)
 {
 	double rhoout = W[0 * nx + (nx - 1)];
 	double uout = W[1 * nx + (nx - 1)] / rhoout;
@@ -355,7 +321,7 @@ std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
 }
 
 // Input/Output Target Pressure Distribution
-void ioTargetPressure(int io, int nx, std::vector <double> &p)
+void ioTargetPressure(int io, std::vector <double> &p)
 {
 
 	FILE  * TargetP;
@@ -391,7 +357,7 @@ void ioTargetPressure(int io, int nx, std::vector <double> &p)
 
 // Return Inverse Design Fitness
 
-double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double> ptarget,
+double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
 		std::vector <double> dx)
 {
 	double fit = 0;

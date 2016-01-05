@@ -1,10 +1,10 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
-
+#include "globals.h"
 
 // Evaluate X
-std::vector <double> evalX(int nx, double a, double b)
+std::vector <double> evalX(double a, double b)
 {
 	std::vector <double> x(nx);
 	double dxConst=(b-a)/nx;
@@ -17,7 +17,7 @@ std::vector <double> evalX(int nx, double a, double b)
 
 //  Evaluate dx
 
-std::vector <double> evalDx(int nx, std::vector <double> x)
+std::vector <double> evalDx(std::vector <double> x)
 {
 	std::vector <double> dx(nx);
 	
@@ -31,7 +31,7 @@ std::vector <double> evalDx(int nx, std::vector <double> x)
 	return dx;
 }
 
-std::vector <double> evalS(int nx, std::vector <double> geom,
+std::vector <double> evalS(std::vector <double> geom,
 			std::vector <double> x, std::vector <double> dx)
 {
 	std::vector <double> S(nx+1);
@@ -47,7 +47,7 @@ std::vector <double> evalS(int nx, std::vector <double> geom,
 
 }
 
-void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx,
+void InitializeGrid(std::vector <double> &x, std::vector <double> &dx,
 		std::vector <double> &S)
 {
 	double h=0.15;

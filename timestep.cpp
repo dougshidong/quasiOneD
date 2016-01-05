@@ -4,6 +4,7 @@
 #include<math.h>
 #include "flux.h"
 #include "globals.h"
+#include "flovar.h"
 
 // Euler Explicit
 void EulerExplicitStep(std::vector <double> S,
@@ -41,11 +42,11 @@ void EulerExplicitStep(std::vector <double> S,
 
 // Jameson's 4th order Runge - Kutta Stepping Scheme
 void rk4(std::vector <double> dx, std::vector <double> S, 
-		std::vector <double> dt, 
-	       	std::vector <double> &W,
-	        std::vector <double> Q,	
-		std::vector <double> &Resi,
-		std::vector <double> &Flux)
+         std::vector <double> dt, 
+         std::vector <double> &W,
+         std::vector <double> Q,	
+         std::vector <double> &Resi,
+         std::vector <double> &Flux)
 {
 	double ki;
 	std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);

@@ -3,16 +3,16 @@
 
 #include <vector>
 
-void InitializeGrid(int nx, std::vector <double> &x, std::vector <double> &dx,
+void InitializeGrid(std::vector <double> &x, std::vector <double> &dx,
 		std::vector <double> &S);
 
 std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
 
-std::vector <double> evalX(int nx, double a, double b);
+std::vector <double> evalX(double a, double b);
 
-std::vector <double> evalDx(int nx, std::vector <double> x);
+std::vector <double> evalDx(std::vector <double> x);
 
-std::vector <double> evalS(int nx, std::vector <double> geom,
+std::vector <double> evalS(std::vector <double> geom,
 			std::vector <double> x, std::vector <double> dx);
 
 

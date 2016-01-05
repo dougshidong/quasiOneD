@@ -3,32 +3,177 @@
 #include<math.h>
 #include"quasiOneD.h"
 #include<vector>
-#include<iomanip>
 #include<Eigen/Dense>
+#include <stdio.h>
+#include <iomanip>
+#include "globals.h"
 
-std::vector <double> adjoint(int nx,
-                             std::vector <double> 1test ,
-                             std::vector <double> 2test)
+double adjConv=1e-7;
+int adjMaxIt=960000;
+int adjPrintIt=10000; 
+int adjPrintConv=1; // 0 to hide real-time adjConvergence
+
+void StegerJac(    std::vector <double> S,
+                   std::vector <double> dx,
+                   std::vector <double> W,
+                   std::vector <double> &Ap_list,
+                   std::vector <double> &An_list);
+
+void adjFlux(      std::vector <double> S,
+                   std::vector <double> dx,
+                   std::vector <double> Ap_list,
+                   std::vector <double> An_list,
+                   std::vector <double> psi,
+                   std::vector <double> &psiF);
+
+void adjointEuler(  std::vector <double> S,
+                    std::vector <double> dt,
+                    std::vector <double> psiF,
+                    std::vector <double> &Resi,
+                    std::vector <double> &psi);
+
+void adjointBC(std::vector <double> &psi, 
+        std::vector <double> W,
+        std::vector <double> dx,
+        std::vector <double> S);
+std::vector <double> adjoint(   std::vector <double> x, 
+                                std::vector <double> dx, 
+                                std::vector <double> S,
+                                std::vector <double> W,
+                                std::vector <double> &psi)
 {
-    
+	std::vector <double> Resi(3*nx,0);
+	std::vector <double> psiF(3*(nx+1),0);
+	std::vector <double> dt(nx);
+
+	std::vector <int> itV(adjMaxIt/adjPrintIt);
+	std::vector <double> normV(adjMaxIt/adjPrintIt);
+
+    std::vector <double> Ap_list(nx*3*3,0), An_list(nx*3*3,0);
+
+	double normR=1.0;
+	int iterations=0;
+
+
+    adjointBC(psi, W, dx, S);
+    StegerJac(S, dx, W, Ap_list, An_list);
+
+	while(normR>adjConv && iterations<adjMaxIt)
+	{
+		iterations++;
+
+		if(iterations%adjPrintIt==0) 
+		{
+			if(adjPrintConv==1)
+			{
+				std::cout<<"Iteration "<<iterations
+				         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
+			}
+			itV[iterations/adjPrintIt-1]=iterations;
+			normV[iterations/adjPrintIt-1]=normR;
+		}
+
+        // CALCULATE TIME STEP
+		for(int i=0;i<nx;i++)
+			dt[i]=0.0001;
+
+
+        adjFlux(S, dx, Ap_list, An_list, psi, psiF);
+        adjointEuler(S, dt, psiF, Resi, psi);
+
+		// Calculating the norm of the first costate residual
+		normR=0;
+		for(int i=0;i<nx;i++)
+		    normR=normR+Resi[2*nx+i]*Resi[2*nx+i];
+		normR=sqrt(normR);
+	}
+
+	std::cout<<"Adjoint Iterations="<<iterations<<"   Density Residual="<<normR<<std::endl;
+    std::vector <double> abc(1,0);
+	
+    FILE *Results;
+	Results=fopen("Adjoint.dat","w");
+	fprintf(Results,"%d\n",nx);
+	for(int k=0;k<3;k++)
+    for(int i=0;i<nx;i++)
+		fprintf(Results, "%.15f\n",psi[k*nx+i]);
+
+	fclose(Results);
+
+	return abc;
 }
 
+void adjointEuler(std::vector <double> S,
+                    std::vector <double> dt,
+                    std::vector <double> psiF,
+                    std::vector <double> &Resi,
+                    std::vector <double> &psi)
+{
+    int ki;
+    for(int k=0;k<3;k++)
+    {
+        for(int i=1;i<nx-1;i++)
+        {
+            ki=k*nx+i;
+            Resi[ki] = psiF[ki+1] * S[i+1]
+                       - psiF[ki] * S[i];
+        }
+        Resi[k*nx+0] = 0;
+        Resi[k*nx+(nx-1)]= 0;
+    }
+    for(int k=0;k<3;k++)
+    for(int i=1;i<nx-1;i++)
+    {
+        ki=k*nx+i;
+        psi[ki] = psi[ki] - (dt[i]) * Resi[ki];
+    }
+    return;
+}
 
-// Calculates the costate fluxes
-// Steger-Warming flux splitting scheme
-std::vector <double> adjointSteger(int nx,
-                                   std::vector <double> S,
-                                   std::vector <double> dx,
-                                   std::vector <double> W
-                                   std::vector <double> psi,
-                                   std::vector <double> &pFlux)
+void adjFlux(
+                   std::vector <double> S,
+                   std::vector <double> dx,
+                   std::vector <double> Ap_list,
+                   std::vector <double> An_list,
+                   std::vector <double> psi,
+                   std::vector <double> &psiF)
+{
+    // Calculate psiF
+    for(int i=1; i<nx; i++)
+    {
+        psiF[0*nx+i]=0;
+        psiF[1*nx+i]=0;
+        psiF[2*nx+i]=0;
+        for(int row=0;row<3;row++)
+        {
+            for(int col=0;col<3;col++)
+            {
+                int Ap_pos=((i-1)*3*3)+(row*3)+col;
+                int An_pos=(i*3*3)+(row*3)+col;
+                psiF[row*nx+i]=psiF[row*nx+i]
+                                + Ap_list[Ap_pos]
+                                * ( psi[col*nx+(i+1)] - psi[col*nx+i] )
+                                + An_list[An_pos]
+                                * ( psi[col*nx+i] - psi[col*nx+(i-1)] );
+            }
+        }
+    }
+}
+
+// Calculates Jacobian
+// Steger-Warming Flux Splitting
+void StegerJac(    std::vector <double> S,
+                   std::vector <double> dx,
+                   std::vector <double> W,
+                   std::vector <double> &Ap_list,
+                   std::vector <double> &An_list)
 {
     double eps=0.1;
     double gam=1.4;
-    double M[3][3]={0},
-           Minv[3][3]={0},
-           N[3][3]={0},
-           Ninv[3][3]={0},
+    double M[3][3]={{0}},
+           Minv[3][3]={{0}},
+           N[3][3]={{0}},
+           Ninv[3][3]={{0}},
            lambdaP[3][3],
            lambdaN[3][3];
     double lambdaa[3];
@@ -38,17 +183,16 @@ std::vector <double> adjointSteger(int nx,
     
     std::vector <double> rho(nx), u(nx), p(nx), c(nx);
 
-    std::vector <double> Ap_list(nx*3*3,0), An_list(nx*3*3,0);
 
 
     double beta=0.4;//gam-1;
 
-    for(int i=1;i<nx-1;i++)
+    for(int i=0;i<nx;i++)
     {
-        rho[i]=W[0*nx+i];       // rho
-        u[i]=W[1*nx+i]/rho[i];  // U
-        p[i]=(gam-1)*(W[2*nx+i]-rho[i]*pow(u[i],2)/2);  // Pressure
-        c[i]=sqrt((gam*p[i])/rho[i]);// Speed of sound
+        rho[i]=W[0*nx+i];
+        u[i]=W[1*nx+i]/rho[i];
+        p[i]=(gam-1)*(W[2*nx+i]-rho[i]*pow(u[i],2)/2);
+        c[i]=sqrt((gam*p[i])/rho[i]);
     }
 
 
@@ -137,38 +281,17 @@ std::vector <double> adjointSteger(int nx,
     }
 
 
-    // Calculate Fluxes
-    for(int i=1; i<nx; i++)
-    {
-        psiF[0*nx+i]=0;
-        psiF[1*nx+i]=0;
-        psiF[2*nx+i]=0;
-        for(int row=0;row<3;row++)
-        {
-            for(int col=0;col<3;col++)
-            {
-                int Ap_pos=((i-1)*3*3)+(row*3)+col;
-                int An_pos=(i*3*3)+(row*3)+col;
-                psiF[row*nx+i]=psiF[row*nx+i]
-                                + Ap_list[Ap_pos]
-                                * ( psi[col*nx+(i+1)] - psi[col*nx+i] )
-                                + An_list[An_pos]
-                                * ( psi[col*nx+i] - psi[col*nx+(i-1)] );
-            }
-        }
-    }
 }
 
 // Set the adjoint BC for target pressure
-void adjointBC(int nx,
-        std::vector <double> &psi, 
+void adjointBC(std::vector <double> &psi, 
         std::vector <double> W,
         std::vector <double> dx,
         std::vector <double> S)
 {
     std::vector <double> pTarget(nx);
 
-    ioTargetPressure(-1,nx,pTarget);
+    ioTargetPressure(-1,pTarget);
 
     double gam=1.4;
     double rho0=W[0*nx];
@@ -178,7 +301,10 @@ void adjointBC(int nx,
     double un=W[1*nx+nx-1]/rhon;
     double pn=(gam-1)*(W[2*nx+nx-1]-rhon*pow(un,2)/2);
 
-
-    psi[2*nx+i]=(p0-pTarget[0])*dx[0]/(S[1]-S[0]);
-    psi[nx-1]=(pn-pTarget[nx-1])*dx[nx-1]/(S[nx]-S[nx-1]);
+    psi[0*nx]=0;
+    psi[1*nx-1]=0;
+    psi[1*nx]= - (p0-pTarget[0])*dx[0]/(S[1]-S[0]);
+    psi[2*nx-1]= - (pn-pTarget[nx-1])*dx[nx-1]/(S[nx]-S[nx-1]);
+    psi[2*nx]=0;
+    psi[3*nx-1]=0;
 }
