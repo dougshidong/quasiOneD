@@ -4,40 +4,42 @@
 #include <math.h>
 #include <vector>
 #include "flux.h"
-
-const double PI = atan(1.0) * 4.0;
-
-// Constants
-double gam = 1.4;
-double R = 1716;
-double Cv = R / (gam - 1);
+#include "timestep.h"
+#include "globals.h"
 
 // Problem parameters
 // Inlet
-double Min = 0.12;
+double Min = 1.2;
 double Ttin = 531.2;
 double ptin = 2117;
 // Outlet
-double pexit = 0.8 * ptin;
+double pexit = 0.76 * ptin;
 // Constant
 double a2 = 2 * gam * Cv * Ttin * ((gam - 1) / (gam + 1)); // used in isentropic nozzle
 
 
 // Convergence Settings
-double CFL = 2;
-double conv = 1e-13;
-int maxIt = 60000;
-int printIt = 1000; 
+double CFL = 0.7;
+double conv = 1e-15;
+int maxIt = 30000;
+int printIt = 1; 
 int printConv = 1; // 0 to hide real - time convergence
-int printW = 0;
+int printW = 1;
+
 // Stepping Scheme
 // 0   -   Euler Explicit
 // 1   -   Runge - Kutta 4th order
 int StepScheme = 1;
+
+// Flux Scheme
+// 0   -   Steger Warming (SW)
+// 1   -   Scalar Dissipation
+int FluxScheme = 0;
+
 // Create Target Pressure
 // 0   -   Do NOT Create Target Pressure
 // 1   -   Create Target Pressure
-int createTarget = 1;
+int createTarget = 0;
 
 double isenP(double pt, double M);
 
@@ -52,8 +54,7 @@ void ioTargetPressure(int io, int nx, std::vector <double> &p);
 double inverseFitness(int nx, std::vector <double> pcurrent, std::vector <double> ptarget,
 		std::vector <double> dx);
 
-double quasiOneD(int nx, 
-		std::vector <double> x, 
+double quasiOneD(std::vector <double> x, 
 		std::vector <double> dx, 
 		std::vector <double> S,
 		int fitnessFun,
@@ -104,6 +105,7 @@ double quasiOneD(int nx,
 	for(int i = 1; i < nx; i++)
 	{
 		Mach[i] = Min;
+		Mach[i] = Min;
 		p[i] = pexit;
 		T[i] = T[0];
 		rho[i] = p[i] / (R * T[i]);
@@ -126,7 +128,7 @@ double quasiOneD(int nx,
 
 	for(int i = 1; i < nx - 1; i++)
 	{
-		Q[1 * nx + i] = p[i] * (S[i] - S[i - 1]);
+		Q[1 * nx + i] = p[i] * (S[i + 1] - S[i]);
 	}
 
 	while(normR > conv && iterations < maxIt)
@@ -147,16 +149,18 @@ double quasiOneD(int nx,
 		for(int i = 0; i < nx; i++)
 			dt[i] = (CFL * dx[i]) / fabs(u[i] + c[i]);
 
-		Flux_StegerWarmingV(nx, Flux, W, u, c, rho);
-
+        if(FluxScheme == 0) // SW
+    		Flux_StegerWarmingV(Flux, W, u, c, rho);
+        else if(FluxScheme == 1) // Scalar
+    		Flux_Scalar(Flux, W, F, u, c);
 		
 		if(StepScheme == 0)
 		{
-			EulerExplicitStep(nx, S, V, dt, Flux, Q, Resi, W);
+			EulerExplicitStep(S, V, dt, Flux, Q, Resi, W);
 		}
 		else if(StepScheme == 1)
 		{
-			rk4(nx, dx, S, dt, W, Q, Resi, Flux);
+			rk4(dx, S, dt, W, Q, Resi, Flux);
 		}
 
 
@@ -186,7 +190,7 @@ double quasiOneD(int nx,
 
 		// Exit boundary condition
         avgu = (u[nx - 1] + u[nx - 2]) / 2;
-        avgc = (c[nx - 1] + u[nx - 2]) / 2;
+        avgc = (c[nx - 1] + c[nx - 2]) / 2;
         dtdx = dt[nx - 1] / dx[nx - 1];
 		eigenvalues[0] = avgu * dtdx;
 		eigenvalues[1] = (avgu + avgc) * dtdx;
@@ -194,13 +198,13 @@ double quasiOneD(int nx,
 
         dpdx = p[nx - 1] - p[nx - 2];
         dudx = u[nx - 1] - u[nx - 2];
-		charRel[0] = -eigenvalues[0] * (rho[nx - 1] - rho[nx - 2]
-                                        - (1 / (c[nx - 1] * c[nx - 1])) * dpdx);
-		charRel[1] = -eigenvalues[1] * (dpdx + rho[nx - 1] * c[nx - 1] * dudx);
-		charRel[2] = -eigenvalues[2] * (dpdx - rho[nx - 1] * c[nx - 1] * dudx);
+
+		charRel[0] = -eigenvalues[0] * ( rho[nx - 1] - rho[nx - 2] - dpdx / pow(c[nx - 1], 2) );
+		charRel[1] = -eigenvalues[1] * ( dpdx + rho[nx - 1] * c[nx - 1] * dudx );
+		charRel[2] = -eigenvalues[2] * ( dpdx - rho[nx - 1] * c[nx - 1] * dudx );
 
 		MachBound = avgu / avgc;
-		//MachBound = (u[nx - 1] / (c[nx - 1]));
+		//MachBound = u[nx - 1] / c[nx - 1];
  		if(MachBound > 1)
         {
 		    dp = 0.5 * (charRel[1] + charRel[2]);
@@ -233,8 +237,8 @@ double quasiOneD(int nx,
 		    Mach[i] = u[i] / c[i];		// Mach number
 		}
 
-		// Update vectors at boundaries
-		for(int i = 0; i < nx; i += nx - 1)
+		// Update vectors 
+		for(int i = 0; i < nx; i++)
 		{
 		    W[0 * nx + i] = rho[i];
 		    W[1 * nx + i] = rho[i] * u[i];
@@ -243,7 +247,7 @@ double quasiOneD(int nx,
 		    F[1 * nx + i] = rho[i] * u[i] * u[i] + p[i];
 		    F[2 * nx + i] = (e[i] + p[i]) * u[i];
 		    Q[0 * nx + i] = 0;
-		    Q[1 * nx + i] = p[i] * (S[i+1] - S[i]);
+		    Q[1 * nx + i] = p[i] * (S[i + 1] - S[i]);
 		    Q[2 * nx + i] = 0;
 		}
         

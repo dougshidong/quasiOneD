@@ -3,8 +3,7 @@
 
 #include<vector>
 
-double quasiOneD(int nx, 
-		std::vector <double> x, 
+double quasiOneD(std::vector <double> x, 
 		std::vector <double> dx, 
 		std::vector <double> S,
 		int fitnessFun,
