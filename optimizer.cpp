@@ -8,18 +8,23 @@
 #include<iomanip>
 #include<Eigen/Dense>
 
-std::vector <double> finiteD(std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar, double h, 
-            double currentI);
+std::vector <double> finiteD(std::vector <double> x,
+                             std::vector <double> dx,
+                             std::vector <double> S, 
+                             std::vector <double> designVar, 
+                             double h, 
+                             double currentI);
 
-double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> pk,
-           std::vector <double> gradient, double currentI,
-           std::vector <double> x, std::vector <double> dx);
+double stepBacktrackUncons(std::vector <double> designVar, 
+                           std::vector <double> pk, 
+                           std::vector <double> gradient, 
+                           double currentI, 
+                           std::vector <double> x, 
+                           std::vector <double> dx);
 
-std::vector <double> BFGS( 
-        std::vector <double> oldH, 
-        std::vector <double> gradList, 
-        std::vector <double> searchD);
+std::vector <double> BFGS(std::vector <double> oldH, 
+                          std::vector <double> gradList, 
+                          std::vector <double> searchD);
 
 void design(std::vector <double> x, std::vector <double> dx,
             std::vector <double> S, std::vector <double> designVar)
@@ -171,8 +176,7 @@ void design(std::vector <double> x, std::vector <double> dx,
 
 }
 
-std::vector <double> BFGS(  
-                          std::vector <double> oldH,
+std::vector <double> BFGS(std::vector <double> oldH,
                           std::vector <double> gradList,
                           std::vector <double> searchD)
 {
@@ -214,84 +218,12 @@ std::vector <double> BFGS(
     return newH;
 }
 
-
-/*
-void HessGradfiniteD(
-        std::vector <double> x, 
-        std::vector <double> dx,
-        std::vector <double> S, 
-        std::vector <double> designVar, 
-        double h, 
-        int gradientType, 
-        double currentI, 
-        std::vector <double> &G)
-{
-    std::vector <double> grad(nx);
-    std::vector <double> tempS(nx + 1);
-    std::vector <double> W(3 * nx, 0);
-    std::vector <double> Hess(nDesVar * nDesVar);
-
-    double I0, I1, dh1, dh2;
-
-    std::vector <double> tempD(nDesVar);
-
-    if(currentI < 0)
-    {
-        I0 = quasiOneD(nx, x, dx, S, designVar, W);
-
-        std::cout<<"I0 = "<<std::setprecision(15)<<I0<<std::endl;
-    }
-    else
-    {
-        I0 = currentI;    
-    }
-
-    for(int i = 0; i < nDesVar; i++)
-    {
-        for(int j = i; j < nDesVar; j++)  
-        {
-
-            dh1 = designVar[i] * h;
-            dh2 = designVar[j] * h;
-
-            tempD = designVar;
-
-            tempD[i] += dh1;
-            tempD[j] += dh2;
-            
-            for(int k = 0; k < nDesVar; k++)
-                std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
-            
-            tempS = evalS(nx, tempD, x, dx);
-            I1 = quasiOneD(nx, x, dx, tempS, tempD, W);
-
-            H[i] = (I1 - I0) / (dh1*dh2);
-            std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
-        
-        }
-            std::cout<<"Gradient "<<i + 1<<":   "<<grad[i]<<std::endl<<std::endl;
-    }
-
-    std::cout<<"FD Inverse Hessian:"<<std::endl;
-    for(int r = 0; r < nDesVar; r++)
-    {
-        std::cout<<"\n";
-        for(int c = 0; c < nDesVar; c++)
-        {
-            rc = r * nDesVar + c;
-            newH[rc] = oldH[rc] + dH(r, c);
-            std::cout<<newH[rc]<<"\t\t";
-        }
-    }
-
-}
-*/
-
-
-
-std::vector <double> finiteD(std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar, 
-            double h, double currentI)
+std::vector <double> finiteD(std::vector <double> x, 
+                             std::vector <double> dx,
+                             std::vector <double> S, 
+                             std::vector <double> designVar, 
+                             double h, 
+                             double currentI)
 {
     std::vector <double> W(3 * nx, 0);
 
@@ -392,9 +324,12 @@ std::vector <double> finiteD(std::vector <double> x, std::vector <double> dx,
 
 
 
-double stepBacktrackUncons(std::vector <double> designVar, std::vector <double> pk,
-           std::vector <double> gradient, double currentI,
-           std::vector <double> x, std::vector <double> dx)
+double stepBacktrackUncons(std::vector <double> designVar,
+                           std::vector <double> pk,
+                           std::vector <double> gradient, 
+                           double currentI,
+                           std::vector <double> x, 
+                           std::vector <double> dx)
 {
     std::vector <double> W(3 * nx, 0);
 
