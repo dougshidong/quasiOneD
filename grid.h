@@ -10,7 +10,8 @@ std::vector <double> evalX(double a, double b);
 std::vector <double> evalDx(std::vector <double> x);
 
 std::vector <double> evalS(std::vector <double> geom,
-			std::vector <double> x, std::vector <double> dx);
+                           std::vector <double> x,
+                           std::vector <double> dx);
 
 
 

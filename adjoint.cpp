@@ -42,65 +42,65 @@ std::vector <double> adjoint(   std::vector <double> x,
                                 std::vector <double> W,
                                 std::vector <double> &psi)
 {
-	std::vector <double> Resi(3*nx,0);
-	std::vector <double> psiF(3*(nx+1),0);
-	std::vector <double> dt(nx);
+    std::vector <double> Resi(3*nx,0);
+    std::vector <double> psiF(3*(nx+1),0);
+    std::vector <double> dt(nx);
 
-	std::vector <int> itV(adjMaxIt/adjPrintIt);
-	std::vector <double> normV(adjMaxIt/adjPrintIt);
+    std::vector <int> itV(adjMaxIt/adjPrintIt);
+    std::vector <double> normV(adjMaxIt/adjPrintIt);
 
     std::vector <double> Ap_list(nx*3*3,0), An_list(nx*3*3,0);
 
-	double normR=1.0;
-	int iterations=0;
+    double normR=1.0;
+    int iterations=0;
 
 
     adjointBC(psi, W, dx, S);
     StegerJac(S, dx, W, Ap_list, An_list);
 
-	while(normR>adjConv && iterations<adjMaxIt)
-	{
-		iterations++;
+    while(normR>adjConv && iterations<adjMaxIt)
+    {
+        iterations++;
 
-		if(iterations%adjPrintIt==0) 
-		{
-			if(adjPrintConv==1)
-			{
-				std::cout<<"Iteration "<<iterations
-				         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
-			}
-			itV[iterations/adjPrintIt-1]=iterations;
-			normV[iterations/adjPrintIt-1]=normR;
-		}
+        if(iterations%adjPrintIt==0) 
+        {
+            if(adjPrintConv==1)
+            {
+                std::cout<<"Iteration "<<iterations
+                         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
+            }
+            itV[iterations/adjPrintIt-1]=iterations;
+            normV[iterations/adjPrintIt-1]=normR;
+        }
 
         // CALCULATE TIME STEP
-		for(int i=0;i<nx;i++)
-			dt[i]=0.0001;
+        for(int i=0;i<nx;i++)
+            dt[i]=0.0001;
 
 
         adjFlux(S, dx, Ap_list, An_list, psi, psiF);
         adjointEuler(S, dt, psiF, Resi, psi);
 
-		// Calculating the norm of the first costate residual
-		normR=0;
-		for(int i=0;i<nx;i++)
-		    normR=normR+Resi[2*nx+i]*Resi[2*nx+i];
-		normR=sqrt(normR);
-	}
+        // Calculating the norm of the first costate residual
+        normR=0;
+        for(int i=0;i<nx;i++)
+            normR=normR+Resi[2*nx+i]*Resi[2*nx+i];
+        normR=sqrt(normR);
+    }
 
-	std::cout<<"Adjoint Iterations="<<iterations<<"   Density Residual="<<normR<<std::endl;
+    std::cout<<"Adjoint Iterations="<<iterations<<"   Density Residual="<<normR<<std::endl;
     std::vector <double> abc(1,0);
-	
+    
     FILE *Results;
-	Results=fopen("Adjoint.dat","w");
-	fprintf(Results,"%d\n",nx);
-	for(int k=0;k<3;k++)
+    Results=fopen("Adjoint.dat","w");
+    fprintf(Results,"%d\n",nx);
+    for(int k=0;k<3;k++)
     for(int i=0;i<nx;i++)
-		fprintf(Results, "%.15f\n",psi[k*nx+i]);
+        fprintf(Results, "%.15f\n",psi[k*nx+i]);
 
-	fclose(Results);
+    fclose(Results);
 
-	return abc;
+    return abc;
 }
 
 void adjointEuler(std::vector <double> S,
