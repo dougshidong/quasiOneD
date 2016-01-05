@@ -7,6 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 rfname = 'Results.dat'
 ptname = 'targetP.dat'
+adname = 'Adjoint.dat'
 
 # Read results and assign to variables
 data = np.loadtxt(rfname)
@@ -37,9 +38,24 @@ nx = data[0]
 
 targetp=data[1:nx+1]
 
+# Read Adjoint Results
+data = np.loadtxt(adname)
+adj1=data[0*nx:1*nx]
+adj2=data[1*nx:2*nx]
+adj3=data[2*nx:3*nx]
+
 pp=PdfPages('Figures.pdf')
+
+
+# Plot Channel
+plt.figure()
+plt.title('Channel Shape')
+PressureCurve = plt.plot(xhalf,S,'-ob',markerfacecolor='None', markeredgecolor='b')
+plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
+pp.savefig()
+
 # Plot Pressure and Target Pressure
-plt.figure(1)
+plt.figure()
 plt.title('Pressure Distribution')
 PressureCurve = plt.plot(x,pres,'-ob',markerfacecolor='None', markeredgecolor='b', label='Current')
 TargetPCurve  = plt.plot(x,targetp,'-or',markerfacecolor='None', markeredgecolor='r', label='Target')
@@ -48,8 +64,15 @@ plt.legend(loc='upper right')
 pp.savefig()
 
 
+# Plot Mach Distribution
+plt.figure()
+plt.title('Mach Distribution')
+adj1Curve = plt.plot(x,Mach,'-ob',markerfacecolor='None', markeredgecolor='b')
+plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
+pp.savefig()
+
 # Plot Convergence
-plt.figure(2)
+plt.figure()
 plt.title('Convergence')
 itIndex1=0
 itIndex2=len(conv)/2-1
@@ -59,13 +82,26 @@ convCurve = plt.loglog(conv[itIndex1:itIndex2],conv[resIndex1:resIndex2], '-x')
 plt.grid(b=True, which='both', color='black', linestyle='-',alpha=0.5)
 pp.savefig()
 
-
-# Plot Mach Distribution
-plt.figure(3)
-plt.title('Mach Distribution')
-plt.plot(x,Mach,'-ob',markerfacecolor='None', markeredgecolor='b')
+# Plot Adjoint Distribution
+plt.figure()
+plt.title('Adjoint Distribution')
+adj1Curve = plt.plot(x,adj1,'-ob',markerfacecolor='None', markeredgecolor='b',label='Adj 1')
 plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
 pp.savefig()
+
+# Plot Adjoint Distribution
+plt.figure()
+plt.title('Adjoint Distribution')
+adj2Curve = plt.plot(x,adj2,'-or',markerfacecolor='None', markeredgecolor='r',label='Adj 1')
+plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
+pp.savefig()
+# Plot Adjoint Distribution
+plt.figure()
+plt.title('Adjoint Distribution')
+adj3Curve = plt.plot(x,adj3,'-og',markerfacecolor='None', markeredgecolor='g',label='Adj 3')
+plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
+pp.savefig()
+
 
 # Close PDF
 pp.close()
