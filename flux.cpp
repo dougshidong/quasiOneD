@@ -13,13 +13,13 @@ void Flux_StegerWarmingV(int nx,
 {
 	double eps=0.1;
 
-	double S[3][3]={0},
-	       Sinv[3][3]={0},
-	       C[3][3]={0},
-	       Cinv[3][3]={0},
-	       lambdaP[3][3]={0},
-	       lambdaN[3][3]={0};
-	double lambdaa[3]={0};
+	double S[3][3]={{0}},
+	       Sinv[3][3]={{0}},
+	       C[3][3]={{0}},
+	       Cinv[3][3]={{0}},
+	       lambdaP[3][3],
+	       lambdaN[3][3];
+	double lambdaa[3];
 	
 	
 	double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
@@ -116,7 +116,7 @@ void Flux_StegerWarmingV(int nx,
 
 	}
 
-	for(int i=1; i<nx; i++)
+	for(int i = 1; i < nx + 1; i++)
 	{
 		Flux[0*nx+i]=0;
 		Flux[1*nx+i]=0;
@@ -133,4 +133,29 @@ void Flux_StegerWarmingV(int nx,
 
 }
 
+
+void Flux_Scalar(int nx,
+	       		std::vector <double> &Flux,
+		       	std::vector <double> W,
+                std::vector <double> F,
+		       	std::vector <double> u,
+		       	std::vector <double> c)
+{
+    int ki;
+    double eps = 0.5, lambda;
+    double avgu, avgc;
+	for(int i = 1; i < nx + 1; i++)
+	{
+        avgu = ( u[i] + u[i + 1] ) / 2;
+        avgc = ( c[i] + c[i + 1] ) / 2;
+        lambda = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ),
+                           fabs(avgu - avgc) );
+
+        for(int k = 0; k < 3; k++)
+        {
+            ki = k * nx + i;
+            Flux[ki] = 0.5 * (F[ki - 1] + F[ki]) - 0.5 * eps * lambda * (W[ki] - W[ki - 1]);
+        }
+	}
+}
 
