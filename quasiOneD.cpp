@@ -29,9 +29,9 @@ double quasiOneD(std::vector <double> x,
 {
 	std::vector <double> rho(nx), u(nx), e(nx);
 	std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-	std::vector <double> F(3 * nx, 0),Q(3 * nx, 0), Resi(3 * nx, 0);
+	std::vector <double> F(3 * nx, 0), Q(3 * nx, 0), Resi(3 * nx, 0);
 	std::vector <double> Flux(3 * (nx + 1), 0);
-//	std::vector <std::vector <double> > W(3,std::vector <double> (nx, 0)),
+//	std::vector <std::vector <double> > W(3, std::vector <double> (nx, 0)),
 //					    F(3, std::vector <double> (nx, 0)),
 //					    Q(3, std::vector <double> (nx, 0));
 

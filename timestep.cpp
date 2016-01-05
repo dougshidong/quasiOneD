@@ -44,7 +44,7 @@ void EulerExplicitStep(std::vector <double> S,
 void rk4(std::vector <double> dx, std::vector <double> S, 
          std::vector <double> dt, 
          std::vector <double> &W,
-         std::vector <double> Q,	
+         std::vector <double> Q, 	
          std::vector <double> &Resi,
          std::vector <double> &Flux)
 {
