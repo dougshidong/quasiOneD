@@ -44,13 +44,7 @@ void design(std::vector <double> x, std::vector <double> dx,
 
     double alpha = 1;
 
-    // 1  =  Steepest Descent
-    // 4  =  QUASI - NEWTON (BFGS)
     
-    // 1  =  FD Forward
-    // 2  =  FD Backward
-    // 3  =  FD Centered
-    // 4  =  Adjoint Method
 
     double h = 1e-4;
     std::vector <double> gradient(nDesVar),
@@ -100,6 +94,9 @@ void design(std::vector <double> x, std::vector <double> dx,
             gradList.push_back(gradient[i]);
         }
 
+//      1  =  Steepest Descent
+//      3  =  Newton
+//      4  =  Quasi-Newton (BFGS)
         if(descentType == 1)
         {
             for(int i = 0; i < nDesVar; i++)

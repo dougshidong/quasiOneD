@@ -1,9 +1,10 @@
 CXX	= g++
 INCLGN  = ./gnuplot-iostream
 INCLEI  = ./eigen/
-DEBUG	= -g -Wall
-#DEBUG	= -O3
-CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o adjoint.o timestep.o globals.o flovar.o
+#DEBUG	= -g -Wall -Warray-bounds
+DEBUG	= -O3
+CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o adjoint.o timestep.o globals.o flovar.o \
+			convert.o
 CPPH	= quasiOneD.h
 CFLAGS	= -Wall -c $(DEBUG) -I $(INCLEI)
 LFLAGS  = -Wall $(DEBUG)
@@ -15,6 +16,9 @@ $(EXEC) : $(CPPOBJ)
 
 main.o: main.cpp quasiOneD.h grid.h optimizer.h
 	$(CC) $(CFLAGS) main.cpp
+
+convert.o : convert.h convert.cpp
+	$(CC) $(CFLAGS) convert.cpp
 
 grid.o: grid.h grid.cpp
 	$(CC) $(CFLAGS) grid.cpp
@@ -28,7 +32,7 @@ optimizer.o : optimizer.h optimizer.cpp quasiOneD.h grid.h adjoint.h
 flux.o : flux.h flux.cpp
 	$(CC) $(CFLAGS) flux.cpp
 
-timestep.o : timestep.h timestep.cpp flux.h
+timestep.o : timestep.h timestep.cpp flux.h convert.h
 	$(CC) $(CFLAGS) timestep.cpp
 
 adjoint.o : adjoint.h adjoint.cpp

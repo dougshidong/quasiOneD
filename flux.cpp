@@ -2,14 +2,26 @@
 
 #include<vector>
 #include<math.h>
+#include<iostream>
 #include"globals.h"
+#include"flovar.h"
+#include"flux.h"
+
+
+// Get Flux based on FluxScheme
+void getFlux(std::vector <double> &Flux,
+             std::vector <double> W,
+             std::vector <double> F)
+{
+    if(FluxScheme == 0) // SW
+        Flux_StegerWarming(Flux, W);
+    else if(FluxScheme == 1) // Scalar
+        Flux_Scalar(Flux, W, F);
+}
 
 // StegerWarming
-void Flux_StegerWarmingV(std::vector <double> &Flux,
-                         std::vector <double> W,
-                         std::vector <double> u,
-                         std::vector <double> c,
-                         std::vector <double> rho)
+void Flux_StegerWarming(std::vector <double> &Flux,
+                         std::vector <double> W)
 {
     double eps = 0.1;
 
@@ -30,7 +42,7 @@ void Flux_StegerWarmingV(std::vector <double> &Flux,
 
 
     double beta = 0.4;//gam-1;
-
+    double rho, u, e, c;
 
     for(int i = 0; i < nx; i++)
     {
@@ -46,42 +58,45 @@ void Flux_StegerWarmingV(std::vector <double> &Flux,
             lambdaP[row][col] = 0;
             lambdaN[row][col] = 0;
         }
-    
+        
+        rho = W[0 * nx + i];
+        u = W[1 * nx + i] / rho;
+        e = W[2 * nx + i];
+        c = sqrt( gam / rho * (gam - 1) * ( e - rho * u * u / 2 ) );
         S[0][0] = 1;
-        S[1][0] = -u[i] / rho[i];
-        S[2][0] = 0.5 * u[i] * u[i] * beta;
-        S[1][1] = 1 / rho[i];
-        S[2][1] = -u[i] * beta;
+        S[1][0] = -u / rho;
+        S[2][0] = 0.5 * u * u * beta;
+        S[1][1] = 1 / rho;
+        S[2][1] = -u * beta;
         S[2][2] = beta;
         Sinv[0][0] = 1;
-        Sinv[1][0] = u[i];
-        Sinv[2][0] = 0.5 * u[i] * u[i];
-        Sinv[1][1] = rho[i];
-        Sinv[2][1] = u[i] * rho[i];
+        Sinv[1][0] = u;
+        Sinv[2][0] = 0.5 * u * u;
+        Sinv[1][1] = rho;
+        Sinv[2][1] = u * rho;
         Sinv[2][2] = 1 / beta;
         C[0][0] = 1;
-        C[1][1] = rho[i] * c[i];
-        C[2][1] = -rho[i] * c[i];
-        C[0][2] = -1 / (c[i] * c[i]);
+        C[1][1] = rho * c;
+        C[2][1] = -rho * c;
+        C[0][2] = -1 / (c * c);
         C[1][2] = 1;
         C[2][2] = 1;
         Cinv[0][0] = 1;
-        Cinv[0][1] = 1 / (2 * c[i] * c[i]);
-        Cinv[0][2] = 1 / (2 * c[i] * c[i]);
-        Cinv[1][1] = 1 / (2 * rho[i] * c[i]);
-        Cinv[1][2] = -1 / (2 * rho[i] * c[i]);
+        Cinv[0][1] = 1 / (2 * c * c);
+        Cinv[0][2] = 1 / (2 * c * c);
+        Cinv[1][1] = 1 / (2 * rho * c);
+        Cinv[1][2] = -1 / (2 * rho * c);
         Cinv[2][1] = 0.5;
         Cinv[2][2] = 0.5;
-        lambdaa[0] = u[i];
-        lambdaa[1] = u[i] + c[i];
-        lambdaa[2] = u[i] - c[i];
+        lambdaa[0] = u;
+        lambdaa[1] = u + c;
+        lambdaa[2] = u - c;
         
         for(int k = 0; k < 3; k++)
-            if(lambdaa[k]>0)
-                lambdaP[k][k] = (lambdaa[k]+
-                    sqrt(pow(lambdaa[k], 2)+pow(eps, 2)))/2;
+            if(lambdaa[k] > 0)
+                lambdaP[k][k] = (lambdaa[k] + sqrt(pow(lambdaa[k], 2) + pow(eps, 2))) /2;
             else
-                lambdaN[k][k] = (lambdaa[k] - sqrt(pow(lambdaa[k], 2)+pow(eps, 2)))/2;
+                lambdaN[k][k] = (lambdaa[k] - sqrt(pow(lambdaa[k], 2) + pow(eps, 2))) / 2;
 
         for(int row = 0; row < 3; row++)
         for(int col = 0; col < 3; col++)
@@ -115,7 +130,7 @@ void Flux_StegerWarmingV(std::vector <double> &Flux,
 
     }
 
-    for(int i = 1; i < nx + 1; i++)
+    for(int i = 1; i < nx; i++)
     {
         Flux[0 * nx + i] = 0;
         Flux[1 * nx + i] = 0;
@@ -135,17 +150,25 @@ void Flux_StegerWarmingV(std::vector <double> &Flux,
 
 void Flux_Scalar(std::vector <double> &Flux,
                  std::vector <double> W,
-                 std::vector <double> F,
-                 std::vector <double> u,
-                 std::vector <double> c)
+                 std::vector <double> F)
 {
     int ki;
     double eps = 0.5, lambda;
     double avgu, avgc;
-    for(int i = 1; i < nx + 1; i++)
+    double rho, e;
+    std::vector <double> u(nx), c(nx);
+
+    for(int i = 0; i < nx; i++)
     {
-        avgu = ( u[i] + u[i + 1] ) / 2;
-        avgc = ( c[i] + c[i + 1] ) / 2;
+        rho = W[0 * nx + i];
+        e = W[2 * nx + i];
+        u[i] = W[1 * nx + i] / rho;
+        c[i] = sqrt( gam / rho * (gam - 1) * ( e - rho * u[i] * u[i] / 2 ) );
+    }
+    for(int i = 1; i < nx; i++)
+    {
+        avgu = ( u[i - 1] + u[i] ) / 2;
+        avgc = ( c[i - 1] + c[i] ) / 2;
         lambda = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ),
                            fabs(avgu - avgc) );
 

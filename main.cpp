@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 #include "globals.h"
+#include <fenv.h>
+
 
 int main()
 {
@@ -16,6 +18,7 @@ int main()
     std::vector <double> geom(3);
     std::vector <double> W(3 * nx, 0);
     
+feenableexcept(FE_INVALID | FE_OVERFLOW);
 
     geom[0] = h_geom;
     geom[1] = t1_geom;

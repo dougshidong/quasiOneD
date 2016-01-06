@@ -3,15 +3,14 @@
 
 #include<vector>
 
-void Flux_StegerWarmingV(std::vector <double> &Flux,
-                         std::vector <double> W,
-                         std::vector <double> u,
-                         std::vector <double> c,
-                         std::vector <double> rho);
+void getFlux(std::vector <double> &Flux,
+             std::vector <double> W,
+             std::vector <double> F);
+
+void Flux_StegerWarming(std::vector <double> &Flux,
+                         std::vector <double> W);
 
 void Flux_Scalar(std::vector <double> &Flux,
                  std::vector <double> W,
-                 std::vector <double> F,
-                 std::vector <double> u,
-                 std::vector <double> c);
+                 std::vector <double> F);
 #endif

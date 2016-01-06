@@ -22,7 +22,7 @@ std::vector <double> evalDx(std::vector <double> x)
     std::vector <double> dx(nx);
     
     dx[0] = x[1] - x[0];
-    for(int i = 1; i < nx; i++)
+    for(int i = 1; i < nx - 1; i++)
     {
         dx[i] =  (x[i] - x[i - 1])/2  +  (x[i + 1] - x[i])/2 ;
     }
