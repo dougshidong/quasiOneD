@@ -26,7 +26,8 @@ void WtoP(std::vector <double> W,
           std::vector <double> &u,
           std::vector <double> &e,
           std::vector <double> &p,
-          std::vector <double> &c)
+          std::vector <double> &c,
+          std::vector <double> &T)
 {
     for(int i = 0; i < nx; i++)
     {
@@ -35,7 +36,28 @@ void WtoP(std::vector <double> W,
         e[i] = W[2 * nx + i];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
+        T[i] = p[i] / (rho[i] * R);
     }
+}
+// Inverse or dW/dWp
+// W  = [rho, rho * u, e]
+// Wp = [rho, u, p]
+void dWpdW(std::vector <double> &M,
+           std::vector <double> W,
+           int k)
+{
+    double rho, u;
+    rho = W[0 * nx + k];
+    u = W[1 * nx + k] / W[0 * nx + k];
+    M[0] = 1;
+    M[1] = 0;
+    M[2] = 0;
+    M[3] = -u / rho;
+    M[4] = 1 / rho;
+    M[5] = 0;
+    M[6] = u * u * (gam - 1) / 2;
+    M[7] = u * (1 - gam);
+    M[8] = gam - 1;
 }
 // Get F
 void WtoF(std::vector <double> W,
