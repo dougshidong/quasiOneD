@@ -103,12 +103,8 @@ std::vector <double> adjoint(std::vector <double> x,
     SparseMatrix <double> matA;
     matA = buildAMatrix(Ap_list, An_list, dBidWi, dBidWd,
                         dBodWd, dBodWo, dQdW, dx, dt, S, u[0]/c[0]);
-    // Transpose
-    SparseMatrix <double> matAtranspose;
-    matAtranspose = matA.transpose();
-//    matAtranspose.makeCompressed();
     std::cout.precision(17);
-    std::cout<<matAtranspose<<std::endl;
+    std::cout<<matA<<std::endl;
 
     // Evaluate dIcdW
     std::vector <double> dIcdW(3 * nx, 0);
@@ -128,13 +124,13 @@ std::vector <double> adjoint(std::vector <double> x,
     MatrixXd matAdense(3 * nx, 3 * nx);
     MatrixXd eye(3 * nx, 3 * nx);
     eye.setIdentity();
-    matAdense = matAtranspose * eye;
+    matAdense = matA * eye;
     if(eig_solv == 0)
     {
     // Setup Solver and Factorize A
         SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
-        slusolver.analyzePattern(matAtranspose);
-        slusolver.factorize(matAtranspose);
+        slusolver.analyzePattern(matA);
+        slusolver.factorize(matA);
         
         if(slusolver.info() == 0)
             std::cout<<"Factorization success"<<std::endl;
@@ -158,7 +154,7 @@ std::vector <double> adjoint(std::vector <double> x,
     if(eig_solv == 2)
     {
         BiCGSTAB<SparseMatrix <double> > itsolver;
-        itsolver.compute(matAtranspose);
+        itsolver.compute(matA);
         if(itsolver.info() == 0)
             std::cout<<"Iterative Factorization success"<<std::endl;
         else
@@ -224,7 +220,13 @@ std::vector <double> adjoint(std::vector <double> x,
 //      psidRdS(0) -= xvec(0 * 3 + k) * B1[k];
 
         // 1
-        psidRdS(1) -= xvec(1 * 3 + k) * Flux[1 * 3 + k];
+        std::cout<<"psidRdS1"<<std::endl;
+//      std::cout<<xvec(1 * 3 + k)<<std::endl;
+//      std::cout<<Flux[1 * 3 + k]<<std::endl;
+        std::cout<<xvec(1 * 3 + k) * Flux[1 * 3 + k]<<std::endl;
+        std::cout<<xvec(1 * 3 + k) * p[1]<<std::endl;
+//      psidRdS(1) -= xvec(1 * 3 + k) * Flux[1 * 3 + k];
+        std::cout<<psidRdS(1)<<std::endl;
 //        psidRdS(1) -= xvec(1 * 3 + k) * B1[k] * dx[0] * S[1] / 2.0;
 
         // nx - 1
@@ -237,8 +239,9 @@ std::vector <double> adjoint(std::vector <double> x,
 
         if(k == 1)
         {
+//          psidRdS(1) += xvec(1 * 3 + k) * p[1];
+            std::cout<<psidRdS(1)<<std::endl;
             psidRdS(nx - 1) -= xvec((nx - 2) * 3 + k) * p[nx - 1];
-            psidRdS(1) += xvec(1 * 3 + k) * p[1];
         }
     }
 
@@ -417,15 +420,15 @@ void StegerJac(std::vector <double> W,
     }
     
     // Transpose the Jacobians
-//  for(int i = 0; i < nx; i++)
-//  for(int row = 0; row < 3; row++)
-//  for(int col = 0; col < 3; col++)
-//  {
-//      // TRANSPOSED JACOBIANS
-//      int vec_pos = (i * 3 * 3) + (row * 3) + col;
-//      Ap_list[vec_pos] = Ap[col][row];
-//      An_list[vec_pos] = An[col][row];
-//  }
+    for(int i = 0; i < nx; i++)
+    for(int row = 0; row < 3; row++)
+    for(int col = 0; col < 3; col++)
+    {
+        // TRANSPOSED JACOBIANS
+        int vec_pos = (i * 3 * 3) + (row * 3) + col;
+        Ap_list[vec_pos] = Ap[col][row];
+        An_list[vec_pos] = An[col][row];
+    }
 
 }
 
@@ -678,23 +681,25 @@ void BCJac(std::vector <double> W,
     double de1dtdr1, de1dtdu1, de1dtdp1;
     double de1dtdr2, de1dtdu2, de1dtdp2;
 
-    de1dtdr1 = du1dt * u1 + dp1dtdr1 * Cv / R + uu * dr1dtdr1 / 2.0 + r1 * u1 * du1dtdr1;
-    de1dtdu1 = dr1dt * u1 + du1dt * r1 + dp1dtdu1 * Cv / R
-              + uu * dr1dtdu1 / 2.0 + r1 * u1 * du1dtdu1;
-    de1dtdp1 = dp1dtdp1 * Cv / R + uu * dr1dtdp1 / 2.0 + r1 * u1 * du1dtdp1;
-    de1dtdr2 = dp1dtdr2 * Cv / R + u1 + r1 * u1 * du1dtdr2 + uu * dr1dtdr2 / 2.0;
-    de1dtdu2 = dp1dtdu2 * Cv / R + u1 + r1 * u1 * du1dtdu2 + uu * dr1dtdu2 / 2.0;
-    de1dtdp2 = dp1dtdp2 * Cv / R + u1 + r1 * u1 * du1dtdp2 + uu * dr1dtdp2 / 2.0;
+//  de1dtdr1 = du1dt * u1 + dp1dtdr1 * Cv / R + uu * dr1dtdr1 / 2.0 + r1 * u1 * du1dtdr1;
+//  de1dtdu1 = dr1dt * u1 + du1dt * r1 + dp1dtdu1 * Cv / R
+//            + uu * dr1dtdu1 / 2.0 + r1 * u1 * du1dtdu1;
+//  de1dtdp1 = dp1dtdp1 * Cv / R + uu * dr1dtdp1 / 2.0 + r1 * u1 * du1dtdp1;
+//  de1dtdr2 = dp1dtdr2 * Cv / R + u1 + r1 * u1 * du1dtdr2 + uu * dr1dtdr2 / 2.0;
+//  de1dtdu2 = dp1dtdu2 * Cv / R + u1 + r1 * u1 * du1dtdu2 + uu * dr1dtdu2 / 2.0;
+//  de1dtdp2 = dp1dtdp2 * Cv / R + u1 + r1 * u1 * du1dtdp2 + uu * dr1dtdp2 / 2.0;
 
+    de1dtdr1 = dp1dtdr1 * Cv / R + uu * dr1dtdr1 / 2.0 + r1 * u1 * du1dtdr1 
+               + du1dt * u1;
+    de1dtdu1 = dp1dtdu1 * Cv / R + uu * dr1dtdu1 / 2.0 + r1 * u1 * du1dtdu1 
+               + du1dt * r1 + dr1dt * u1;
+    de1dtdp1 = dp1dtdp1 / (gam - 1) + uu * dr1dtdp1 / 2.0 + r1 * u1 * du1dtdp1;
+    de1dtdr2 = dp1dtdr2 / (gam - 1) + uu * dr1dtdr2 / 2.0 + r1 * u1 * du1dtdr2;
+    de1dtdu2 = dp1dtdu2 / (gam - 1) + uu * dr1dtdu2 / 2.0 + r1 * u1 * du1dtdu2;
+    de1dtdp2 = dp1dtdp2 / (gam - 1) + uu * dr1dtdp2 / 2.0 + r1 * u1 * du1dtdp2;
 
     // BN
     BN[0] = dr1dt;
-    std::cout<<"dr1dt outlet "<<BN[0]<<std::endl;
-    std::cout<<"dp1dt outlet "<<dp1dt<<std::endl;
-    std::cout<<"c2 outlet "<<c1 * c1<<std::endl;
-    std::cout<<"R1"<<R1<<std::endl;
-    std::cout<<"R2"<<R2<<std::endl;
-    std::cout<<"R3"<<R3<<std::endl;
     BN[1] = dru1dt;
     BN[2] = de1dt;
 
@@ -711,17 +716,11 @@ void BCJac(std::vector <double> W,
     std::cout.precision(17);
     // Get Transformation Matrix
     dWpdW(dwpdw, W, nx - 1);
-    std::cout<<"dbodwo (1,1)"<<std::endl; 
-    for(int row = 0; row < 1; row++)
-    for(int col = 0; col < 1; col++)
+    for(int row = 0; row < 3; row++)
+    for(int col = 0; col < 3; col++)
     for(int k = 0; k < 3; k++)
     {
-        std::cout<<"k = "<<k<<std::endl;
-        std::cout<<dBodWo[row * 3 + col]<<std::endl;
-        std::cout<<dbdwp[row * 3 + k] * dwpdw[k * 3 + col]<<std::endl;
-        std::cout<<"dbdwp "<<dbdwp[row * 3 + k]<<" dwpdw "<<dwpdw[k * 3 + col]<<std::endl;
-        dBodWo[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
-        std::cout<<dBodWo[row * 3 + col]<<std::endl;
+        dBodWo[col * 3 + row] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
     }
     dbdwp[0] = dr1dtdr2;
     dbdwp[1] = dr1dtdu2;
@@ -733,43 +732,12 @@ void BCJac(std::vector <double> W,
     dbdwp[7] = de1dtdu2;
     dbdwp[8] = de1dtdp2;
 
-    std::cout<<"dbdwp"<<std::endl; 
-    std::cout<<dbdwp[0]<<std::endl;
-    std::cout<<dbdwp[1]<<std::endl;
-    std::cout<<dbdwp[2]<<std::endl;
-    std::cout<<dbdwp[3]<<std::endl;
-    std::cout<<dbdwp[4]<<std::endl;
-    std::cout<<dbdwp[5]<<std::endl;
-    std::cout<<dbdwp[6]<<std::endl;
-    std::cout<<dbdwp[7]<<std::endl;
-    std::cout<<dbdwp[8]<<std::endl;
-
     // Get Transformation Matrix
     dWpdW(dwpdw, W, nx - 2);
-    std::cout<<"dwpdw"<<std::endl; 
-    std::cout<<dwpdw[0]<<std::endl;
-    std::cout<<dwpdw[1]<<std::endl;
-    std::cout<<dwpdw[2]<<std::endl;
-    std::cout<<dwpdw[3]<<std::endl;
-    std::cout<<dwpdw[4]<<std::endl;
-    std::cout<<dwpdw[5]<<std::endl;
-    std::cout<<dwpdw[6]<<std::endl;
-    std::cout<<dwpdw[7]<<std::endl;
-    std::cout<<dwpdw[8]<<std::endl;
     for(int row = 0; row < 3; row++)
     for(int col = 0; col < 3; col++)
     for(int k = 0; k < 3; k++)
-        dBodWd[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
-    std::cout<<"dBodWd"<<std::endl; 
-    std::cout<<dBodWd[0]<<std::endl;
-    std::cout<<dBodWd[1]<<std::endl;
-    std::cout<<dBodWd[2]<<std::endl;
-    std::cout<<dBodWd[3]<<std::endl;
-    std::cout<<dBodWd[4]<<std::endl;
-    std::cout<<dBodWd[5]<<std::endl;
-    std::cout<<dBodWd[6]<<std::endl;
-    std::cout<<dBodWd[7]<<std::endl;
-    std::cout<<dBodWd[8]<<std::endl;
+        dBodWd[col * 3 + row] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
 
     // *********************
     // INLET JACOBIANS
@@ -940,7 +908,7 @@ void BCJac(std::vector <double> W,
         for(int row = 0; row < 3; row++)
         for(int col = 0; col < 3; col++)
         for(int k = 0; k < 3; k++)
-            dBidWi[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
+            dBidWi[col * 3 + row] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
         
         dbdwp[0] = dr1dtdr2;
         dbdwp[1] = dr1dtdu2;
@@ -957,7 +925,7 @@ void BCJac(std::vector <double> W,
         for(int row = 0; row < 3; row++)
         for(int col = 0; col < 3; col++)
         for(int k = 0; k < 3; k++)
-            dBidWd[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
+            dBidWd[col * 3 + row] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
     }
     // Supersonic Inlet
     else
@@ -1066,9 +1034,9 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
 
                 val = Ap[dwi * 9 + k] * S[psii + 1];
                 val -= An[dwi * 9 + k] * S[psii];
-                if(row == 1) // Remember it is the transposed dQdW
+                if(col == 1) // Remember it is the transposed dQdW
                 {
-                    val -= dQdW[dwi * 3 + col];
+                    val -= dQdW[dwi * 3 + row];
                 }
 
                 matA.insert(ri, ci) = val;

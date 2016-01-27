@@ -22,7 +22,7 @@ const double conv = 1e-13;
 const int maxIt = 50000;
 const int printIt = 100;
 const int printConv = 0; // 0 to hide real - time convergence
-const int printW = 1;
+const int printW = 0;
 
 // Stepping Scheme
 // 0   -   Euler Explicit
