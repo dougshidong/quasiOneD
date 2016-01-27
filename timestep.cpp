@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "flovar.h"
 
+std::vector <double> Flux(3 * (nx + 1), 0);
 // Euler Explicit
 void EulerExplicitStep(std::vector <double> S,
                        std::vector <double> V,
@@ -17,7 +18,6 @@ void EulerExplicitStep(std::vector <double> S,
                        std::vector <double> F)
 {
     int ki;
-    std::vector <double> Flux(3 * (nx + 1), 0);
     getFlux(Flux, W, F);
     for(int k = 0; k < 3; k++)
     {
@@ -39,6 +39,11 @@ void EulerExplicitStep(std::vector <double> S,
     return;
 }
 
+std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+std::vector <double> W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0);
+std::vector <double> F1(3 * nx, 0), F2(3 * nx, 0);
+std::vector <double> Q1(3 * nx, 0), Q2(3 * nx, 0);
+std::vector <double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
 // 4th order Runge - Kutta Stepping Scheme
 void rk4(std::vector <double> dx, 
          std::vector <double> S, 
@@ -49,12 +54,6 @@ void rk4(std::vector <double> dx,
          std::vector <double> &Resi)
 {
     double ki;
-    std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-    std::vector <double> W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0);
-    std::vector <double> F1(3 * nx, 0), F2(3 * nx, 0);
-    std::vector <double> Q1(3 * nx, 0), Q2(3 * nx, 0);
-    std::vector <double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
-    std::vector <double> Flux(3 * (nx + 1), 0);
 
     getFlux(Flux, W, F);
     // Residual 0
@@ -156,6 +155,10 @@ void rk4(std::vector <double> dx,
 }
 
 
+std::vector <double> Resitemp(3 * nx, 0);
+std::vector <double> Wtemp(3 * nx, 0);
+std::vector <double> Ftemp(3 * nx, 0);
+std::vector <double> Qtemp(3 * nx, 0);
 // Jameson's 4th order Runge - Kutta Stepping Scheme
 void jamesonrk(std::vector <double> dx, 
          std::vector <double> S,
@@ -166,12 +169,6 @@ void jamesonrk(std::vector <double> dx,
          std::vector <double> &Resi)
 {
     double ki;
-    std::vector <double> Flux(3 * (nx + 1), 0);
-    std::vector <double> Resitemp(3 * nx, 0);
-    std::vector <double> Wtemp(3 * nx, 0);
-    std::vector <double> Ftemp(3 * nx, 0);
-    std::vector <double> Qtemp(3 * nx, 0);
-    std::vector <double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
 
     // Initialize First Stage
     for(int k = 0; k < 3; k++)

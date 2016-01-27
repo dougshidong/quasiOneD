@@ -23,4 +23,3 @@ extern const int StepScheme;
 
 extern const int FluxScheme;
 
-extern const int createTarget;

@@ -35,11 +35,8 @@ void Flux_StegerWarming(std::vector <double> &Flux,
     
     
     double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
-    
-
 
     std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
-
 
     double beta = 0.4;//gam-1;
     double rho, u, e, c;

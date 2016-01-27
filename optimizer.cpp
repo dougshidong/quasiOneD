@@ -7,7 +7,7 @@
 #include<vector>
 #include<iomanip>
 #include<Eigen/Dense>
-
+#include<stdlib.h>//exit
 std::vector <double> finiteD(std::vector <double> x,
                              std::vector <double> dx,
                              std::vector <double> S, 
@@ -44,8 +44,6 @@ void design(std::vector <double> x, std::vector <double> dx,
 
     double alpha = 1;
 
-    
-
     double h = 1e-4;
     std::vector <double> gradient(nDesVar),
                 pk(nDesVar),
@@ -53,7 +51,18 @@ void design(std::vector <double> x, std::vector <double> dx,
                 dgradient(nDesVar);
 
     int rc;
+    std::vector <double> psi(3 * nx, 0);
     
+    quasiOneD(x, dx, S, designVar, W);
+    gradient = adjoint(x, dx, S, W, psi, designVar);
+    
+    currentI = quasiOneD(x, dx, S, designVar, W);
+    gradient = finiteD(x, dx, S, designVar, h, currentI);
+    std::cout<<"Gradient from FD:"<<std::endl;
+    for(int i = 0; i < 3; i++)
+        std::cout<<gradient[i]<<std::endl;
+
+    exit(EXIT_FAILURE); 
     // Initialize B
     for(int r = 0; r < nDesVar; r++)
     for(int c = 0; c < nDesVar; c++)
@@ -88,6 +97,7 @@ void design(std::vector <double> x, std::vector <double> dx,
         currentI = quasiOneD(x, dx, S, designVar, W);
 
         gradient = finiteD(x, dx, S, designVar, h, currentI);
+        //gradient = adjoint(x, dx, S, W, psi, designVar);
 
         for(int i = 0; i < nDesVar; i++)
         {
@@ -239,7 +249,7 @@ std::vector <double> finiteD(std::vector <double> x,
     {
         I0 = quasiOneD(x, dx, S, designVar, W);
 
-        std::cout<<"I0 = "<<std::setprecision(15)<<I0<<std::endl;
+        //std::cout<<"I0 = "<<std::setprecision(15)<<I0<<std::endl;
     }
     else
     {
@@ -259,8 +269,8 @@ std::vector <double> finiteD(std::vector <double> x,
         {
             tempD[i] += dh;
             
-            for(int k = 0; k < nDesVar; k++)
-                std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+            //for(int k = 0; k < nDesVar; k++)
+            //    std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
             tempS = evalS(tempD, x, dx);
 
@@ -274,22 +284,22 @@ std::vector <double> finiteD(std::vector <double> x,
         {
             tempD[i] -= dh;
         
-            for(int k = 0; k < nDesVar; k++)
-                std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+            //for(int k = 0; k < nDesVar; k++)
+            //    std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
             tempS = evalS(tempD, x, dx);
 
             I2 = quasiOneD(x, dx, tempS, tempD, W);
 
             grad[i] = (I0 - I2) / dh;
-            std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
+            //std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
 
         }
         else if(gradientType == 3)
         {
             tempD[i] += dh;
-            for(int k = 0; k < nDesVar; k++)
-                std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+            //for(int k = 0; k < nDesVar; k++)
+            //    std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
 
             tempS = evalS(tempD, x, dx);
@@ -297,23 +307,23 @@ std::vector <double> finiteD(std::vector <double> x,
 
             I1 = quasiOneD(x, dx, tempS, tempD, W);
 
-            std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
+            //std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
 
             tempD = designVar;
             tempD[i] -= dh;
 
-            for(int k = 0; k < nDesVar; k++)
-                std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
+            //for(int k = 0; k < nDesVar; k++)
+            //    std::cout<<std::setprecision(15)<<tempD[k]<<std::endl;
 
             tempS = evalS(tempD, x, dx);
 
             I2 = quasiOneD(x, dx, tempS, tempD, W);
 
-            std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
+            //std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
 
             grad[i] = (I1 - I2) / (2 * dh);
         }
-        std::cout<<"Gradient "<<i + 1<<":   "<<grad[i]<<std::endl<<std::endl;
+        //std::cout<<"Gradient "<<i + 1<<":   "<<grad[i]<<std::endl<<std::endl;
     }
 
     return grad;
