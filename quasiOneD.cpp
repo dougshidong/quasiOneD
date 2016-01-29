@@ -22,7 +22,7 @@ double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarge
         std::vector <double> dx);
 
 void inletBC(std::vector <double> &W, double dt0, double dx0);
-void outletBC(std::vector <double> &W, double dt0, double dx0);
+void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <double> &Resi);
 
 double quasiOneD(std::vector <double> x, 
         std::vector <double> dx, 
@@ -124,7 +124,7 @@ double quasiOneD(std::vector <double> x,
             inletBC(W, dt[0], dx[0]);
        
         // Update Oulet BC W[nx - 1]
-        outletBC(W, dt[nx - 1], dx[nx - 1]);
+        outletBC(W, dt[nx - 1], dx[nx - 1], Resi);
         
         // Update flow properties
         for(int i = 0; i < nx ; i++)
@@ -151,7 +151,7 @@ double quasiOneD(std::vector <double> x,
         // Calculating the norm of the density residual
         normR = 0;
         for(int i = 0; i < nx; i++)
-            normR = normR + Resi[0 * nx + i] * Resi[0 * nx + i];
+            normR = normR + pow(Resi[2 * nx + i], 2);
         normR = sqrt(normR);
     }
 
@@ -164,7 +164,7 @@ double quasiOneD(std::vector <double> x,
                 std::cout<<W[k * nx + i]<<std::endl;
         }
     }
-    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Energy Residual = "<<normR<<std::endl;
     
 
     FILE  * Results;
@@ -181,10 +181,10 @@ double quasiOneD(std::vector <double> x,
     for(int i = 0; i < nx; i++)
         fprintf(Results, "%.15f\n", x[i] - dx[i] / 2);
     fprintf(Results, "%f\n", x.back() + dx.back() / 2);
-
-    iterlength = itV.size();
     for(int i = 0; i < nx + 1; i++)
         fprintf(Results, "%.15f\n", S[i]);
+
+    iterlength = itV.size();
     for(int i = 0; i < iterlength; i++)
         fprintf(Results, "%.15d\n", itV[i]);
     for(int i = 0; i < iterlength; i++)
@@ -197,7 +197,7 @@ double quasiOneD(std::vector <double> x,
     // Create Target Pressure
     if(createTarget == 1) ioTargetPressure(1, p);
 
-
+    // Compute Fitness
     if(fitnessFun == 0)
         return TotalPressureLoss(W);
     else if(fitnessFun == 1)
@@ -336,7 +336,7 @@ void inletBC(std::vector <double> &W, double dt0, double dx0)
     W[2 * nx + 0] = e[0];
 }
 
-void outletBC(std::vector <double> &W, double dt0, double dx0)
+void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <double> &Resi)
 {
     double avgc, avgu, dtdx, MachBound;
     double eigenvalues[3], Ri[3];
@@ -380,13 +380,27 @@ void outletBC(std::vector <double> &W, double dt0, double dx0)
     
     drho = Ri[0] + dp / (pow(c[1], 2));
     du = (Ri[1] - dp) / (rho[1] * c[1]);
+
+//  std::cout<<"dr1dt "<<drho<<std::endl;
+//  std::cout<<"dp1dt "<<dp<<std::endl;
+//  std::cout<<"c2 "<<pow(c[1],2)<<std::endl;
+//  std::cout<<"R1 "<<Ri[0]<<std::endl;
+//  std::cout<<"R2 "<<Ri[1]<<std::endl;
+//  std::cout<<"R3 "<<Ri[2]<<std::endl;
+
+
+    Resi[0 * nx + nx - 1] = drho / dtdx;
+    Resi[1 * nx + nx - 1] = drho / dtdx * u[1] * du / dtdx * rho[1];
+    Resi[2 * nx + nx - 1] = u[1] * u[1] / 2.0 * drho / dtdx 
+                            + rho[1] * u[1] * du / dtdx
+                            + Cv / R * dp / dtdx;
     
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;
     T = p[1] / (rho[1] * R);
     e[1] = rho[1] * (Cv * T + 0.5 * pow(u[1], 2));
-    
+
     W[0 * nx + nx - 1] = rho[1];
     W[1 * nx + nx - 1] = rho[1] * u[1];
     W[2 * nx + nx - 1] = e[1];

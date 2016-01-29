@@ -1,6 +1,8 @@
-#!/usr/bin/python
+#!/home/ddong/anaconda2/bin/python
 '''Ploting results'''
-
+import sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -40,10 +42,9 @@ targetp=data[1:nx+1]
 
 # Read Adjoint Results
 data = np.loadtxt(adname)
-adj1=data[0*nx:1*nx]
-adj2=data[1*nx:2*nx]
-adj3=data[2*nx:3*nx]
-
+adj1=data[0*nx+1:1*nx + 1]
+adj2=data[1*nx+1:2*nx + 1]
+adj3=data[2*nx+1:3*nx + 1]
 pp=PdfPages('Figures.pdf')
 
 
@@ -58,7 +59,7 @@ pp.savefig()
 plt.figure()
 plt.title('Pressure Distribution')
 PressureCurve = plt.plot(x,pres,'-ob',markerfacecolor='None', markeredgecolor='b', label='Current')
-TargetPCurve  = plt.plot(x,targetp,'-or',markerfacecolor='None', markeredgecolor='r', label='Target')
+TargetPCurve  = plt.plot(x,targetp,'-xr',markerfacecolor='None', markeredgecolor='r', label='Target')
 plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
 plt.legend(loc='upper right')
 pp.savefig()
@@ -95,6 +96,7 @@ plt.title('Adjoint Distribution')
 adj2Curve = plt.plot(x,adj2,'-or',markerfacecolor='None', markeredgecolor='r',label='Adj 1')
 plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
 pp.savefig()
+
 # Plot Adjoint Distribution
 plt.figure()
 plt.title('Adjoint Distribution')

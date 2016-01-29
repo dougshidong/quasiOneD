@@ -14,3 +14,4 @@ extern const int descentType;
 
 extern const int gradientType;
 
+extern const int createTarget;
