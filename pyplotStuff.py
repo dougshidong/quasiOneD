@@ -1,6 +1,8 @@
-#!/usr/bin/python
+#!/home/ddong/anaconda2/bin/python
 '''Ploting results'''
 import sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -43,9 +45,6 @@ data = np.loadtxt(adname)
 adj1=data[0*nx+1:1*nx + 1]
 adj2=data[1*nx+1:2*nx + 1]
 adj3=data[2*nx+1:3*nx + 1]
-print(adj1)
-print(adj2)
-print(adj3)
 pp=PdfPages('Figures.pdf')
 
 

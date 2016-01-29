@@ -17,6 +17,9 @@
 
 using namespace Eigen;
 
+void JacobianCenter(std::vector <double> &J,
+                    double u, double c);
+
 SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
                                   std::vector <double> An,
                                   std::vector <double> dBidWi,
@@ -32,6 +35,11 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
 VectorXd buildbMatrix(std::vector <double> dIcdW);
 
 void StegerJac(std::vector <double> W,
+               std::vector <double> &Ap_list,
+               std::vector <double> &An_list,
+               std::vector <double> &Flux);
+
+void ScalarJac(std::vector <double> W,
                std::vector <double> &Ap_list,
                std::vector <double> &An_list,
                std::vector <double> &Flux);
@@ -88,7 +96,8 @@ std::vector <double> adjoint(std::vector <double> x,
     // Get Jacobians and Fluxes
     std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
     std::vector <double> Flux(3 * (nx + 1), 0);
-    StegerJac(W, Ap_list, An_list, Flux);
+    if(FluxScheme == 0) StegerJac(W, Ap_list, An_list, Flux);
+    if(FluxScheme == 1) ScalarJac(W, Ap_list, An_list, Flux);
     
     // Transposed Boundary Flux Jacobians
     std::vector <double> dBidWi(3 * 3, 0);
@@ -200,7 +209,7 @@ std::vector <double> adjoint(std::vector <double> x,
     // Evaluate psi * dRdS
     VectorXd psidRdS(nx + 1);
     psidRdS.setZero();
-    for(int i = 2; i < nx - 1;  i++)
+    for(int i = 2; i < nx - 1; i++)
     for(int k = 0; k < 3; k++)
     {
         psidRdS(i) += xvec((i - 1) * 3 + k) * Flux[i * 3 + k];
@@ -216,17 +225,10 @@ std::vector <double> adjoint(std::vector <double> x,
     for(int k = 0; k < 3; k++)
     {
         // 0 Inlet is not a function of the shape
-//      psidRdS(0) -= xvec(0 * 3 + k) * B1[k] * dx[0] * S[0] / 2.0;
 //      psidRdS(0) -= xvec(0 * 3 + k) * B1[k];
 
         // 1
-        std::cout<<"psidRdS1"<<std::endl;
-//      std::cout<<xvec(1 * 3 + k)<<std::endl;
-//      std::cout<<Flux[1 * 3 + k]<<std::endl;
-        std::cout<<xvec(1 * 3 + k) * Flux[1 * 3 + k]<<std::endl;
-        std::cout<<xvec(1 * 3 + k) * p[1]<<std::endl;
-//      psidRdS(1) -= xvec(1 * 3 + k) * Flux[1 * 3 + k];
-        std::cout<<psidRdS(1)<<std::endl;
+        psidRdS(1) -= xvec(1 * 3 + k) * Flux[1 * 3 + k];
 //        psidRdS(1) -= xvec(1 * 3 + k) * B1[k] * dx[0] * S[1] / 2.0;
 
         // nx - 1
@@ -234,13 +236,11 @@ std::vector <double> adjoint(std::vector <double> x,
         psidRdS(nx - 1) += xvec((nx - 2) * 3 + k) * Flux[(nx - 1) * 3 + k];
 
         // nx Outlet is not a function of the shape
-//      psidRdS(nx) -= xvec((nx - 1) * 3 + k) * BN[k] * dx[nx - 1] * S[nx] / 2.0;
 //      psidRdS(nx) -= xvec((nx - 1) * 3 + k) * BN[k];
 
         if(k == 1)
         {
-//          psidRdS(1) += xvec(1 * 3 + k) * p[1];
-            std::cout<<psidRdS(1)<<std::endl;
+            psidRdS(1) += xvec(1 * 3 + k) * p[1];
             psidRdS(nx - 1) -= xvec((nx - 2) * 3 + k) * p[nx - 1];
         }
     }
@@ -259,8 +259,6 @@ std::vector <double> adjoint(std::vector <double> x,
     double xh;
     for(int i = 0; i < nx + 1; i++)
     {
-        xh = fabs(x[i] - dx[i] / 2.0);
-
         if(i == 0 || i == nx)
         {
             dSdDesign(i, 0) = 0;
@@ -269,6 +267,7 @@ std::vector <double> adjoint(std::vector <double> x,
         }
         else
         {
+            xh = fabs(x[i] - dx[i] / 2.0);
             dSdDesign(i, 0) = - pow(sin(PI * pow(xh, d2)), d3);
             dSdDesign(i, 1) = - d1 * d3 * PI * pow(xh, d2)
                               * cos(PI * pow(xh, d2)) * log(xh)
@@ -431,6 +430,92 @@ void StegerJac(std::vector <double> W,
     }
 
 }
+
+void JacobianCenter(std::vector <double> &J,
+                    double u, double c)
+{
+    J[0] = 0;
+    J[1] = 1;
+    J[2] = 0;
+    J[3] = u * u * (gam - 3) / 2;
+    J[4] = u * (3 - gam);
+    J[5] = gam - 1;
+    J[6] = ( pow(u, 3) * (gam - 1) * (gam - 2) - 2 * u * c * c ) / (2 * (gam - 1));
+    J[7] = ( 2 * c * c + u * u * ( -2 * gam * gam + 5 * gam - 3 ) ) / (2 * (gam - 1));
+    J[8] = u * gam;
+}
+
+void ScalarJac(std::vector <double> W,
+               std::vector <double> &Ap_list,
+               std::vector <double> &An_list,
+               std::vector <double> &Flux)
+{
+    std::vector <double> rho(nx), u(nx), e(nx);
+    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+    WtoP(W, rho, u, e, p, c, T); 
+
+    int vec_pos, k;
+    double eps = 0.5, lamb;
+
+    std::vector <double> J(9, 0);
+    std::vector <double> dlambdadw(3, 0);
+    for(int i = 0; i < nx - 1; i++)
+    {
+        JacobianCenter(J, u[i], c[i]);
+
+        dlambdadw[0] = e[i] * gam * (1 - gam) 
+                       / ( 2 * rho[i] * rho[i] * sqrt( 2 * (gam - 1) * gam
+                       * (2 * e[i] - rho[i] * u[i] * u[i]) / rho[i] ) );
+        std::cout<<i<<std::endl;
+        std::cout<<rho[i]<<std::endl;
+        dlambdadw[1] = u[i] * dlambdadw[0]
+                       + rho[i] * (1.0 / 2.0 + u[i] * (1 - gam) * gam
+                       / ( 4 * sqrt( (gam - 1) * gam
+                       * (e[i] - u[i] * u[i] * rho[i] / 2) / rho[i] ) ) );
+        dlambdadw[2] = (gam - 1) * gam
+                       / ( 4 * rho[i] * sqrt( (gam - 1) * gam
+                       * (e[i] - u[i] * u[i] * rho[i] / 2) / rho[i] ) );
+
+        lamb = (u[i] + u[i + 1] + c[i] + c[i + 1]) / 2;
+
+        for(int row = 0; row < 3; row++)
+        for(int col = 0; col < 3; col++)
+        {
+            vec_pos = (i * 9) + (col * 3) + row; // Transposed
+            k = row * 3 + col;
+            Ap_list[vec_pos] = J[k] / 2.0 - dlambdadw[col] * eps
+                               * (W[row * nx + i + 1] - W[row * nx + i]) / 2.0;
+            An_list[vec_pos] = J[k] / 2.0 - dlambdadw[col] * eps
+                               * (W[row * nx + i + 1] - W[row * nx + i]) / 2.0;
+            if(row == col)
+            {
+                Ap_list[vec_pos] += eps * lamb / 2.0;
+                An_list[vec_pos] -= eps * lamb / 2.0;
+            }
+        }
+    }
+
+    double avgu, avgc;
+    int ki;
+    std::vector <double> F(3 * nx, 0);
+    WtoF(W, F);
+    for(int i = 1; i < nx; i++)
+    {
+        avgu = ( u[i - 1] + u[i] ) / 2;
+        avgc = ( c[i - 1] + c[i] ) / 2;
+        lamb = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ),
+                           fabs(avgu - avgc) );
+
+        for(int k = 0; k < 3; k++)
+        {
+            ki = i * nx + k;
+            Flux[ki] = 0.5 * (F[ki - 1] + F[ki]) - 0.5 * eps * lamb * (W[ki] - W[ki - 1]);
+        }
+    }
+
+}
+
+
 
 void evaldIcdW(std::vector <double> &dIcdW,
                std::vector <double> W,
