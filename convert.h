@@ -23,4 +23,7 @@ void dWpdW(std::vector <double> &M,
 void WtoF(std::vector <double> W,
           std::vector <double> &F);
 
+void WtoQ(std::vector <double> W,
+          std::vector <double> &Q,
+          std::vector <double> S);
 #endif

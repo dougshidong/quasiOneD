@@ -74,3 +74,20 @@ void WtoF(std::vector <double> W,
         F[2 * nx + i] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
     }
 }
+
+// get Q
+void WtoQ(std::vector <double> W,
+          std::vector <double> &Q,
+          std::vector <double> S)
+{
+    double rho, u, e, p;
+    for(int i = 0; i < nx; i++)
+    {
+        rho = W[0 * nx + i];
+        u = W[1 * nx + i] / rho;
+        e = W[2 * nx + i];
+        p = (gam - 1) * ( e - rho * u * u / 2 );
+
+        Q[1 * nx + i] = p * (S[i + 1] - S[i]);
+    }
+}

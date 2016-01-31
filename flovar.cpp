@@ -17,7 +17,7 @@ const double pexit = 0.72 * ptin;
 const double a2 = 2 * gam * Cv * Ttin * ((gam - 1) / (gam + 1)); // used in isentropic nozzle
 
 // Convergence Settings
-const double CFL = 0.2;
+const double CFL = 0.7;
 const double conv = 1e-13;
 const int maxIt = 50000;
 const int printIt = 100;
@@ -33,4 +33,4 @@ const int StepScheme = 2;
 // Flux Scheme
 // 0   -   Steger Warming (SW)
 // 1   -   Scalar Dissipation
-const int FluxScheme = 1;
+const int FluxScheme = 0;

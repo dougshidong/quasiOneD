@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "flovar.h"
 #include "convert.h"
+#include "flux.h"
 
 using namespace Eigen;
 
@@ -22,6 +23,17 @@ void JacobianCenter(std::vector <double> &J,
 
 SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
                                   std::vector <double> An,
+                                  std::vector <double> dBidWi,
+                                  std::vector <double> dBidWd,
+                                  std::vector <double> dBodWd,
+                                  std::vector <double> dBodWo,
+                                  std::vector <double> dQdW,
+                                  std::vector <double> dx,
+                                  std::vector <double> dt,
+                                  std::vector <double> S,
+                                  double Min);
+
+SparseMatrix<double> buildAFD(std::vector <double> W,
                                   std::vector <double> dBidWi,
                                   std::vector <double> dBidWd,
                                   std::vector <double> dBodWd,
@@ -127,13 +139,13 @@ std::vector <double> adjoint(std::vector <double> x,
     std::cout<<"Vector B"<<std::endl;
     std::cout<<bvec<<std::endl;
 
-    double eig_solv = 0;
     VectorXd xvec(3 * nx);
     xvec.setZero();
     MatrixXd matAdense(3 * nx, 3 * nx);
     MatrixXd eye(3 * nx, 3 * nx);
     eye.setIdentity();
     matAdense = matA * eye;
+    double eig_solv = 0;
     if(eig_solv == 0)
     {
     // Setup Solver and Factorize A
@@ -1224,4 +1236,133 @@ void evalddtdW(std::vector <double> &ddtdW,
         ddtdW[i * 3 + 1] = CFL * dx[i] * dStepdru;
         ddtdW[i * 3 + 2] = CFL * dx[i] * dStepde;
     }
+}
+
+SparseMatrix<double> buildAFD(std::vector <double> W,
+                                  std::vector <double> dBidWi,
+                                  std::vector <double> dBidWd,
+                                  std::vector <double> dBodWd,
+                                  std::vector <double> dBodWo,
+                                  std::vector <double> dQdW,
+                                  std::vector <double> dx,
+                                  std::vector <double> dt,
+                                  std::vector <double> S,
+                                  double Min)
+{
+    SparseMatrix<double> matA(3 * nx, 3 * nx);
+    int dwi, psii;
+    int k, ri, ci;
+    double val;
+    // Input 4 lines where BC Jacobians occur
+    // psi(1), psi(2), psi(n-1), psi(n)
+    for(int row = 0; row < 3; row++)
+    {
+        for(int col = 0; col < 3; col++)
+        {
+            k = row * 3 + col;
+            // dw0, psi0
+            dwi = 0;
+            psii = 0;
+            ri = dwi * 3 + row;
+            ci = psii * 3 + col;
+
+            val = - dBidWi[k];
+            matA.insert(ri, ci) = val;
+
+            // dw1, psi0
+            dwi = 1;
+            psii = 0;
+            ri = dwi * 3 + row;
+            ci = psii * 3 + col;
+
+            val = - dBidWd[k];
+            matA.insert(ri, col) = val;
+
+            // dw(nx-1), psi(nx-1)
+            dwi = nx - 1;
+            psii = nx - 1;
+            ri = dwi * 3 + row;
+            ci = psii * 3 + col;
+
+            val = - dBodWo[k];
+            matA.insert(ri, ci) = val;
+
+            // dw(nx-2), psi(nx-1)
+            dwi = nx - 2;
+            psii = nx - 1;
+            ri = dwi * 3 + row;
+            ci = psii * 3 + col;
+
+            val = - dBodWd[k];
+            std::cout<<val<<std::endl;
+            matA.insert(ri, ci) = val;
+        }
+    }
+    std::vector <double> Wd(3 * nx, 0), F(3 * nx, 0), Q(3 * nx, 0); 
+    std::vector <double> Flux(3 * (nx + 1), 0);
+    std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0);
+    std::vector <double> dRdW(3 * nx, 0);
+    WtoF(W, F);
+    WtoQ(W, Q, S);
+    getFlux(Flux, W, F);
+    double ki;
+
+    for(int k = 0; k < 3; k++)
+    {
+        for(int i = 1; i < nx - 1; i++)
+        {
+            ki = k * nx + i;
+            Resi0[ki] = Flux[ki + 1] * S[i + 1] - Flux[ki] * S[i] - Q[ki];
+        }
+        Resi0[k * nx + 0] = 0;
+        Resi0[k * nx + (nx - 1)] = 0;
+    }
+    for(int dwi = 0; dwi < nx; dwi++)
+    {
+        for(int psii = 1; psii < nx - 1; psii++)
+        {
+            double h = 0.001;
+
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                for(int i = 1; i < 3 * nx; i++)
+                    Wd[i] = W[i];
+
+                ri = dwi * 3 + row;
+                ci = psii * 3 + col;
+                
+                WtoF(Wd, F);
+                WtoQ(Wd, Q, S);
+                getFlux(Flux, Wd, F);
+            }
+            for(int k = 0; k < 3; k++)
+            {
+                for(int i = 1; i < nx - 1; i++)
+                {
+                    ki = k * nx + i;
+                    Resi1[ki] = Flux[ki + 1] * S[i + 1] - Flux[ki] * S[i] - Q[ki];
+                    dRdW[ki] = (Resi1[ki] - Resi0[ki]) / (h * W[dwi]);
+                }
+            }
+
+        }
+        
+    }
+    if(Min > 1.0)
+    {
+        // Supersonic Inlet, don't solve for psi(0)
+        for(int row = 0; row < 3; row++)
+        for(int col = 0; col < 3; col++)
+        {
+            // dw(0), psi(1)
+            dwi = 0;
+            psii = 1;
+            ri = dwi * 3 + row;
+            ci = psii * 3 + col;
+    
+            matA.coeffRef(ri, ci) = 0;
+        }
+    }
+    return matA;
 }
