@@ -8,7 +8,7 @@ const double R = 1716.0;
 const double Cv = R / (gam - 1);
 
 // Inlet
-const double Min = 2.2;
+const double Min = 2.1;
 const double Ttin = 531.2;
 const double ptin = 2117;
 // Outlet
@@ -17,10 +17,10 @@ const double pexit = 0.72 * ptin;
 const double a2 = 2 * gam * Cv * Ttin * ((gam - 1) / (gam + 1)); // used in isentropic nozzle
 
 // Convergence Settings
-const double CFL = 0.7;
-const double conv = 1e-13;
-const int maxIt = 50000;
-const int printIt = 100;
+const double CFL = 0.2;
+const double conv = 1e-11;
+const int maxIt = 500000;
+const int printIt = 1000;
 const int printConv = 0; // 0 to hide real - time convergence
 const int printW = 0;
 
@@ -28,9 +28,10 @@ const int printW = 0;
 // 0   -   Euler Explicit
 // 1   -   Runge - Kutta 4th order
 // 2   -   Jameson's Runge-Kutta 4th order
-const int StepScheme = 2;
+const int StepScheme = 0;
 
 // Flux Scheme
 // 0   -   Steger Warming (SW)
 // 1   -   Scalar Dissipation
-const int FluxScheme = 0;
+const int FluxScheme = 1;
+double Scalareps = 0.5;

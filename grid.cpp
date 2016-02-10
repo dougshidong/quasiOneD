@@ -36,10 +36,13 @@ std::vector <double> evalS(std::vector <double> geom,
                            std::vector <double> dx)
 {
     std::vector <double> S(nx + 1);
-
+    double xh;
     // Define Area
     for(int i = 0; i < nx; i++)
-        S[i] =  1 - geom[0] * pow(sin(PI * pow(fabs(x[i] - dx[i]/2), geom[1])), geom[2]);
+    {
+        xh = fabs(x[i] - dx[i] / 2.0);
+        S[i] =  1 - geom[0] * pow(sin(PI * pow(xh, geom[1])), geom[2]);
+    }
     
     S[nx] =  1 - geom[0] * pow(sin(PI * pow(x[nx - 1] + dx[nx - 1]/2, geom[1])), geom[2]);
 

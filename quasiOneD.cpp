@@ -72,18 +72,18 @@ double quasiOneD(std::vector <double> x,
     // State and Flux Vectors Initialization
     for(int i = 0; i < nx; i++)
     {
-        W[0 * nx + i] = rho[i];
-        W[1 * nx + i] = rho[i] * u[i];
-        W[2 * nx + i] = e[i];
+        W[i * 3 + 0] = rho[i];
+        W[i * 3 + 1] = rho[i] * u[i];
+        W[i * 3 + 2] = e[i];
 
-        F[0 * nx + i] = rho[i] * u[i];
-        F[1 * nx + i] = rho[i] * u[i] * u[i] + p[i];
-        F[2 * nx + i] = ( e[i] + p[i] ) * u[i];
+        F[i * 3 + 0] = rho[i] * u[i];
+        F[i * 3 + 1] = rho[i] * u[i] * u[i] + p[i];
+        F[i * 3 + 2] = ( e[i] + p[i] ) * u[i];
     }
 
     for(int i = 0; i < nx; i++)
     {
-        Q[1 * nx + i] = p[i] * (S[i + 1] - S[i]);
+        Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);
     }
 
     while(normR > conv && iterations < maxIt)
@@ -129,9 +129,9 @@ double quasiOneD(std::vector <double> x,
         // Update flow properties
         for(int i = 0; i < nx ; i++)
         {
-            rho[i] = W[0 * nx + i];     // rho
-            u[i] = W[1 * nx + i] / rho[i];  // U
-            e[i] = W[2 * nx + i];       // Energy
+            rho[i] = W[i * 3 + 0];     // rho
+            u[i] = W[i * 3 + 1] / rho[i];  // U
+            e[i] = W[i * 3 + 2];       // Energy
             p[i] = (gam - 1) * (e[i] - rho[i] * pow(u[i], 2) / 2);  // Pressure
             T[i] = p[i] / (rho[i] * R); // Temperature
             c[i] = sqrt((gam * p[i]) / rho[i]);// Speed of sound
@@ -141,17 +141,17 @@ double quasiOneD(std::vector <double> x,
         // Update vectors 
         for(int i = 0; i < nx; i++)
         {
-            F[0 * nx + i] = rho[i] * u[i];
-            F[1 * nx + i] = rho[i] * u[i] * u[i] + p[i];
-            F[2 * nx + i] = (e[i] + p[i]) * u[i];
+            F[i * 3 + 0] = rho[i] * u[i];
+            F[i * 3 + 1] = rho[i] * u[i] * u[i] + p[i];
+            F[i * 3 + 2] = (e[i] + p[i]) * u[i];
 
-            Q[1 * nx + i] = p[i] * (S[i + 1] - S[i]);
+            Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);
         }
         
         // Calculating the norm of the density residual
         normR = 0;
         for(int i = 0; i < nx; i++)
-            normR = normR + pow(Resi[2 * nx + i], 2);
+            normR = normR + pow(Resi[i * 3 + 1], 2);
         normR = sqrt(normR);
     }
 
@@ -161,7 +161,7 @@ double quasiOneD(std::vector <double> x,
         {
             std::cout<<"W"<<k + 1<<std::endl;
             for(int i = 0; i < nx; i++)
-                std::cout<<W[k * nx + i]<<std::endl;
+                std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
     std::cout<<"Flow iterations = "<<iterations<<"   Energy Residual = "<<normR<<std::endl;
@@ -224,9 +224,9 @@ double isenT(double Tt, double M)
 
 double TotalPressureLoss(std::vector <double> W)
 {
-    double rhoout = W[0 * nx + (nx - 1)];
-    double uout = W[1 * nx + (nx - 1)] / rhoout;
-    double pout = (gam - 1) * (W[2 * nx + (nx - 1)] - rhoout * pow(uout, 2) / 2);
+    double rhoout = W[(nx - 1) * 3 + 0];
+    double uout = W[(nx - 1) * 3 + 1] / rhoout;
+    double pout = (gam - 1) * (W[(nx - 1) * 3 + 2] - rhoout * pow(uout, 2) / 2);
     //double Tout = pout/(rhoout * R);
 
     double ptout_normalized;
@@ -307,9 +307,9 @@ void inletBC(std::vector <double> &W, double dt0, double dx0)
     double rho[2], u[2], e[2], p[2], c[2];
     for(int i = 0; i < 2; i++)
     {
-        rho[i] = W[0 * nx + i];
-        u[i] = W[1 * nx + i] / rho[i];
-        e[i] = W[2 * nx + i];
+        rho[i] = W[i * 3 + 0];
+        u[i] = W[i * 3 + 1] / rho[i];
+        e[i] = W[i * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
     } 
@@ -331,9 +331,9 @@ void inletBC(std::vector <double> &W, double dt0, double dx0)
     rho[0] = p[0] / (R * T0);
     e[0] = rho[0] * (Cv * T0 + 0.5 * u[0] * u[0]);
 
-    W[0 * nx + 0] = rho[0];
-    W[1 * nx + 0] = rho[0] * u[0];
-    W[2 * nx + 0] = e[0];
+    W[0 * 3 + 0] = rho[0];
+    W[0 * 3 + 1] = rho[0] * u[0];
+    W[0 * 3 + 2] = e[0];
 }
 
 void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <double> &Resi)
@@ -345,9 +345,9 @@ void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <doub
 
     for(int i = 0; i < 2; i++)
     {
-        rho[i] = W[0 * nx + i + nx - 2];
-        u[i] = W[1 * nx + i + nx - 2] / rho[i];
-        e[i] = W[2 * nx + i + nx - 2];
+        rho[i] = W[(i + (nx - 2)) * 3 + 0];
+        u[i] = W[(i + (nx - 2)) * 3 + 1] / rho[i];
+        e[i] = W[(i + (nx - 2)) * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
     } 
@@ -381,27 +381,19 @@ void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <doub
     drho = Ri[0] + dp / (pow(c[1], 2));
     du = (Ri[1] - dp) / (rho[1] * c[1]);
 
-//  std::cout<<"dr1dt "<<drho<<std::endl;
-//  std::cout<<"dp1dt "<<dp<<std::endl;
-//  std::cout<<"c2 "<<pow(c[1],2)<<std::endl;
-//  std::cout<<"R1 "<<Ri[0]<<std::endl;
-//  std::cout<<"R2 "<<Ri[1]<<std::endl;
-//  std::cout<<"R3 "<<Ri[2]<<std::endl;
-
-
-    Resi[0 * nx + nx - 1] = drho / dtdx;
-    Resi[1 * nx + nx - 1] = drho / dtdx * u[1] * du / dtdx * rho[1];
-    Resi[2 * nx + nx - 1] = u[1] * u[1] / 2.0 * drho / dtdx 
-                            + rho[1] * u[1] * du / dtdx
-                            + Cv / R * dp / dtdx;
+    Resi[(nx - 1) * 3 + 0] = - drho / dtdx;
+    Resi[(nx - 1) * 3 + 1] = (rho[1] * u[1] - (rho[1] + drho) * (u[1] + du)) / dtdx;
     
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;
     T = p[1] / (rho[1] * R);
+    
+    Resi[(nx - 1) * 3 + 2] = (e[1] - rho[1] * (Cv * T + 0.5 * pow(u[1], 2))) / dtdx;
+
     e[1] = rho[1] * (Cv * T + 0.5 * pow(u[1], 2));
 
-    W[0 * nx + nx - 1] = rho[1];
-    W[1 * nx + nx - 1] = rho[1] * u[1];
-    W[2 * nx + nx - 1] = e[1];
+    W[(nx - 1) * 3 + 0] = rho[1];
+    W[(nx - 1) * 3 + 1] = rho[1] * u[1];
+    W[(nx - 1) * 3 + 2] = e[1];
 }

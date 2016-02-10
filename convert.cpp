@@ -14,9 +14,9 @@ void WtoP(std::vector <double> W,
 {
     for(int i = 0; i < nx; i++)
     {
-        rho[i] = W[0 * nx + i];
-        u[i] = W[1 * nx + i] / rho[i];
-        e[i] = W[2 * nx + i];
+        rho[i] = W[i * 3 + 0];
+        u[i] = W[i * 3 + 1] / rho[i];
+        e[i] = W[i * 3 + 2];
     }
 }
 
@@ -31,9 +31,9 @@ void WtoP(std::vector <double> W,
 {
     for(int i = 0; i < nx; i++)
     {
-        rho[i] = W[0 * nx + i];
-        u[i] = W[1 * nx + i] / rho[i];
-        e[i] = W[2 * nx + i];
+        rho[i] = W[i * 3 + 0];
+        u[i] = W[i * 3 + 1] / rho[i];
+        e[i] = W[i * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
         T[i] = p[i] / (rho[i] * R);
@@ -44,11 +44,11 @@ void WtoP(std::vector <double> W,
 // Wp = [rho, u, p]
 void dWpdW(std::vector <double> &M,
            std::vector <double> W,
-           int k)
+           int i)
 {
     double rho, u;
-    rho = W[0 * nx + k];
-    u = W[1 * nx + k] / W[0 * nx + k];
+    rho = W[i * 3 + 0];
+    u = W[i * 3 + 1] / rho;
     M[0] = 1;
     M[1] = 0;
     M[2] = 0;
@@ -66,12 +66,12 @@ void WtoF(std::vector <double> W,
     double w1, w2, w3;
     for(int i = 0; i < nx; i++)
     {
-        w1 = W[0 * nx + i];
-        w2 = W[1 * nx + i];
-        w3 = W[2 * nx + i];
-        F[0 * nx + i] = w2;
-        F[1 * nx + i] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
-        F[2 * nx + i] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
+        w1 = W[i * 3 + 0];
+        w2 = W[i * 3 + 1];
+        w3 = W[i * 3 + 2];
+        F[i * 3 + 0] = w2;
+        F[i * 3 + 1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
+        F[i * 3 + 2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
     }
 }
 
@@ -83,11 +83,13 @@ void WtoQ(std::vector <double> W,
     double rho, u, e, p;
     for(int i = 0; i < nx; i++)
     {
-        rho = W[0 * nx + i];
-        u = W[1 * nx + i] / rho;
-        e = W[2 * nx + i];
+        rho = W[i * 3 + 0];
+        u = W[i * 3 + 1] / rho;
+        e = W[i * 3 + 2];
         p = (gam - 1) * ( e - rho * u * u / 2 );
 
-        Q[1 * nx + i] = p * (S[i + 1] - S[i]);
+        Q[i * 3 + 0] = 0;
+        Q[i * 3 + 1] = p * (S[i + 1] - S[i]);
+        Q[i * 3 + 2] = 0;
     }
 }

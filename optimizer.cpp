@@ -44,8 +44,8 @@ void design(std::vector <double> x, std::vector <double> dx,
 
     double alpha = 1;
 
-    double h = 1e-4;
-    std::vector <double> gradient(nDesVar),
+    double h = 1e-6;
+    std::vector <double> gradient(nDesVar), gradientFD(nDesVar),
                 pk(nDesVar),
                 searchD(nDesVar),
                 dgradient(nDesVar);
@@ -54,14 +54,12 @@ void design(std::vector <double> x, std::vector <double> dx,
     std::vector <double> psi(3 * nx, 0);
     
     quasiOneD(x, dx, S, designVar, W);
-    gradient = adjoint(x, dx, S, W, psi, designVar);
     
     currentI = quasiOneD(x, dx, S, designVar, W);
-    gradient = finiteD(x, dx, S, designVar, h, currentI);
-    std::cout<<"Gradient from FD:"<<std::endl;
-    for(int i = 0; i < 3; i++)
-        std::cout<<gradient[i]<<std::endl;
+    gradient = adjoint(x, dx, S, W, psi, designVar);
+    gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
+//    gradient = gradientFD;
     exit(EXIT_FAILURE); 
     // Initialize B
     for(int r = 0; r < nDesVar; r++)
@@ -96,8 +94,9 @@ void design(std::vector <double> x, std::vector <double> dx,
         S = evalS(designVar, x, dx);
         currentI = quasiOneD(x, dx, S, designVar, W);
 
-        gradient = finiteD(x, dx, S, designVar, h, currentI);
-        //gradient = adjoint(x, dx, S, W, psi, designVar);
+        gradientFD = finiteD(x, dx, S, designVar, h, currentI);
+        gradient = adjoint(x, dx, S, W, psi, designVar);
+//        gradient = gradientFD;
 
         for(int i = 0; i < nDesVar; i++)
         {
@@ -144,8 +143,6 @@ void design(std::vector <double> x, std::vector <double> dx,
         std::cout<<"Search Direction: :"<<std::endl;
         for(int i = 0; i < nDesVar; i++)
             std::cout<<searchD[i]<<std::endl;
-
-
 
 
         for(int i = 0; i < nDesVar; i++)
@@ -255,15 +252,12 @@ std::vector <double> finiteD(std::vector <double> x,
     {
         I0 = currentI;    
     }
-
     for(int i = 0; i < nDesVar; i++)
     {
 
         dh = designVar[i] * h;
 
         tempD = designVar;
-
-
 
         if(gradientType == 1)
         {
@@ -277,7 +271,7 @@ std::vector <double> finiteD(std::vector <double> x,
             I1 = quasiOneD(x, dx, tempS, tempD, W);
 
             grad[i] = (I1 - I0) / dh;
-            std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
+//          std::cout<<"I1 = "<<std::setprecision(15)<<I1<<std::endl;
     
         }
         else if(gradientType == 2)
@@ -323,8 +317,10 @@ std::vector <double> finiteD(std::vector <double> x,
 
             grad[i] = (I1 - I2) / (2 * dh);
         }
-        //std::cout<<"Gradient "<<i + 1<<":   "<<grad[i]<<std::endl<<std::endl;
     }
+    std::cout<<"Gradient from FD: "<<std::endl;
+    for(int i = 0; i < 3; i++)
+        std::cout<<grad[i]<<std::endl;
 
     return grad;
 }

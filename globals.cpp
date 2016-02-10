@@ -4,7 +4,7 @@
 const double PI = atan(1.0) * 4.0;
 
 // Number of Cells in Grid
-const int nx = 60;
+const int nx = 100;
 
 // Optimization Flag
 const int opt = 1;
@@ -13,8 +13,9 @@ const int opt = 1;
 const int nDesVar = 3;
 // Input Geometry
 const double a_geom = 0, b_geom = 1;
-const double h_geom = 0.025, t1_geom = 0.70, t2_geom = 1.00;
+//const double h_geom = 0.015, t1_geom = 0.70, t2_geom = 1.00;
 //const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 3.00;
+const double h_geom = 0.17, t1_geom = 0.80, t2_geom = 12.00;
 
 // Fitness Function
 // 0  -  Total Pressure Loss
@@ -31,7 +32,7 @@ const int descentType = 4;
 // 2  -  FD Backward
 // 3  -  FD Centered
 // 4  -  Adjoint Method
-const int gradientType = 1;
+const int gradientType = 3;
 
 // Create Target Pressure
 // 0   -   Do NOT Create Target Pressure

@@ -56,9 +56,9 @@ void Flux_StegerWarming(std::vector <double> &Flux,
             lambdaN[row][col] = 0;
         }
         
-        rho = W[0 * nx + i];
-        u = W[1 * nx + i] / rho;
-        e = W[2 * nx + i];
+        rho = W[i * 3 + 0];
+        u = W[i * 3 + 1] / rho;
+        e = W[i * 3 + 2];
         c = sqrt( gam / rho * (gam - 1) * ( e - rho * u * u / 2 ) );
         S[0][0] = 1;
         S[1][0] = -u / rho;
@@ -129,16 +129,16 @@ void Flux_StegerWarming(std::vector <double> &Flux,
 
     for(int i = 1; i < nx; i++)
     {
-        Flux[0 * nx + i] = 0;
-        Flux[1 * nx + i] = 0;
-        Flux[2 * nx + i] = 0;
+        Flux[i * 3 + 0] = 0;
+        Flux[i * 3 + 1] = 0;
+        Flux[i * 3 + 2] = 0;
         for(int row = 0; row < 3; row++)
         for(int col = 0; col < 3; col++)
         {
             int Ap_pos = ((i - 1) * 3 * 3) + (row * 3) + col;
             int An_pos = (i * 3 * 3) + (row * 3) + col;
-            Flux[row * nx + i] = Flux[row * nx + i] + Ap_list[Ap_pos] * W[col * nx + (i - 1)]
-                 + An_list[An_pos] * W[col * nx + i];
+            Flux[i * 3 + row] = Flux[i * 3 + row] + Ap_list[Ap_pos] * W[(i - 1) * 3 + col]
+                 + An_list[An_pos] * W[i * 3 + col];
         }
     }
 
@@ -149,30 +149,32 @@ void Flux_Scalar(std::vector <double> &Flux,
                  std::vector <double> W,
                  std::vector <double> F)
 {
-    int ki;
-    double eps = 0.5, lambda;
+    int ki, kim;
+    double lambda;
     double avgu, avgc;
     double rho, e;
     std::vector <double> u(nx), c(nx);
 
     for(int i = 0; i < nx; i++)
     {
-        rho = W[0 * nx + i];
-        e = W[2 * nx + i];
-        u[i] = W[1 * nx + i] / rho;
-        c[i] = sqrt( gam / rho * (gam - 1) * ( e - rho * u[i] * u[i] / 2 ) );
+        rho = W[i * 3 + 0];
+        e = W[i * 3 + 2];
+        u[i] = W[i * 3 + 1] / rho;
+        c[i] = sqrt( gam / rho * (gam - 1) * ( e - rho * u[i] * u[i] / 2.0 ) );
     }
     for(int i = 1; i < nx; i++)
     {
-        avgu = ( u[i - 1] + u[i] ) / 2;
-        avgc = ( c[i - 1] + c[i] ) / 2;
+        avgu = ( u[i - 1] + u[i] ) / 2.0;
+        avgc = ( c[i - 1] + c[i] ) / 2.0;
         lambda = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ),
                            fabs(avgu - avgc) );
+        lambda = avgu + avgc;
 
         for(int k = 0; k < 3; k++)
         {
-            ki = k * nx + i;
-            Flux[ki] = 0.5 * (F[ki - 1] + F[ki]) - 0.5 * eps * lambda * (W[ki] - W[ki - 1]);
+            ki = i * 3 + k;
+            kim = (i - 1) * 3 + k;
+            Flux[ki] = 0.5 * (F[kim] + F[ki]) - 0.5 * Scalareps * lambda * (W[ki] - W[kim]);
         }
     }
 }
