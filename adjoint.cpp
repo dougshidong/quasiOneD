@@ -36,24 +36,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
                                   std::vector <double> S,
                                   double Min);
 
-SparseMatrix<double> buildAFD(std::vector <double> W,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
-                                  std::vector <double> S,
-                                  double Min);
 SparseMatrix<double> buildAFD2(std::vector <double> W,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
                                   std::vector <double> S,
                                   double Min);
 
@@ -135,19 +118,14 @@ std::vector <double> adjoint(std::vector <double> x,
     SparseMatrix <double> matAFD, matAFD2;
     matAt = buildAMatrix(Ap_list, An_list, dBidWi, dBidWd,
                         dBodWd, dBodWo, dQdW, dx, dt, S, u[0]/c[0]);
-    matAFD = buildAFD(W, dBidWi, dBidWd, dBodWd, dBodWo, dQdW, dx, dt, S, u[0]/c[0]);
-    matAFD2 = buildAFD2(W, dBidWi, dBidWd, dBodWd, dBodWo, dQdW, dx, dt, S, u[0]/c[0]);
+    matAFD2 = buildAFD2(W, S, u[0]/c[0]);
     matA = matAt.transpose();
     matA = matAFD2.transpose();
     std::cout.precision(17);
-//  std::cout<<matAt<<std::endl;
+    std::cout<<matAt<<std::endl;
 //  std::cout<<matAFD2<<std::endl;
-//  std::cout<<"(matAFD - matAFD2).norm() / matAFD.norm():"<<std::endl;
-//  std::cout<<(matAFD - matAFD2).norm() / matAFD.norm()<<std::endl;
-//  std::cout<<"(matAFD - matAt).norm() / matA.norm():"<<std::endl;
-//  std::cout<<(matAFD - matAt).norm() / matAFD.norm()<<std::endl;
-//  std::cout<<"(matAFD2 - matAt).norm() / matA.norm():"<<std::endl;
-//  std::cout<<(matAFD2 - matAt).norm() / matAFD2.norm()<<std::endl;
+    std::cout<<"(matAFD2 - matAt).norm() / matA.norm():"<<std::endl;
+    std::cout<<(matAFD2 - matAt).norm() / matAFD2.norm()<<std::endl;
 
     // Evaluate dIcdW
     std::vector <double> dIcdW(3 * nx, 0);
@@ -156,9 +134,8 @@ std::vector <double> adjoint(std::vector <double> x,
     // Build B matrix
     VectorXd bvec(3 * nx);
     bvec.setZero();
-
     bvec = buildbMatrix(dIcdW);
-    std::cout<<"Vector B"<<std::endl;
+    std::cout<<"Vector B:"<<std::endl;
     std::cout<<bvec<<std::endl;
 
     MatrixXd matAdense(3 * nx, 3 * nx);
@@ -166,9 +143,11 @@ std::vector <double> adjoint(std::vector <double> x,
     eye.setIdentity();
     matAdense = matA * eye;
 
+    matAdense = matAdense + eye * 0.1;
+
     VectorXd xvec(3 * nx);
     xvec.setZero();
-    double eig_solv = 0;
+    double eig_solv = 1;
     if(eig_solv == 0)
     {
     // Setup Solver and Factorize A
@@ -176,24 +155,16 @@ std::vector <double> adjoint(std::vector <double> x,
         slusolver.analyzePattern(matA);
         slusolver.factorize(matA);
         
-//      if(slusolver.info() == 0)
-//          std::cout<<"Factorization success"<<std::endl;
-//      else
-//          std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
+        if(slusolver.info() != 0)
+            std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
     
         // Solve for X
         xvec = slusolver.solve(bvec);
-//      std::cout<<"Adjoint Result:"<<std::endl;
-//      std::cout<<xvec<<std::endl;
     }
     if(eig_solv == 1)
     {
         // Full Pivoting LU Factorization
         xvec = matAdense.fullPivLu().solve(bvec);
-        std::cout<<"Adjoint Result:"<<std::endl;
-        std::cout<<xvec<<std::endl;
-        std::cout<<"Identity"<<std::endl;
-        std::cout<<(matAdense.inverse() * matAdense).norm()<<std::endl;
     }
     if(eig_solv == 2)
     {
@@ -206,11 +177,9 @@ std::vector <double> adjoint(std::vector <double> x,
         std::cout << "#iterations:     " << itsolver.iterations() << std::endl;
         std::cout << "estimated error: " << itsolver.error()      << std::endl;
         xvec = itsolver.solve(bvec);
-        std::cout<<"Adjoint Result:"<<std::endl;
-        std::cout<<xvec<<std::endl;
+//      std::cout<<"Adjoint Result:"<<std::endl;
+//      std::cout<<xvec<<std::endl;
     }
-//  std::cout<<"Condition Number"<<std::endl;
-//  std::cout<<matAdense.inverse().norm() * matAdense.norm()<<std::endl;
     JacobiSVD<MatrixXd> svd(matAdense);
     double cond = svd.singularValues()(0) 
     / svd.singularValues()(svd.singularValues().size()-1);
@@ -258,7 +227,7 @@ std::vector <double> adjoint(std::vector <double> x,
         }
     }
 
-
+    // Evaluate psi * dRdS neat the Boundaries
     for(int k = 0; k < 3; k++)
     {
         // Cell 0 Inlet is not a function of the shape
@@ -277,11 +246,8 @@ std::vector <double> adjoint(std::vector <double> x,
             psidRdS(nx - 1) -= xvec((nx - 2) * 3 + k) * p[nx - 1];
         }
     }
-
-    std::cout<<"psidRdS:"<<std::endl;
-    for(int i = 0; i < nx + 1; i++)
-        std::cout<<psidRdS(i)<<std::endl;
-    
+   
+    // Finite Difference dRdS
     MatrixXd dRdS(3 * nx, nx + 1);
     dRdS = evaldRdS(Flux, S, W);
     VectorXd psidRdSFD(nx + 1);
@@ -289,7 +255,6 @@ std::vector <double> adjoint(std::vector <double> x,
     psidRdSFD = xvec.transpose() * dRdS;
     std::cout<<"(psidRdSFD - psidRdS).norm()"<<std::endl;
     std::cout<<(psidRdSFD - psidRdS).norm()<<std::endl;
-    
     // Evaluate dSdDesign
     MatrixXd dSdDesign(nx + 1, designVar.size());
     double d1 = designVar[0], d2 = designVar[1], d3 = designVar[2];
@@ -318,7 +283,7 @@ std::vector <double> adjoint(std::vector <double> x,
     grad = psidRdS.transpose() * dSdDesign;
 
     std::vector <double> gradient(designVar.size());
-    for(int iDes = 0; iDes < designVar.size(); iDes++)
+    for(int iDes = 0; iDes < (int)designVar.size(); iDes++)
     {
        gradient[iDes] = grad(iDes);
     }
@@ -1135,7 +1100,7 @@ void BCJac(std::vector <double> W,
             dBidWi[i] = 0;
             dBidWd[i] = 0;
             if(i % 4 == 0)
-                dBidWi[i] = 1;
+                dBidWi[i] = -1;
         }
     }
 }
@@ -1233,7 +1198,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
 
                 val = Ap[Wi * 9 + k] * S[Ri + 1];
                 val -= An[Wi * 9 + k] * S[Ri];
-                if(row == 1) // Remember it is NOT TRANSPOSED dQdW
+                if(row == 1) 
                 {
                     val -= dQdW[Wi * 3 + col];
                 }
@@ -1362,236 +1327,17 @@ void evalddtdW(std::vector <double> &ddtdW,
     }
 }
 
-SparseMatrix<double> buildAFD(std::vector <double> W,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
-                                  std::vector <double> S,
-                                  double Min)
-{
-    SparseMatrix<double> matA(3 * nx, 3 * nx);
-    int Ri, Wi;
-    int k, rowi, coli;
-    double val;
-    // Input 4 lines where BC Jacobians occur
-    // psi(1), psi(2), psi(n-1), psi(n)
-    for(int row = 0; row < 3; row++)
-    {
-        for(int col = 0; col < 3; col++)
-        {
-            k = row * 3 + col;
-            // dw0, psi0
-            Ri = 0;
-            Wi = 0;
-            rowi = Ri * 3 + row;
-            coli = Wi * 3 + col;
-
-            val = - dBidWi[k];
-            matA.insert(rowi, coli) = val;
-
-            // dw1, psi0
-            Ri = 0;
-            Wi = 1;
-            rowi = Ri * 3 + row;
-            coli = Wi * 3 + col;
-
-            val = - dBidWd[k];
-            matA.insert(rowi, coli) = val;
-
-//          // dw(nx-1), psi(nx-1)
-//          Ri = nx - 1;
-//          Wi = nx - 1;
-//          rowi = Ri * 3 + row;
-//          coli = Wi * 3 + col;
-
-//          val = - dBodWo[k];
-//          matA.insert(rowi, coli) = val;
-
-//          // dw(nx-2), psi(nx-1)
-//          Ri = nx - 2;
-//          Wi = nx - 1;
-//          rowi = Ri * 3 + row;
-//          coli = Wi * 3 + col;
-
-//          val = - dBodWd[k];
-//          matA.insert(rowi, coli) = val;
-        }
-    }
-    std::vector <double> Wd(3 * nx, 0), F(3 * nx, 0), Q(3 * nx, 0); 
-    std::vector <double> Flux(3 * (nx + 1), 0);
-    std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0);
-    std::vector <double> dRdW(9, 0);
-    WtoF(W, F);
-    WtoQ(W, Q, S);
-    getFlux(Flux, W, F);
-    int ki, kip;
-    double pert;
-
-    for(int k = 0; k < 3; k++)
-    {
-        for(int i = 1; i < nx - 1; i++)
-        {
-            ki = i * 3 + k;
-            kip = (i + 1) * 3 + k;
-            Resi0[ki] = Flux[kip] * S[i + 1] - Flux[ki] * S[i] - Q[ki];
-        }
-        Resi0[0 * 3 + k] = 0;
-        Resi0[(nx - 1) * 3 + k] = 0;
-    }
-    for(int i = 0; i < 3 * nx; i++)
-        Wd[i] = W[i];
-    outletBC(Wd, 1, 1, Resi0);
-
-    for(int Ri = 1; Ri < nx; Ri++)
-    {
-        for(int Wi = 0; Wi < nx; Wi++)
-        {
-            double h = 0.00001;
-            // Outlet
-            if (Ri == nx - 1)
-            {
-                for(int statei = 0; statei < 3; statei++)
-                {
-                    for(int i = 0; i < 3 * nx; i++)
-                        Wd[i] = W[i];
-                    
-                    pert = W[Wi * 3 + statei] * h;
-                    Wd[Wi * 3 + statei] = W[Wi * 3 + statei] + pert;
-                    outletBC(Wd, 1, 1, Resi1);
-                    
-                    for(int resii = 0; resii < 3; resii++)
-                    {
-                        ki = Ri * 3 + resii;
-                        dRdW[resii * 3 + statei] = (Resi1[ki] - Resi0[ki]) / pert;
-                    }
-                }
-                for(int row = 0; row < 3; row++)
-                for(int col = 0; col < 3; col++)
-                {
-                    rowi = Ri * 3 + row;
-                    coli = Wi * 3 + col;
-                    matA.insert(rowi, coli) = dRdW[row * 3 + col]; // Transposed
-                }
-            }
-            // Domain
-            else
-            {
-                for(int statei = 0; statei < 3; statei++)
-                {
-                    for(int i = 0; i < 3 * nx; i++)
-                        Wd[i] = W[i];
-
-                    pert = W[Wi * 3 + statei] * h;
-                    Wd[Wi * 3 + statei] = W[Wi * 3 + statei] + pert;
-
-                    WtoF(Wd, F);
-                    WtoQ(Wd, Q, S);
-                    getFlux(Flux, Wd, F);
-                    
-                    for(int resii = 0; resii < 3; resii++)
-                    {
-                        ki = Ri * 3 + resii;
-                        kip = (Ri + 1) * 3 + resii;
-                        Resi1[ki] = Flux[kip] * S[Ri + 1] - Flux[ki] * S[Ri] - Q[ki];
-                        dRdW[resii * 3 + statei] = (Resi1[ki] - Resi0[ki]) / pert;
-                    }
-                }
-                for(int row = 0; row < 3; row++)
-                for(int col = 0; col < 3; col++)
-                {
-                    rowi = Ri * 3 + row;
-                    coli = Wi * 3 + col;
-                    matA.insert(rowi, coli) = dRdW[row * 3 + col]; // Transposed
-                }
-            }
-
-        }
-        
-    }
-    if(Min > 1.0)
-    {
-        // Supersonic Inlet, don't solve for psi(0)
-        for(int row = 0; row < 3; row++)
-        for(int col = 0; col < 3; col++)
-        {
-            // dw(0), psi(1)
-            Ri = 1;
-            Wi = 0;
-            rowi = Ri * 3 + row;
-            coli = Wi * 3 + col;
-    
-            matA.coeffRef(rowi, coli) = 0;
-        }
-    }
-    return matA;
-}
 
 SparseMatrix<double> buildAFD2(std::vector <double> W,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
                                   std::vector <double> S,
                                   double Min)
 {
     SparseMatrix<double> matA(3 * nx, 3 * nx);
     int Ri, Wi;
-    int k, rowi, coli;
-    double val;
-    // Input 4 lines where BC Jacobians occur
-    // psi(1), psi(2), psi(n-1), psi(n)
-    for(int row = 0; row < 3; row++)
-    {
-        for(int col = 0; col < 3; col++)
-        {
-            k = row * 3 + col;
-            // dw0, psi0
-            Ri = 0;
-            Wi = 0;
-            rowi = Ri * 3 + row;
-            coli = Wi * 3 + col;
-
-            val = - dBidWi[k];
-            matA.insert(rowi, coli) = val;
-
-            // dw1, psi0
-            Ri = 0;
-            Wi = 1;
-            rowi = Ri * 3 + row;
-            coli = Wi * 3 + col;
-
-            val = - dBidWd[k];
-            matA.insert(rowi, coli) = val;
-
-//          // dw(nx-1), psi(nx-1)
-//          Ri = nx - 1;
-//          Wi = nx - 1;
-//          rowi = Ri * 3 + row;
-//          coli = Wi * 3 + col;
-
-//          val = - dBodWo[k];
-//          matA.insert(rowi, coli) = val;
-
-//          // dw(nx-2), psi(nx-1)
-//          Ri = nx - 2;
-//          Wi = nx - 1;
-//          rowi = Ri * 3 + row;
-//          coli = Wi * 3 + col;
-
-//          val = - dBodWd[k];
-//          matA.insert(rowi, coli) = val;
-        }
-    }
+    int rowi, coli;
     std::vector <double> Wd(3 * nx, 0), F(3 * nx, 0), Q(3 * nx, 0); 
     std::vector <double> Flux(3 * (nx + 1), 0);
-    std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+    std::vector <double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
     std::vector <double> dRdW(9, 0);
     WtoF(W, F);
     WtoQ(W, Q, S);
@@ -1599,28 +1345,13 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
     int ki, kip;
     double pert;
 
-    for(int k = 0; k < 3; k++)
-    {
-        for(int i = 1; i < nx - 1; i++)
-        {
-            ki = i * 3 + k;
-            kip = (i + 1) * 3 + k;
-            Resi0[ki] = Flux[kip] * S[i + 1] - Flux[ki] * S[i] - Q[ki];
-        }
-        Resi0[0 * 3 + k] = 0;
-        Resi0[(nx - 1) * 3 + k] = 0;
-    }
-    for(int i = 0; i < 3 * nx; i++)
-        Wd[i] = W[i];
-    outletBC(Wd, 1, 1, Resi0);
-
-    for(int Ri = 1; Ri < nx; Ri++)
+    for(int Ri = 0; Ri < nx; Ri++)
     {
         for(int Wi = 0; Wi < nx; Wi++)
         {
             double h = 0.00001;
-            // Outlet
-            if (Ri == nx - 1)
+            // Inlet
+            if(Ri == 0)
             {
                 for(int statei = 0; statei < 3; statei++)
                 {
@@ -1629,13 +1360,13 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
                     
                     pert = W[Wi * 3 + statei] * h;
                     Wd[Wi * 3 + statei] = W[Wi * 3 + statei] + pert;
-                    outletBC(Wd, 1, 1, Resi1);
+                    inletBC(Wd, Resi1, 1.0, 1.0);
                     
                     for(int i = 0; i < 3 * nx; i++)
                         Wd[i] = W[i];
                     
                     Wd[Wi * 3 + statei] = W[Wi * 3 + statei] - pert;
-                    outletBC(Wd, 1, 1, Resi2);
+                    inletBC(Wd, Resi2, 1.0, 1.0);
                     
                     for(int resii = 0; resii < 3; resii++)
                     {
@@ -1648,7 +1379,39 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
                 {
                     rowi = Ri * 3 + row;
                     coli = Wi * 3 + col;
-                    matA.insert(rowi, coli) = dRdW[row * 3 + col]; // Transposed
+                    matA.insert(rowi, coli) = dRdW[row * 3 + col];
+                }
+            }
+            // Outlet
+            else if(Ri == nx - 1)
+            {
+                for(int statei = 0; statei < 3; statei++)
+                {
+                    for(int i = 0; i < 3 * nx; i++)
+                        Wd[i] = W[i];
+                    
+                    pert = W[Wi * 3 + statei] * h;
+                    Wd[Wi * 3 + statei] = W[Wi * 3 + statei] + pert;
+                    outletBC(Wd, Resi1, 1.0, 1.0);
+                    
+                    for(int i = 0; i < 3 * nx; i++)
+                        Wd[i] = W[i];
+                    
+                    Wd[Wi * 3 + statei] = W[Wi * 3 + statei] - pert;
+                    outletBC(Wd, Resi2, 1.0, 1.0);
+                    
+                    for(int resii = 0; resii < 3; resii++)
+                    {
+                        ki = Ri * 3 + resii;
+                        dRdW[resii * 3 + statei] = (Resi1[ki] - Resi2[ki]) / (2 * pert);
+                    }
+                }
+                for(int row = 0; row < 3; row++)
+                for(int col = 0; col < 3; col++)
+                {
+                    rowi = Ri * 3 + row;
+                    coli = Wi * 3 + col;
+                    matA.insert(rowi, coli) = dRdW[row * 3 + col];
                 }
             }
             // Domain
@@ -1695,7 +1458,7 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
                 {
                     rowi = Ri * 3 + row;
                     coli = Wi * 3 + col;
-                    matA.insert(rowi, coli) = dRdW[row * 3 + col]; // Transposed
+                    matA.insert(rowi, coli) = dRdW[row * 3 + col];
                 }
             }
 
@@ -1708,7 +1471,16 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
         for(int row = 0; row < 3; row++)
         for(int col = 0; col < 3; col++)
         {
-            // dw(0), psi(1)
+            // R0, W0
+            Ri = 0;
+            Wi = 0;
+            rowi = Ri * 3 + row;
+            coli = Wi * 3 + col;
+            matA.coeffRef(rowi, coli) = 0;
+            if(row == col)
+                matA.coeffRef(rowi, coli) = 1;
+
+            // R1, W0
             Ri = 1;
             Wi = 0;
             rowi = Ri * 3 + row;

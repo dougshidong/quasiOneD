@@ -35,7 +35,7 @@ void design(std::vector <double> x, std::vector <double> dx,
     std::vector <double> normGradList, gradList;
     std::vector <double> H(nDesVar * nDesVar, 0);
     double normGrad = 1;
-    double tolGrad = 1e-6;
+    double tolGrad = 1e-10;
     double currentI;
 
     int maxDesign = 10000;
@@ -60,7 +60,7 @@ void design(std::vector <double> x, std::vector <double> dx,
     gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
 //    gradient = gradientFD;
-    exit(EXIT_FAILURE); 
+      exit(EXIT_FAILURE); 
     // Initialize B
     for(int r = 0; r < nDesVar; r++)
     for(int c = 0; c < nDesVar; c++)

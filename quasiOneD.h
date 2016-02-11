@@ -13,6 +13,7 @@ double TotalPressureLoss(std::vector <double> W);
 
 void ioTargetPressure(int io, std::vector <double> &p);
 
-void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <double> &Resi);
+void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
 
 #endif

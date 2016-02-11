@@ -21,8 +21,8 @@ void ioTargetPressure(int io, std::vector <double> &p);
 double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
         std::vector <double> dx);
 
-void inletBC(std::vector <double> &W, double dt0, double dx0);
-void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <double> &Resi);
+void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
 
 double quasiOneD(std::vector <double> x, 
         std::vector <double> dx, 
@@ -119,12 +119,11 @@ double quasiOneD(std::vector <double> x,
             jamesonrk(dx, S, V, dt, W, F, Resi);
         }
 
-        // Update Inlet BC W[0] (if Subsonic)
-        if(Mach[0] < 1)
-            inletBC(W, dt[0], dx[0]);
+        // Update Inlet BC W[0]
+        inletBC(W, Resi, dt[0], dx[0]);
        
         // Update Oulet BC W[nx - 1]
-        outletBC(W, dt[nx - 1], dx[nx - 1], Resi);
+        outletBC(W, Resi, dt[nx - 1], dx[nx - 1]);
         
         // Update flow properties
         for(int i = 0; i < nx ; i++)
@@ -151,7 +150,7 @@ double quasiOneD(std::vector <double> x,
         // Calculating the norm of the density residual
         normR = 0;
         for(int i = 0; i < nx; i++)
-            normR = normR + pow(Resi[i * 3 + 1], 2);
+            normR = normR + pow(Resi[i * 3 + 0], 2);
         normR = sqrt(normR);
     }
 
@@ -164,7 +163,7 @@ double quasiOneD(std::vector <double> x,
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-    std::cout<<"Flow iterations = "<<iterations<<"   Energy Residual = "<<normR<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
     
 
     FILE  * Results;
@@ -301,9 +300,9 @@ double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarge
 }
 
 
-void inletBC(std::vector <double> &W, double dt0, double dx0)
+void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
 {
-    double dpdu, dpdx, dudx, du, eigenvalue, T0;
+    double dpdu, dpdx, dudx, dtdx, du, eigenvalue, T0;
     double rho[2], u[2], e[2], p[2], c[2];
     for(int i = 0; i < 2; i++)
     {
@@ -312,31 +311,45 @@ void inletBC(std::vector <double> &W, double dt0, double dx0)
         e[i] = W[i * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
-    } 
-    dpdu = ptin * (gam / (gam - 1))
-         * pow(1 - ((gam - 1) / (gam + 1)) * u[0] * u[0] / a2,
-               1 / (gam - 1))
-         * ( - 2 * ((gam - 1) / (gam + 1)) * u[0] / a2);
-         
-    eigenvalue = ((u[1] + u[0] - c[1] - c[0]) / 2) * (dt0 / dx0);
-    
-    dpdx = p[1] - p[0];
-    dudx = u[1] - u[0];
-    du = -eigenvalue * (dpdx - rho[0] * c[0] * dudx)
-            / (dpdu - rho[0] * c[0]);
-    
-    u[0] = u[0] + du;
-    T0 = Ttin * (1 - ((gam - 1) / (gam + 1)) * u[0] * u[0] / a2);
-    p[0] = ptin * pow(T0 / Ttin, gam / (gam - 1));
-    rho[0] = p[0] / (R * T0);
-    e[0] = rho[0] * (Cv * T0 + 0.5 * u[0] * u[0]);
+    }
+    if(u[0] < c[0])
+    {
+        dpdu = ptin * (gam / (gam - 1))
+             * pow(1 - ((gam - 1) / (gam + 1)) * u[0] * u[0] / a2,
+                   1 / (gam - 1))
+             * ( - 2 * ((gam - 1) / (gam + 1)) * u[0] / a2);
+             
+        dtdx = dt0 / dx0;
+        eigenvalue = ((u[1] + u[0] - c[1] - c[0]) / 2) * dtdx;
+        
+        dpdx = p[1] - p[0];
+        dudx = u[1] - u[0];
+        du = -eigenvalue * (dpdx - rho[0] * c[0] * dudx)
+                / (dpdu - rho[0] * c[0]);
+        
+        u[0] = u[0] + du;
+        T0 = Ttin * (1 - ((gam - 1) / (gam + 1)) * u[0] * u[0] / a2);
+        p[0] = ptin * pow(T0 / Ttin, gam / (gam - 1));
+        rho[0] = p[0] / (R * T0);
+        e[0] = rho[0] * (Cv * T0 + 0.5 * u[0] * u[0]);
 
-    W[0 * 3 + 0] = rho[0];
-    W[0 * 3 + 1] = rho[0] * u[0];
-    W[0 * 3 + 2] = e[0];
+        Resi[0 * 3 + 0] = (W[0 * 3 + 0] - rho[0]) / dtdx;
+        Resi[0 * 3 + 1] = (W[0 * 3 + 1] - rho[0] * u[0]) / dtdx;
+        Resi[0 * 3 + 2] = (W[0 * 3 + 2] - e[0]) / dtdx;
+
+        W[0 * 3 + 0] = rho[0];
+        W[0 * 3 + 1] = rho[0] * u[0];
+        W[0 * 3 + 2] = e[0];
+    }
+    else
+    {
+        Resi[0 * 3 + 0] = 0;
+        Resi[0 * 3 + 1] = 0;
+        Resi[0 * 3 + 2] = 0;
+    }
 }
 
-void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <double> &Resi)
+void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
 {
     double avgc, avgu, dtdx, MachBound;
     double eigenvalues[3], Ri[3];
@@ -368,7 +381,6 @@ void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <doub
     Ri[2] = -eigenvalues[2] * ( dpdx - rho[1] * c[1] * dudx );
     
     MachBound = avgu / avgc;
-    //MachBound = u[1] / c[1];
     if(MachBound > 1)
     {
         dp = 0.5 * (Ri[1] + Ri[2]);
@@ -380,18 +392,16 @@ void outletBC(std::vector <double> &W, double dt0, double dx0, std::vector <doub
     
     drho = Ri[0] + dp / (pow(c[1], 2));
     du = (Ri[1] - dp) / (rho[1] * c[1]);
-
-    Resi[(nx - 1) * 3 + 0] = - drho / dtdx;
-    Resi[(nx - 1) * 3 + 1] = (rho[1] * u[1] - (rho[1] + drho) * (u[1] + du)) / dtdx;
     
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;
     T = p[1] / (rho[1] * R);
-    
-    Resi[(nx - 1) * 3 + 2] = (e[1] - rho[1] * (Cv * T + 0.5 * pow(u[1], 2))) / dtdx;
-
     e[1] = rho[1] * (Cv * T + 0.5 * pow(u[1], 2));
+
+    Resi[(nx - 1) * 3 + 0] = (W[(nx - 1) * 3 + 0] - rho[1]) / dtdx;
+    Resi[(nx - 1) * 3 + 1] = (W[(nx - 1) * 3 + 1] - rho[1] * u[1]) / dtdx;
+    Resi[(nx - 1) * 3 + 2] = (W[(nx - 1) * 3 + 2] - e[1]) / dtdx;
 
     W[(nx - 1) * 3 + 0] = rho[1];
     W[(nx - 1) * 3 + 1] = rho[1] * u[1];

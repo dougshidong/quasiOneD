@@ -18,8 +18,8 @@ const double a2 = 2 * gam * Cv * Ttin * ((gam - 1) / (gam + 1)); // used in isen
 
 // Convergence Settings
 const double CFL = 0.2;
-const double conv = 1e-11;
-const int maxIt = 500000;
+const double conv = 1e-14;
+const int maxIt = 50000;
 const int printIt = 1000;
 const int printConv = 0; // 0 to hide real - time convergence
 const int printW = 0;
