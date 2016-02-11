@@ -143,7 +143,7 @@ std::vector <double> adjoint(std::vector <double> x,
     eye.setIdentity();
     matAdense = matA * eye;
 
-    matAdense = matAdense + eye * 0.1;
+    matAdense = matAdense + eye * 0.0;
 
     VectorXd xvec(3 * nx);
     xvec.setZero();
