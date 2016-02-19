@@ -8,11 +8,11 @@ const double R = 1716.0 / 1716.0;
 const double Cv = R / (gam - 1.0);
 
 // Inlet
-const double Min = 0.5;
+const double Min = 1.5;
 const double Ttin = 531.2 / 531.2;
 const double ptin = 2117.0 / 2117.0;
 // Outlet
-const double pexit = 0.12 * ptin;
+const double pexit = 0.92 * ptin;
 // Constant
 const double a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0)/(gam + 1.0)); // used in isentropic nozzle
 

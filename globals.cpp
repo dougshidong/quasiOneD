@@ -14,7 +14,7 @@ const int nDesVar = 3;
 // Input Geometry
 const double a_geom = 0, b_geom = 1;
 const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 3.00;
-//const double h_geom = 0.05, t1_geom = 0.40, t2_geom = 6.00;
+//const double h_geom = 0.05, t1_geom = 1.00, t2_geom = 6.00;
 
 // Fitness Function
 // 0  -  Total Pressure Loss

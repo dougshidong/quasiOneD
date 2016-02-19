@@ -319,9 +319,6 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
                    1.0 / (gam - 1.0))
              * ( - 2.0 * ((gam - 1.0) / (gam + 1.0)) * u[0] / a2);
 
-        std::cout<<"dpdu"<<std::endl;
-        std::cout<<dpdu<<std::endl;
-
         dtdx = dt0 / dx0;
         eigenvalue = ((u[1] + u[0] - c[1] - c[0]) / 2.0) * dtdx;
         
@@ -330,23 +327,19 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
         du = -eigenvalue * (dpdx - rho[0] * c[0] * dudx)
                 / (dpdu - rho[0] * c[0]);
         
-        Resi[0 * 3 + 1] = (u[0] - (u[0] + du)) / dtdx;
+        Resi[0 * 3 + 1] = ((u[0] + du) - u[0]) / dtdx;
         u[0] = u[0] + du;
 
         T0 = Ttin * (1.0 - ((gam - 1.0) / (gam + 1.0)) * u[0] * u[0] / a2);
-        Resi[0 * 3 + 2] = (p[0] - ptin * pow(T0 / Ttin, gam / (gam - 1.0)) ) / dtdx;
-        std::cout<<"dpdt"<<std::endl;
-        std::cout<<Resi[0 *3 + 2]<<std::endl;
-        std::cout<<"dpdu * Resi[0*3+1]"<<std::endl;
-        std::cout<<dpdu * Resi[0*3+1]<<std::endl;
+        Resi[0 * 3 + 2] = (ptin * pow(T0 / Ttin, gam / (gam - 1.0)) - p[0]) / dtdx;
         p[0] = ptin * pow(T0 / Ttin, gam / (gam - 1.0));
-        Resi[0 * 3 + 0] = (rho[0] - p[0] / (R * T0)) / dtdx;
+        Resi[0 * 3 + 0] = (p[0] / (R * T0) - rho[0]) / dtdx;
         rho[0] = p[0] / (R * T0);
         e[0] = rho[0] * (Cv * T0 + 0.5 * u[0] * u[0]);
 
-//      Resi[0 * 3 + 0] = (W[0 * 3 + 0] - rho[0]) / dtdx;
-//      Resi[0 * 3 + 1] = (W[0 * 3 + 1] - rho[0] * u[0]) / dtdx;
-//      Resi[0 * 3 + 2] = (W[0 * 3 + 2] - e[0]) / dtdx;
+        Resi[0 * 3 + 0] = -(rho[0] - W[0 * 3 + 0]) / dtdx;
+        Resi[0 * 3 + 1] = -(rho[0] * u[0] - W[0 * 3 + 1]) / dtdx;
+        Resi[0 * 3 + 2] = -(e[0] - W[0 * 3 + 2]) / dtdx;
 
         W[0 * 3 + 0] = rho[0];
         W[0 * 3 + 1] = rho[0] * u[0];
