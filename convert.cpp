@@ -39,7 +39,7 @@ void WtoP(std::vector <double> W,
         T[i] = p[i] / (rho[i] * R);
     }
 }
-// Inverse or dW/dWp
+// Inverse[dW/dWp] or dWp/dW
 // W  = [rho, rho * u, e]
 // Wp = [rho, u, p]
 void dWpdW(std::vector <double> &M,
@@ -49,15 +49,35 @@ void dWpdW(std::vector <double> &M,
     double rho, u;
     rho = W[i * 3 + 0];
     u = W[i * 3 + 1] / rho;
-    M[0] = 1;
-    M[1] = 0;
-    M[2] = 0;
+    M[0] = 1.0;
+    M[1] = 0.0;
+    M[2] = 0.0;
     M[3] = -u / rho;
-    M[4] = 1 / rho;
-    M[5] = 0;
-    M[6] = u * u * (gam - 1) / 2;
-    M[7] = u * (1 - gam);
-    M[8] = gam - 1;
+    M[4] = 1.0 / rho;
+    M[5] = 0.0;
+    M[6] = u * u * (gam - 1.0) / 2.0;
+    M[7] = u * (1.0 - gam);
+    M[8] = gam - 1.0;
+}
+// dW/dWp
+// W  = [rho, rho * u, e]
+// Wp = [rho, u, p]
+void dWdWp(std::vector <double> &M,
+           std::vector <double> W,
+           int i)
+{
+    double rho, u;
+    rho = W[i * 3 + 0];
+    u = W[i * 3 + 1] / rho;
+    M[0] = 1.0;
+    M[1] = 0.0;
+    M[2] = 0.0;
+    M[3] = u;
+    M[4] = rho;
+    M[5] = 0.0;
+    M[6] = u * u / 2.0;
+    M[7] = u * rho;
+    M[8] = 1.0 / (gam - 1.0);
 }
 // Get F
 void WtoF(std::vector <double> W,

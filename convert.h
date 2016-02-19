@@ -20,6 +20,10 @@ void dWpdW(std::vector <double> &M,
            std::vector <double> W,
            int k);
 
+void dWdWp(std::vector <double> &M,
+           std::vector <double> W,
+           int k);
+
 void WtoF(std::vector <double> W,
           std::vector <double> &F);
 

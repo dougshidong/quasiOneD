@@ -44,7 +44,7 @@ void design(std::vector <double> x, std::vector <double> dx,
 
     double alpha = 1;
 
-    double h = 1e-6;
+    double h = 1e-8;
     std::vector <double> gradient(nDesVar), gradientFD(nDesVar),
                 pk(nDesVar),
                 searchD(nDesVar),

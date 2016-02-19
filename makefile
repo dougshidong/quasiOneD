@@ -1,8 +1,8 @@
 CXX	= g++
 INCLGN  = ./gnuplot-iostream
 INCLEI  = ./eigen/
-#DEBUG	= -g -Wall
-DEBUG	= -O3
+DEBUG	= -g -Wall
+#DEBUG	= -O3
 CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o adjoint.o timestep.o globals.o flovar.o \
 			convert.o
 CPPH	= quasiOneD.h

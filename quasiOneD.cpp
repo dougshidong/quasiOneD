@@ -314,28 +314,39 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
     }
     if(u[0] < c[0])
     {
-        dpdu = ptin * (gam / (gam - 1))
-             * pow(1 - ((gam - 1) / (gam + 1)) * u[0] * u[0] / a2,
-                   1 / (gam - 1))
-             * ( - 2 * ((gam - 1) / (gam + 1)) * u[0] / a2);
-             
+        dpdu = ptin * (gam / (gam - 1.0))
+             * pow(1.0 - ((gam - 1.0) / (gam + 1.0)) * u[0] * u[0] / a2,
+                   1.0 / (gam - 1.0))
+             * ( - 2.0 * ((gam - 1.0) / (gam + 1.0)) * u[0] / a2);
+
+        std::cout<<"dpdu"<<std::endl;
+        std::cout<<dpdu<<std::endl;
+
         dtdx = dt0 / dx0;
-        eigenvalue = ((u[1] + u[0] - c[1] - c[0]) / 2) * dtdx;
+        eigenvalue = ((u[1] + u[0] - c[1] - c[0]) / 2.0) * dtdx;
         
         dpdx = p[1] - p[0];
         dudx = u[1] - u[0];
         du = -eigenvalue * (dpdx - rho[0] * c[0] * dudx)
                 / (dpdu - rho[0] * c[0]);
         
+        Resi[0 * 3 + 1] = (u[0] - (u[0] + du)) / dtdx;
         u[0] = u[0] + du;
-        T0 = Ttin * (1 - ((gam - 1) / (gam + 1)) * u[0] * u[0] / a2);
-        p[0] = ptin * pow(T0 / Ttin, gam / (gam - 1));
+
+        T0 = Ttin * (1.0 - ((gam - 1.0) / (gam + 1.0)) * u[0] * u[0] / a2);
+        Resi[0 * 3 + 2] = (p[0] - ptin * pow(T0 / Ttin, gam / (gam - 1.0)) ) / dtdx;
+        std::cout<<"dpdt"<<std::endl;
+        std::cout<<Resi[0 *3 + 2]<<std::endl;
+        std::cout<<"dpdu * Resi[0*3+1]"<<std::endl;
+        std::cout<<dpdu * Resi[0*3+1]<<std::endl;
+        p[0] = ptin * pow(T0 / Ttin, gam / (gam - 1.0));
+        Resi[0 * 3 + 0] = (rho[0] - p[0] / (R * T0)) / dtdx;
         rho[0] = p[0] / (R * T0);
         e[0] = rho[0] * (Cv * T0 + 0.5 * u[0] * u[0]);
 
-        Resi[0 * 3 + 0] = (W[0 * 3 + 0] - rho[0]) / dtdx;
-        Resi[0 * 3 + 1] = (W[0 * 3 + 1] - rho[0] * u[0]) / dtdx;
-        Resi[0 * 3 + 2] = (W[0 * 3 + 2] - e[0]) / dtdx;
+//      Resi[0 * 3 + 0] = (W[0 * 3 + 0] - rho[0]) / dtdx;
+//      Resi[0 * 3 + 1] = (W[0 * 3 + 1] - rho[0] * u[0]) / dtdx;
+//      Resi[0 * 3 + 2] = (W[0 * 3 + 2] - e[0]) / dtdx;
 
         W[0 * 3 + 0] = rho[0];
         W[0 * 3 + 1] = rho[0] * u[0];
@@ -351,7 +362,7 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
 
 void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
 {
-    double avgc, avgu, dtdx, MachBound;
+    double avgc, avgu, dtdx, MachOut;
     double eigenvalues[3], Ri[3];
     double dpdx, dudx, du, drho, dp, T;
     double rho[2], u[2], e[2], p[2], c[2];
@@ -380,8 +391,8 @@ void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, d
     Ri[1] = -eigenvalues[1] * ( dpdx + rho[1] * c[1] * dudx );
     Ri[2] = -eigenvalues[2] * ( dpdx - rho[1] * c[1] * dudx );
     
-    MachBound = avgu / avgc;
-    if(MachBound > 1)
+    MachOut = avgu / avgc;
+    if(MachOut > 1)
     {
         dp = 0.5 * (Ri[1] + Ri[2]);
     }
