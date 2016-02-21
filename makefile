@@ -3,8 +3,8 @@ INCLGN  = ./gnuplot-iostream
 INCLEI  = ./eigen/
 DEBUG	= -g -Wall
 #DEBUG	= -O3
-CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o adjoint.o timestep.o globals.o flovar.o \
-			convert.o
+CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o adjoint.o timestep.o globals.o \
+		  convert.o
 CPPH	= quasiOneD.h
 CFLAGS	= -Wall -c $(DEBUG) -I $(INCLEI)
 LFLAGS  = -Wall $(DEBUG)

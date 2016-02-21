@@ -6,7 +6,6 @@
 #include "flux.h"
 #include "timestep.h"
 #include "globals.h"
-#include "flovar.h"
 
 double isenP(double pt, double M);
 

@@ -3,7 +3,6 @@
 #include<vector>
 #include<math.h>
 #include"globals.h"
-#include"flovar.h"
 
 
 // Get primitive variables

@@ -6,7 +6,6 @@
 #include "flux.h"
 #include "convert.h"
 #include "globals.h"
-#include "flovar.h"
 
 std::vector <double> Flux(3 * (nx + 1), 0);
 // Euler Explicit

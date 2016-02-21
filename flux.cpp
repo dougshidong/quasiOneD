@@ -4,7 +4,6 @@
 #include<math.h>
 #include<iostream>
 #include"globals.h"
-#include"flovar.h"
 #include"flux.h"
 
 
