@@ -2,16 +2,17 @@
 #define grid_h
 
 #include <vector>
+#include<complex>
 
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
+std::vector <std::complex<double> > calcVolume(std::vector <std::complex<double> > S, std::vector <std::complex<double> > dx);
 
-std::vector <double> evalX(double a, double b);
+std::vector <std::complex<double> > evalX(std::complex<double> a, std::complex<double> b);
 
-std::vector <double> evalDx(std::vector <double> x);
+std::vector <std::complex<double> > evalDx(std::vector <std::complex<double> > x);
 
-std::vector <double> evalS(std::vector <double> geom,
-                           std::vector <double> x,
-                           std::vector <double> dx);
+std::vector <std::complex<double> > evalS(std::vector <std::complex<double> > geom,
+                           std::vector <std::complex<double> > x,
+                           std::vector <std::complex<double> > dx);
 
 
 

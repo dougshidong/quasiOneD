@@ -2,27 +2,28 @@
 #define TIMESTEP_H
 
 #include<vector>
+#include<complex>
 
-void EulerExplicitStep(std::vector <double> S,
-                std::vector <double> V,
-                std::vector <double> dt,
-                std::vector <double> Q,
-                std::vector <double> &Resi,
-                std::vector <double> &W,
-                std::vector <double> F);
+void EulerExplicitStep(std::vector <std::complex<double> > S,
+                std::vector <std::complex<double> > V,
+                std::vector <std::complex<double> > dt,
+                std::vector <std::complex<double> > Q,
+                std::vector <std::complex<double> > &Resi,
+                std::vector <std::complex<double> > &W,
+                std::vector <std::complex<double> > F);
 
-void rk4(std::vector <double> dx, std::vector <double> S, 
-                std::vector <double> dt, 
-                std::vector <double> &W,
-                std::vector <double> F,
-                std::vector <double> Q, 
-                std::vector <double> &Resi);
+void rk4(std::vector <std::complex<double> > dx, std::vector <std::complex<double> > S, 
+                std::vector <std::complex<double> > dt, 
+                std::vector <std::complex<double> > &W,
+                std::vector <std::complex<double> > F,
+                std::vector <std::complex<double> > Q, 
+                std::vector <std::complex<double> > &Resi);
 
-void jamesonrk(std::vector <double> dx,
-         std::vector <double> S, 
-         std::vector <double> V, 
-         std::vector <double> dt, 
-         std::vector <double> &W,
-         std::vector <double> F,
-         std::vector <double> &Resi);
+void jamesonrk(std::vector <std::complex<double> > dx,
+         std::vector <std::complex<double> > S, 
+         std::vector <std::complex<double> > V, 
+         std::vector <std::complex<double> > dt, 
+         std::vector <std::complex<double> > &W,
+         std::vector <std::complex<double> > F,
+         std::vector <std::complex<double> > &Resi);
 #endif

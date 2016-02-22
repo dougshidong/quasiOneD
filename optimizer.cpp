@@ -7,51 +7,52 @@
 #include<vector>
 #include<iomanip>
 #include<Eigen/Dense>
+#include <complex>
 #include<stdlib.h>//exit
-std::vector <double> finiteD(std::vector <double> x,
-                             std::vector <double> dx,
-                             std::vector <double> S, 
-                             std::vector <double> designVar, 
-                             double h, 
-                             double currentI);
+std::vector <std::complex<double> > finiteD(std::vector <std::complex<double> > x,
+                             std::vector <std::complex<double> > dx,
+                             std::vector <std::complex<double> > S, 
+                             std::vector <std::complex<double> > designVar, 
+                             std::complex<double> h, 
+                             std::complex<double> currentI);
 
-double stepBacktrackUncons(std::vector <double> designVar, 
-                           std::vector <double> pk, 
-                           std::vector <double> gradient, 
-                           double currentI, 
-                           std::vector <double> x, 
-                           std::vector <double> dx);
+std::complex<double> stepBacktrackUncons(std::vector <std::complex<double> > designVar, 
+                           std::vector <std::complex<double> > pk, 
+                           std::vector <std::complex<double> > gradient, 
+                           std::complex<double> currentI, 
+                           std::vector <std::complex<double> > x, 
+                           std::vector <std::complex<double> > dx);
 
-std::vector <double> BFGS(std::vector <double> oldH, 
-                          std::vector <double> gradList, 
-                          std::vector <double> searchD);
+std::vector <std::complex<double> > BFGS(std::vector <std::complex<double> > oldH, 
+                          std::vector <std::complex<double> > gradList, 
+                          std::vector <std::complex<double> > searchD);
 
-void design(std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar)
+void design(std::vector <std::complex<double> > x, std::vector <std::complex<double> > dx,
+            std::vector <std::complex<double> > S, std::vector <std::complex<double> > designVar)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector <std::complex<double> > W(3 * nx, 0);
 
     
-    std::vector <double> normGradList, gradList;
-    std::vector <double> H(nDesVar * nDesVar, 0);
-    double normGrad = 1;
-    double tolGrad = 1e-10;
-    double currentI;
+    std::vector <std::complex<double> > normGradList, gradList;
+    std::vector <std::complex<double> > H(nDesVar * nDesVar, 0);
+    std::complex<double> normGrad = 1;
+    std::complex<double> tolGrad = 1e-10;
+    std::complex<double> currentI;
 
     int maxDesign = 10000;
 
     int printConv = 1;
 
-    double alpha = 1;
+    std::complex<double> alpha = 1;
 
-    double h = 1e-8;
-    std::vector <double> gradient(nDesVar), gradientFD(nDesVar),
+    std::complex<double> h = 1e-8;
+    std::vector <std::complex<double> > gradient(nDesVar), gradientFD(nDesVar),
                 pk(nDesVar),
                 searchD(nDesVar),
                 dgradient(nDesVar);
 
     int rc;
-    std::vector <double> psi(3 * nx, 0);
+    std::vector <std::complex<double> > psi(3 * nx, 0);
     
     quasiOneD(x, dx, S, designVar, W);
     
@@ -77,7 +78,7 @@ void design(std::vector <double> x, std::vector <double> dx,
     int iDesign = 0;
 
     // Design Loop
-    while(normGrad > tolGrad && iDesign < maxDesign)
+    while(std::real(normGrad) > std::real(tolGrad) && iDesign < maxDesign)
     {
         iDesign++ ;
 
@@ -180,15 +181,15 @@ void design(std::vector <double> x, std::vector <double> dx,
 
 }
 
-std::vector <double> BFGS(std::vector <double> oldH,
-                          std::vector <double> gradList,
-                          std::vector <double> searchD)
+std::vector <std::complex<double> > BFGS(std::vector <std::complex<double> > oldH,
+                          std::vector <std::complex<double> > gradList,
+                          std::vector <std::complex<double> > searchD)
 {
     int ls = gradList.size();
     int rc;
-    std::vector <double> newH(nDesVar * nDesVar);
-    Eigen::VectorXd dg(nDesVar), dx(nDesVar);
-    Eigen::MatrixXd dH(nDesVar, nDesVar), a(nDesVar, nDesVar), b(nDesVar, nDesVar);
+    std::vector <std::complex<double> > newH(nDesVar * nDesVar);
+    Eigen::VectorXcd dg(nDesVar), dx(nDesVar);
+    Eigen::MatrixXcd dH(nDesVar, nDesVar), a(nDesVar, nDesVar), b(nDesVar, nDesVar);
 
     for(int i = 0; i < nDesVar; i++)
     {
@@ -196,7 +197,7 @@ std::vector <double> BFGS(std::vector <double> oldH,
         dx(i) = searchD[i];
     }
     
-    Eigen::Map <Eigen::Matrix<double, - 1, - 1, Eigen::RowMajor> > 
+    Eigen::Map <Eigen::Matrix<std::complex<double>, - 1, - 1, Eigen::RowMajor> > 
         cH(oldH.data(), nDesVar, nDesVar);
 
     a = ((dx.transpose() * dg + dg.transpose() * cH * dg)(0) * (dx * dx.transpose()))
@@ -222,27 +223,27 @@ std::vector <double> BFGS(std::vector <double> oldH,
     return newH;
 }
 
-std::vector <double> finiteD(std::vector <double> x, 
-                             std::vector <double> dx,
-                             std::vector <double> S, 
-                             std::vector <double> designVar, 
-                             double h, 
-                             double currentI)
+std::vector <std::complex<double> > finiteD(std::vector <std::complex<double> > x, 
+                             std::vector <std::complex<double> > dx,
+                             std::vector <std::complex<double> > S, 
+                             std::vector <std::complex<double> > designVar, 
+                             std::complex<double> h, 
+                             std::complex<double> currentI)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector <std::complex<double> > W(3 * nx, 0);
 
     // Method
     // 1  =  Forward
     // 2  =  Backward
     // 3  =  Central
-    std::vector <double> grad(nx);
-    std::vector <double> tempS(nx + 1);
+    std::vector <std::complex<double> > grad(nx);
+    std::vector <std::complex<double> > tempS(nx + 1);
     
-    double I0, I1, I2, dh;
+    std::complex<double> I0, I1, I2, dh;
 
-    std::vector <double> tempD(nDesVar);
+    std::vector <std::complex<double> > tempD(nDesVar);
 
-    if(currentI < 0 && gradientType != 3)
+    if(std::real(currentI) < 0 && gradientType != 3)
     {
         I0 = quasiOneD(x, dx, S, designVar, W);
 
@@ -315,7 +316,19 @@ std::vector <double> finiteD(std::vector <double> x,
 
             //std::cout<<"I2 = "<<std::setprecision(15)<<I2<<std::endl;
 
-            grad[i] = (I1 - I2) / (2 * dh);
+            grad[i] = (I1 - I2) / (2.0 * dh);
+        }
+        else if(gradientType == 4)
+        {
+            tempD[i] += dh * std::complex<double>(0.0,1.0);
+
+            tempS = evalS(tempD, x, dx);
+
+            I1 = quasiOneD(x, dx, tempS, tempD, W);
+
+            std::cout<<"doing complex step"<<std::endl;
+
+            grad[i] = std::imag(I1) / (dh);
         }
     }
     std::cout<<"Gradient from FD: "<<std::endl;
@@ -327,23 +340,23 @@ std::vector <double> finiteD(std::vector <double> x,
 
 
 
-double stepBacktrackUncons(std::vector <double> designVar,
-                           std::vector <double> pk,
-                           std::vector <double> gradient, 
-                           double currentI,
-                           std::vector <double> x, 
-                           std::vector <double> dx)
+std::complex<double> stepBacktrackUncons(std::vector <std::complex<double> > designVar,
+                           std::vector <std::complex<double> > pk,
+                           std::vector <std::complex<double> > gradient, 
+                           std::complex<double> currentI,
+                           std::vector <std::complex<double> > x, 
+                           std::vector <std::complex<double> > dx)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector <std::complex<double> > W(3 * nx, 0);
 
-    double alpha = 1;
-    double c1 = 1e-4;
-    std::vector <double> tempS(nx + 1);
-    double newVal;
+    std::complex<double> alpha = 1;
+    std::complex<double> c1 = 1e-4;
+    std::vector <std::complex<double> > tempS(nx + 1);
+    std::complex<double> newVal;
 
-    double c_pk_grad = 0;
+    std::complex<double> c_pk_grad = 0;
 
-    std::vector <double> tempD(nDesVar);
+    std::vector <std::complex<double> > tempD(nDesVar);
 
     for(int i = 0; i < nDesVar; i++)
     {
@@ -361,7 +374,7 @@ double stepBacktrackUncons(std::vector <double> designVar,
     newVal = quasiOneD(x, dx, tempS, tempD, W);
 
 
-    while(newVal > (currentI + alpha * c_pk_grad) && alpha > 0.0001)
+    while(std::real(newVal) > std::real((currentI + alpha * c_pk_grad)) && std::real(alpha) > 0.0001)
     {
         alpha = alpha * 0.5;
         std::cout<<"Alpha Reduction: "<<alpha<<std::endl;

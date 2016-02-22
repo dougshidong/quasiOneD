@@ -6,41 +6,42 @@
 #include "flux.h"
 #include "timestep.h"
 #include "globals.h"
+#include <complex>
 
-double isenP(double pt, double M);
+std::complex<double> isenP(std::complex<double> pt, std::complex<double> M);
 
-double isenT(double Tt, double M);
+std::complex<double> isenT(std::complex<double> Tt, std::complex<double> M);
 
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
+std::vector <std::complex<double> > calcVolume(std::vector <std::complex<double> > S, std::vector <std::complex<double> > dx);
 
-double TotalPressureLoss(std::vector <double> W);
+std::complex<double> TotalPressureLoss(std::vector <std::complex<double> > W);
 
-void ioTargetPressure(int io, std::vector <double> &p);
+void ioTargetPressure(int io, std::vector <std::complex<double> > &p);
 
-double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
-        std::vector <double> dx);
+std::complex<double> inverseFitness(std::vector <std::complex<double> > pcurrent, std::vector <std::complex<double> > ptarget,
+        std::vector <std::complex<double> > dx);
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void inletBC(std::vector <std::complex<double> > &W, std::vector <std::complex<double> > &Resi, std::complex<double> dt0, std::complex<double> dx0);
+void outletBC(std::vector <std::complex<double> > &W, std::vector <std::complex<double> > &Resi, std::complex<double> dt0, std::complex<double> dx0);
 
-double quasiOneD(std::vector <double> x, 
-        std::vector <double> dx, 
-        std::vector <double> S,
-        std::vector <double> designVar,
-        std::vector <double> &W)
+std::complex<double> quasiOneD(std::vector <std::complex<double> > x, 
+        std::vector <std::complex<double> > dx, 
+        std::vector <std::complex<double> > S,
+        std::vector <std::complex<double> > designVar,
+        std::vector <std::complex<double> > &W)
 {
-    std::vector <double> rho(nx), u(nx), e(nx);
-    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-    std::vector <double> F(3 * nx, 0), Q(3 * nx, 0), Resi(3 * nx, 0);
-//  std::vector <std::vector <double> > W(3, std::vector <double> (nx, 0)),
+    std::vector <std::complex<double> > rho(nx), u(nx), e(nx);
+    std::vector <std::complex<double> > T(nx), p(nx), c(nx), Mach(nx);
+    std::vector <std::complex<double> > F(3 * nx, 0), Q(3 * nx, 0), Resi(3 * nx, 0);
+//  std::vector <std::vector <std::complex<double> > > W(3, std::vector <std::complex<double> > (nx, 0)),
 
-    std::vector <double> dt(nx), V(nx);
+    std::vector <std::complex<double> > dt(nx), V(nx);
 
     std::vector <int> itV(maxIt/printIt);
-    std::vector <double> normV(maxIt/printIt);
+    std::vector <std::complex<double> > normV(maxIt/printIt);
 
     int iterlength;
-    double normR = 1.0;
+    std::complex<double> normR = 1.0;
     int iterations = 0;
 
 
@@ -85,7 +86,7 @@ double quasiOneD(std::vector <double> x,
         Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);
     }
 
-    while(normR > conv && iterations < maxIt)
+    while(std::real(normR) > std::real(conv) && iterations < maxIt)
     {
         iterations++;
 
@@ -102,7 +103,7 @@ double quasiOneD(std::vector <double> x,
 
         // Calculate Time Step
         for(int i = 0; i < nx; i++)
-            dt[i] = (CFL * dx[i]) / fabs(u[i] + c[i]);
+            dt[i] = (CFL * dx[i]) / fabs(std::real(u[i] + c[i]));
 
         // Step in Time
         if(StepScheme == 0)
@@ -130,7 +131,7 @@ double quasiOneD(std::vector <double> x,
             rho[i] = W[i * 3 + 0];     // rho
             u[i] = W[i * 3 + 1] / rho[i];  // U
             e[i] = W[i * 3 + 2];       // Energy
-            p[i] = (gam - 1) * (e[i] - rho[i] * pow(u[i], 2) / 2);  // Pressure
+            p[i] = (gam - 1.0) * (e[i] - rho[i] * pow(u[i], 2.0) / 2.0);  // Pressure
             T[i] = p[i] / (rho[i] * R); // Temperature
             c[i] = sqrt((gam * p[i]) / rho[i]);// Speed of sound
             Mach[i] = u[i] / c[i];      // Mach number
@@ -165,32 +166,32 @@ double quasiOneD(std::vector <double> x,
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
     
 
-    FILE  * Results;
-    Results = fopen("Results.dat", "w");
-    fprintf(Results, "%d\n", nx);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", x[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", p[i] / ptin);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", rho[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", Mach[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", x[i] - dx[i] / 2);
-    fprintf(Results, "%f\n", x.back() + dx.back() / 2);
-    for(int i = 0; i < nx + 1; i++)
-        fprintf(Results, "%.15f\n", S[i]);
+//  FILE  * Results;
+//  Results = fopen("Results.dat", "w");
+//  fprintf(Results, "%d\n", nx);
+//  for(int i = 0; i < nx; i++)
+//      fprintf(Results, "%.15f\n", x[i]);
+//  for(int i = 0; i < nx; i++)
+//      fprintf(Results, "%.15f\n", p[i] / ptin);
+//  for(int i = 0; i < nx; i++)
+//      fprintf(Results, "%.15f\n", rho[i]);
+//  for(int i = 0; i < nx; i++)
+//      fprintf(Results, "%.15f\n", Mach[i]);
+//  for(int i = 0; i < nx; i++)
+//      fprintf(Results, "%.15f\n", x[i] - dx[i] / 2);
+//  fprintf(Results, "%f\n", x.back() + dx.back() / 2);
+//  for(int i = 0; i < nx + 1; i++)
+//      fprintf(Results, "%.15f\n", S[i]);
 
-    iterlength = itV.size();
-    for(int i = 0; i < iterlength; i++)
-        fprintf(Results, "%.15d\n", itV[i]);
-    for(int i = 0; i < iterlength; i++)
-        fprintf(Results, "%.15f\n", normV[i]);
+//  iterlength = itV.size();
+//  for(int i = 0; i < iterlength; i++)
+//      fprintf(Results, "%.15d\n", itV[i]);
+//  for(int i = 0; i < iterlength; i++)
+//      fprintf(Results, "%.15f\n", normV[i]);
 
 
 
-    fclose(Results);
+//  fclose(Results);
 
     // Create Target Pressure
     if(createTarget == 1) ioTargetPressure(1, p);
@@ -200,7 +201,7 @@ double quasiOneD(std::vector <double> x,
         return TotalPressureLoss(W);
     else if(fitnessFun == 1)
     {
-        std::vector <double> ptarget(nx, 0);
+        std::vector <std::complex<double> > ptarget(nx, 0);
         ioTargetPressure(-1, ptarget);
         return inverseFitness(p, ptarget, dx);
     }
@@ -210,49 +211,47 @@ double quasiOneD(std::vector <double> x,
 
 }
 
-double isenP(double pt, double M)
+std::complex<double> isenP(std::complex<double> pt, std::complex<double> M)
 {
-    return pt * pow((1 + (gam - 1) / 2 * pow(M, 2)), ( - gam / (gam - 1)));
+    return pt * pow((1.0 + (gam - 1.0) / 2.0 * pow(M, 2.0)), ( - gam / (gam - 1.0)));
 }
 
-double isenT(double Tt, double M)
+std::complex<double> isenT(std::complex<double> Tt, std::complex<double> M)
 {
-    return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
+    return Tt * pow((1.0 + (gam - 1.0) / 2.0 * pow(M, 2.0)), - 1.0);
 }
 
-double TotalPressureLoss(std::vector <double> W)
+std::complex<double> TotalPressureLoss(std::vector <std::complex<double> > W)
 {
-    double rhoout = W[(nx - 1) * 3 + 0];
-    double uout = W[(nx - 1) * 3 + 1] / rhoout;
-    double pout = (gam - 1) * (W[(nx - 1) * 3 + 2] - rhoout * pow(uout, 2) / 2);
-    //double Tout = pout/(rhoout * R);
+    std::complex<double> rhoout = W[(nx - 1) * 3 + 0];
+    std::complex<double> uout = W[(nx - 1) * 3 + 1] / rhoout;
+    std::complex<double> pout = (gam - 1.0) * (W[(nx - 1) * 3 + 2] - rhoout * pow(uout, 2.0) / 2.0);
+    //std::complex<double> Tout = pout/(rhoout * R);
 
-    double ptout_normalized;
+    std::complex<double> ptout_normalized;
 
-    double ToverTt = 1 - pow(uout, 2) / a2 * (gam - 1) / (gam + 1);
+    std::complex<double> ToverTt = 1.0 - pow(uout, 2.0) / a2 * (gam - 1.0) / (gam + 1.0);
+    std::complex<double> poverpt = pow(ToverTt, (gam / (gam - 1.0)));
 
-    double poverpt = pow(ToverTt, (gam / (gam - 1)));
-
-    ptout_normalized = 1 - (pout / poverpt) / ptin;
+    ptout_normalized = 1.0 - (pout / poverpt) / ptin;
 
     return ptout_normalized;
 }
 
 // Define Volume
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
+std::vector <std::complex<double> > calcVolume(std::vector <std::complex<double> > S, std::vector <std::complex<double> > dx)
 {
-    std::vector <double> V;
+    std::vector <std::complex<double> > V;
     int ndx = dx.size();
     for(int i = 0; i < ndx; i++)
-        V.push_back((S[i] + S[i + 1]) / 2 * dx[i]);
+        V.push_back((S[i] + S[i + 1]) / 2.0 * dx[i]);
 
     return V;
 }
 
 // Input/Output Target Pressure Distribution
-void ioTargetPressure(int io, std::vector <double> &p)
+void ioTargetPressure(int io, std::vector <std::complex<double> > &p)
 {
-
     FILE  * TargetP;
     int err;
     // Output
@@ -263,20 +262,21 @@ void ioTargetPressure(int io, std::vector <double> &p)
 //      for(int i = 0; i < nx; i++)
 //          fprintf(TargetP, "%.15f\n", x[i]);
         for(int i = 0; i < nx; i++)
-            fprintf(TargetP, "%.15f\n", p[i] / ptin);
+            fprintf(TargetP, "%.15f + i%.15f\n", std::real(p[i] / ptin), std::imag(p[i] / ptin));
     }
     // Input
     else
     {
         int nxT;
-
+        double re, im;
         TargetP = fopen("targetP.dat", "r");
         rewind(TargetP);
         err = fscanf(TargetP, "%d", &nxT);
         if(nxT!=nx) std::cout<< "nx and nxT are different for targetP";
         for(int iT = 0; iT < nxT; iT++)
         {
-            err = fscanf(TargetP, "%lf", &p[iT]);
+            err = fscanf(TargetP, "%.15lf + i%15lf\n", &re, &im);
+            p[iT] = re + im * std::complex<double>(0.0, 1.0);
         }
         if(err != 1) std::cout<< "Err";
     }   
@@ -286,32 +286,32 @@ void ioTargetPressure(int io, std::vector <double> &p)
 
 // Return Inverse Design Fitness
 
-double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
-        std::vector <double> dx)
+std::complex<double> inverseFitness(std::vector <std::complex<double> > pcurrent, std::vector <std::complex<double> > ptarget,
+        std::vector <std::complex<double> > dx)
 {
-    double fit = 0;
+    std::complex<double> fit = 0;
     for(int i = 0; i < nx; i++)
     {
-        fit += pow(pcurrent[i] / ptin - ptarget[i], 2) * dx[i];
+        fit += pow(pcurrent[i] / ptin - ptarget[i], 2.0) * dx[i];
     }
-    std::cout<<"InverseFitness =  "<<fit / 2<<std::endl;
-    return fit / 2;
+    std::cout<<"InverseFitness =  "<<fit / 2.0<<std::endl;
+    return fit / 2.0;
 }
 
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
+void inletBC(std::vector <std::complex<double> > &W, std::vector <std::complex<double> > &Resi, std::complex<double> dt0, std::complex<double> dx0)
 {
-    double dpdu, dpdx, dudx, dtdx, du, eigenvalue, T0;
-    double rho[2], u[2], e[2], p[2], c[2];
+    std::complex<double> dpdu, dpdx, dudx, dtdx, du, eigenvalue, T0;
+    std::complex<double> rho[2], u[2], e[2], p[2], c[2];
     for(int i = 0; i < 2; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
         e[i] = W[i * 3 + 2];
-        p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
+        p[i] = (gam - 1.0) * ( e[i] - rho[i] * u[i] * u[i] / 2.0 );
         c[i] = sqrt( gam * p[i] / rho[i] );
     }
-    if(u[0] < c[0])
+    if(std::real(u[0]) < std::real(c[0]))
     {
         dpdu = ptin * (gam / (gam - 1.0))
              * pow(1.0 - ((gam - 1.0) / (gam + 1.0)) * u[0] * u[0] / a2,
@@ -352,25 +352,25 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
     }
 }
 
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
+void outletBC(std::vector <std::complex<double> > &W, std::vector <std::complex<double> > &Resi, std::complex<double> dt0, std::complex<double> dx0)
 {
-    double avgc, avgu, dtdx, MachOut;
-    double eigenvalues[3], Ri[3];
-    double dpdx, dudx, du, drho, dp, T;
-    double rho[2], u[2], e[2], p[2], c[2];
+    std::complex<double> avgc, avgu, dtdx, MachOut;
+    std::complex<double> eigenvalues[3], Ri[3];
+    std::complex<double> dpdx, dudx, du, drho, dp, T;
+    std::complex<double> rho[2], u[2], e[2], p[2], c[2];
 
     for(int i = 0; i < 2; i++)
     {
         rho[i] = W[(i + (nx - 2)) * 3 + 0];
         u[i] = W[(i + (nx - 2)) * 3 + 1] / rho[i];
         e[i] = W[(i + (nx - 2)) * 3 + 2];
-        p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
+        p[i] = (gam - 1.0) * ( e[i] - rho[i] * u[i] * u[i] / 2.0 );
         c[i] = sqrt( gam * p[i] / rho[i] );
     } 
 
     // Exit boundary condition
-    avgu = (u[1] + u[0]) / 2;
-    avgc = (c[1] + c[0]) / 2;
+    avgu = (u[1] + u[0]) / 2.0;
+    avgc = (c[1] + c[0]) / 2.0;
     dtdx = dt0 / dx0;
     eigenvalues[0] = avgu * dtdx;
     eigenvalues[1] = (avgu + avgc) * dtdx;
@@ -379,12 +379,12 @@ void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, d
     dpdx = p[1] - p[0];
     dudx = u[1] - u[0];
     
-    Ri[0] = -eigenvalues[0] * ( rho[1] - rho[0] - dpdx / pow(c[1], 2) );
+    Ri[0] = -eigenvalues[0] * ( rho[1] - rho[0] - dpdx / pow(c[1], 2.0) );
     Ri[1] = -eigenvalues[1] * ( dpdx + rho[1] * c[1] * dudx );
     Ri[2] = -eigenvalues[2] * ( dpdx - rho[1] * c[1] * dudx );
     
     MachOut = avgu / avgc;
-    if(MachOut > 1)
+    if(std::real(MachOut) > 1)
     {
         dp = 0.5 * (Ri[1] + Ri[2]);
     }

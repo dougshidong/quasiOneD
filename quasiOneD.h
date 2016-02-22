@@ -2,18 +2,19 @@
 #define QUASIONED_H
 
 #include<vector>
+#include <complex>
 
-double quasiOneD(std::vector <double> x, 
-                 std::vector <double> dx, 
-                 std::vector <double> S,
-                 std::vector <double> designVar,
-                 std::vector <double> &W);
+std::complex<double> quasiOneD(std::vector <std::complex<double> > x, 
+                 std::vector <std::complex<double> > dx, 
+                 std::vector <std::complex<double> > S,
+                 std::vector <std::complex<double> > designVar,
+                 std::vector <std::complex<double> > &W);
 
-double TotalPressureLoss(std::vector <double> W);
+std::complex<double> TotalPressureLoss(std::vector <std::complex<double> > W);
 
-void ioTargetPressure(int io, std::vector <double> &p);
+void ioTargetPressure(int io, std::vector <std::complex<double> > &p);
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void inletBC(std::vector <std::complex<double> > &W, std::vector <std::complex<double> > &Resi, std::complex<double> dt0, std::complex<double> dx0);
+void outletBC(std::vector <std::complex<double> > &W, std::vector <std::complex<double> > &Resi, std::complex<double> dt0, std::complex<double> dx0);
 
 #endif

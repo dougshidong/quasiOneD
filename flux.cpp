@@ -5,12 +5,13 @@
 #include<iostream>
 #include"globals.h"
 #include"flux.h"
+#include<complex>
 
 
 // Get Flux based on FluxScheme
-void getFlux(std::vector <double> &Flux,
-             std::vector <double> W,
-             std::vector <double> F)
+void getFlux(std::vector <std::complex<double> > &Flux,
+             std::vector <std::complex<double> > W,
+             std::vector <std::complex<double> > F)
 {
     if(FluxScheme == 0) // SW
         Flux_StegerWarming(Flux, W);
@@ -19,26 +20,26 @@ void getFlux(std::vector <double> &Flux,
 }
 
 // StegerWarming
-void Flux_StegerWarming(std::vector <double> &Flux,
-                         std::vector <double> W)
+void Flux_StegerWarming(std::vector <std::complex<double> > &Flux,
+                         std::vector <std::complex<double> > W)
 {
-    double eps = 0.1;
+    std::complex<double> eps = 0.1;
 
-    double S[3][3] = {{0}},
+    std::complex<double> S[3][3] = {{0}},
            Sinv[3][3] = {{0}},
            C[3][3] = {{0}},
            Cinv[3][3] = {{0}},
            lambdaP[3][3],
            lambdaN[3][3];
-    double lambdaa[3];
+    std::complex<double> lambdaa[3];
     
     
-    double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
+    std::complex<double> Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 
-    std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
+    std::vector <std::complex<double> > Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
 
-    double beta = 0.4;//gam-1;
-    double rho, u, e, c;
+    std::complex<double> beta = 0.4;//gam-1;
+    std::complex<double> rho, u, e, c;
 
     for(int i = 0; i < nx; i++)
     {
@@ -58,30 +59,30 @@ void Flux_StegerWarming(std::vector <double> &Flux,
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
         e = W[i * 3 + 2];
-        c = sqrt( gam / rho * (gam - 1) * ( e - rho * u * u / 2 ) );
-        S[0][0] = 1;
+        c = sqrt( gam / rho * (gam - 1.0) * ( e - rho * u * u / 2.0 ) );
+        S[0][0] = 1.0;
         S[1][0] = -u / rho;
         S[2][0] = 0.5 * u * u * beta;
-        S[1][1] = 1 / rho;
+        S[1][1] = 1.0 / rho;
         S[2][1] = -u * beta;
         S[2][2] = beta;
-        Sinv[0][0] = 1;
+        Sinv[0][0] = 1.0;
         Sinv[1][0] = u;
         Sinv[2][0] = 0.5 * u * u;
         Sinv[1][1] = rho;
         Sinv[2][1] = u * rho;
-        Sinv[2][2] = 1 / beta;
-        C[0][0] = 1;
+        Sinv[2][2] = 1.0 / beta;
+        C[0][0] = 1.0;
         C[1][1] = rho * c;
         C[2][1] = -rho * c;
-        C[0][2] = -1 / (c * c);
-        C[1][2] = 1;
-        C[2][2] = 1;
-        Cinv[0][0] = 1;
-        Cinv[0][1] = 1 / (2 * c * c);
-        Cinv[0][2] = 1 / (2 * c * c);
-        Cinv[1][1] = 1 / (2 * rho * c);
-        Cinv[1][2] = -1 / (2 * rho * c);
+        C[0][2] = -1.0 / (c * c);
+        C[1][2] = 1.0;
+        C[2][2] = 1.0;
+        Cinv[0][0] = 1.0;
+        Cinv[0][1] = 1.0 / (2.0 * c * c);
+        Cinv[0][2] = 1.0 / (2.0 * c * c);
+        Cinv[1][1] = 1.0 / (2.0 * rho * c);
+        Cinv[1][2] = -1.0 / (2.0 * rho * c);
         Cinv[2][1] = 0.5;
         Cinv[2][2] = 0.5;
         lambdaa[0] = u;
@@ -89,10 +90,10 @@ void Flux_StegerWarming(std::vector <double> &Flux,
         lambdaa[2] = u - c;
         
         for(int k = 0; k < 3; k++)
-            if(lambdaa[k] > 0)
-                lambdaP[k][k] = (lambdaa[k] + sqrt(pow(lambdaa[k], 2) + pow(eps, 2))) /2;
+            if(std::real(lambdaa[k]) > 0)
+                lambdaP[k][k] = (lambdaa[k] + sqrt(pow(lambdaa[k], 2.0) + pow(eps, 2.0))) /2.0;
             else
-                lambdaN[k][k] = (lambdaa[k] - sqrt(pow(lambdaa[k], 2) + pow(eps, 2))) / 2;
+                lambdaN[k][k] = (lambdaa[k] - sqrt(pow(lambdaa[k], 2.0) + pow(eps, 2.0))) / 2.0;
 
         for(int row = 0; row < 3; row++)
         for(int col = 0; col < 3; col++)
@@ -144,29 +145,27 @@ void Flux_StegerWarming(std::vector <double> &Flux,
 }
 
 
-void Flux_Scalar(std::vector <double> &Flux,
-                 std::vector <double> W,
-                 std::vector <double> F)
+void Flux_Scalar(std::vector <std::complex<double> > &Flux,
+                 std::vector <std::complex<double> > W,
+                 std::vector <std::complex<double> > F)
 {
     int ki, kim;
-    double lambda;
-    double avgu, avgc;
-    double rho, e;
-    std::vector <double> u(nx), c(nx);
+    std::complex<double> lambda;
+    std::complex<double> avgu, avgc;
+    std::complex<double> rho, e;
+    std::vector <std::complex<double> > u(nx), c(nx);
 
     for(int i = 0; i < nx; i++)
     {
         rho = W[i * 3 + 0];
         e = W[i * 3 + 2];
         u[i] = W[i * 3 + 1] / rho;
-        c[i] = sqrt( gam / rho * (gam - 1) * ( e - rho * u[i] * u[i] / 2.0 ) );
+        c[i] = sqrt( gam / rho * (gam - 1.0) * ( e - rho * u[i] * u[i] / 2.0 ) );
     }
     for(int i = 1; i < nx; i++)
     {
         avgu = ( u[i - 1] + u[i] ) / 2.0;
         avgc = ( c[i - 1] + c[i] ) / 2.0;
-        lambda = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ),
-                           fabs(avgu - avgc) );
         lambda = avgu + avgc;
 
         for(int k = 0; k < 3; k++)

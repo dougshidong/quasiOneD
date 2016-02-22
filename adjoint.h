@@ -2,11 +2,12 @@
 #define adjoint_h
 
 #include<vector>
+#include <complex>
 
-std::vector <double> adjoint(std::vector <double> x, 
-                             std::vector <double> dx, 
-                             std::vector <double> S,
-                             std::vector <double> W,
-                             std::vector <double> &psi,
-                             std::vector <double> designVar);
+std::vector <std::complex<double> > adjoint(std::vector <std::complex<double> > x, 
+                             std::vector <std::complex<double> > dx, 
+                             std::vector <std::complex<double> > S,
+                             std::vector <std::complex<double> > W,
+                             std::vector <std::complex<double> > &psi,
+                             std::vector <std::complex<double> > designVar);
 #endif

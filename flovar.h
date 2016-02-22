@@ -1,17 +1,17 @@
-extern const double gam;
-extern const double R;
-extern const double Cv;
+extern const std::complex<double> gam;
+extern const std::complex<double> R;
+extern const std::complex<double> Cv;
 
-extern const double Min;
-extern const double Ttin; 
-extern const double ptin;
+extern const std::complex<double> Min;
+extern const std::complex<double> Ttin; 
+extern const std::complex<double> ptin;
 
-extern const double pexit;
+extern const std::complex<double> pexit;
 
-extern const double a2;
+extern const std::complex<double> a2;
 
-extern const double CFL;
-extern const double conv;
+extern const std::complex<double> CFL;
+extern const std::complex<double> conv;
 
 extern const int maxIt;
 
@@ -23,4 +23,4 @@ extern const int StepScheme;
 
 extern const int FluxScheme;
 
-extern double Scalareps;
+extern std::complex<double> Scalareps;

@@ -2,15 +2,16 @@
 #define FLUX_H
 
 #include<vector>
+#include<complex>
 
-void getFlux(std::vector <double> &Flux,
-             std::vector <double> W,
-             std::vector <double> F);
+void getFlux(std::vector <std::complex<double> > &Flux,
+             std::vector <std::complex<double> > W,
+             std::vector <std::complex<double> > F);
 
-void Flux_StegerWarming(std::vector <double> &Flux,
-                         std::vector <double> W);
+void Flux_StegerWarming(std::vector <std::complex<double> > &Flux,
+                         std::vector <std::complex<double> > W);
 
-void Flux_Scalar(std::vector <double> &Flux,
-                 std::vector <double> W,
-                 std::vector <double> F);
+void Flux_Scalar(std::vector <std::complex<double> > &Flux,
+                 std::vector <std::complex<double> > W,
+                 std::vector <std::complex<double> > F);
 #endif

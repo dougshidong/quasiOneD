@@ -6,16 +6,17 @@
 #include "flux.h"
 #include "convert.h"
 #include "globals.h"
+#include <complex>
 
-std::vector <double> Flux(3 * (nx + 1), 0);
+std::vector <std::complex<double> > Flux(3 * (nx + 1), 0);
 // Euler Explicit
-void EulerExplicitStep(std::vector <double> S,
-                       std::vector <double> V,
-                       std::vector <double> dt,
-                       std::vector <double> Q,
-                       std::vector <double> &Resi,
-                       std::vector <double> &W,
-                       std::vector <double> F)
+void EulerExplicitStep(std::vector <std::complex<double> > S,
+                       std::vector <std::complex<double> > V,
+                       std::vector <std::complex<double> > dt,
+                       std::vector <std::complex<double> > Q,
+                       std::vector <std::complex<double> > &Resi,
+                       std::vector <std::complex<double> > &W,
+                       std::vector <std::complex<double> > F)
 {
     int ki, kip;
     getFlux(Flux, W, F);
@@ -40,21 +41,21 @@ void EulerExplicitStep(std::vector <double> S,
     return;
 }
 
-std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-std::vector <double> W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0);
-std::vector <double> F1(3 * nx, 0), F2(3 * nx, 0);
-std::vector <double> Q1(3 * nx, 0), Q2(3 * nx, 0);
-std::vector <double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
+std::vector <std::complex<double> > Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+std::vector <std::complex<double> > W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0);
+std::vector <std::complex<double> > F1(3 * nx, 0), F2(3 * nx, 0);
+std::vector <std::complex<double> > Q1(3 * nx, 0), Q2(3 * nx, 0);
+std::vector <std::complex<double> > utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
 // 4th order Runge - Kutta Stepping Scheme
-void rk4(std::vector <double> dx, 
-         std::vector <double> S, 
-         std::vector <double> dt, 
-         std::vector <double> &W,
-         std::vector <double> F,
-         std::vector <double> Q,    
-         std::vector <double> &Resi)
+void rk4(std::vector <std::complex<double> > dx, 
+         std::vector <std::complex<double> > S, 
+         std::vector <std::complex<double> > dt, 
+         std::vector <std::complex<double> > &W,
+         std::vector <std::complex<double> > F,
+         std::vector <std::complex<double> > Q,    
+         std::vector <std::complex<double> > &Resi)
 {
-    double ki, kip;
+    int ki, kip;
 
     getFlux(Flux, W, F);
     // Residual 0
@@ -73,7 +74,7 @@ void rk4(std::vector <double> dx,
         for(int i = 1; i < nx - 1; i++)
         {
             ki = i * 3 + k;
-            W1[ki] = W[ki] - (dt[i] / 2) * Resi0[ki] / dx[i];
+            W1[ki] = W[ki] - (dt[i] / 2.0) * Resi0[ki] / dx[i];
         }
         W1[0 * 3 + k] = W[0 * 3 + k];
         W1[(nx - 1) * 3 + k] = W[(nx - 1) * 3 + k];
@@ -82,7 +83,7 @@ void rk4(std::vector <double> dx,
     {
         rhotemp[i] = W1[i * 3 + 0];
         utemp[i] = W1[i * 3 + 1] / rhotemp[i];
-        ptemp[i] = (gam - 1) * (W1[i * 3 + 2] - rhotemp[i] * utemp[i] / 2);
+        ptemp[i] = (gam - 1) * (W1[i * 3 + 2] - rhotemp[i] * utemp[i] / 2.0);
         ctemp[i] = sqrt(gam * ptemp[i] / rhotemp[i]);
 
         Q1[i * 3 + 1] = ptemp[i] * (S[i + 1] - S[i]);
@@ -108,7 +109,7 @@ void rk4(std::vector <double> dx,
         for(int i = 1; i < nx - 1; i++)
         {
             ki = i * 3 + k;
-            W2[ki] = W[ki] - (dt[i] / 2) * Resi1[ki] / dx[i];
+            W2[ki] = W[ki] - (dt[i] / 2.0) * Resi1[ki] / dx[i];
         }
         W2[0 * 3 + k] = W[0 * 3 + k];
         W2[(nx - 1) * 3 + k] = W[(nx - 1) * 3 + k];
@@ -117,7 +118,7 @@ void rk4(std::vector <double> dx,
     {
         rhotemp[i] = W1[i * 3 + 0];
         utemp[i] = W1[i * 3 + 1] / rhotemp[i];
-        ptemp[i] = (gam - 1) * (W1[i * 3 + 2] - rhotemp[i] * utemp[i] / 2);
+        ptemp[i] = (gam - 1) * (W1[i * 3 + 2] - rhotemp[i] * utemp[i] / 2.0);
         ctemp[i] = sqrt(gam * ptemp[i] / rhotemp[i]);
 
         Q2[i * 3 + 1] = ptemp[i] * (S[i + 1] - S[i]);
@@ -143,7 +144,7 @@ void rk4(std::vector <double> dx,
         for(int i = 1; i < nx - 1; i++)
         {
             ki = i * 3 + k;
-            W3[ki] = W[ki] - (dt[i] / 2) * Resi2[ki] / dx[i];
+            W3[ki] = W[ki] - (dt[i] / 2.0) * Resi2[ki] / dx[i];
         }
     }
 
@@ -152,27 +153,27 @@ void rk4(std::vector <double> dx,
         for(int i = 1; i < nx - 1; i++)
         {
             ki = i * 3 + k;
-            W[ki] = ((double)1.0 / 6.0) * (W[ki] + 2 * W1[ki] + 2 * W2[ki] + W3[ki]);
-            Resi[ki] = (2 * Resi0[ki] + 2 * Resi1[ki] + Resi2[ki]) / 6.0;
+            W[ki] = ((double)1.0 / 6.0) * (W[ki] + 2.0 * W1[ki] + 2.0 * W2[ki] + W3[ki]);
+            Resi[ki] = (2.0 * Resi0[ki] + 2.0 * Resi1[ki] + Resi2[ki]) / 6.0;
         }
     }
 }
 
 
-std::vector <double> Resitemp(3 * nx, 0);
-std::vector <double> Wtemp(3 * nx, 0);
-std::vector <double> Ftemp(3 * nx, 0);
-std::vector <double> Qtemp(3 * nx, 0);
+std::vector <std::complex<double> > Resitemp(3 * nx, 0);
+std::vector <std::complex<double> > Wtemp(3 * nx, 0);
+std::vector <std::complex<double> > Ftemp(3 * nx, 0);
+std::vector <std::complex<double> > Qtemp(3 * nx, 0);
 // Jameson's 4th order Runge - Kutta Stepping Scheme
-void jamesonrk(std::vector <double> dx, 
-         std::vector <double> S,
-         std::vector <double> V,
-         std::vector <double> dt, 
-         std::vector <double> &W,
-         std::vector <double> F,
-         std::vector <double> &Resi)
+void jamesonrk(std::vector <std::complex<double> > dx, 
+         std::vector <std::complex<double> > S,
+         std::vector <std::complex<double> > V,
+         std::vector <std::complex<double> > dt, 
+         std::vector <std::complex<double> > &W,
+         std::vector <std::complex<double> > F,
+         std::vector <std::complex<double> > &Resi)
 {
-    double ki, kip;
+    int ki, kip;
 
     // Initialize First Stage
     for(int k = 0; k < 3; k++)
@@ -188,7 +189,7 @@ void jamesonrk(std::vector <double> dx,
     {
         rhotemp[i] = W[i * 3 + 0];
         utemp[i] = W[i * 3 + 1] / rhotemp[i];
-        ptemp[i] = (gam - 1) * (W[i * 3 + 2] - rhotemp[i] * utemp[i] / 2);
+        ptemp[i] = (gam - 1) * (W[i * 3 + 2] - rhotemp[i] * utemp[i] / 2.0);
         ctemp[i] = sqrt(gam * ptemp[i] / rhotemp[i]);
 
         Qtemp[i * 3 + 1] = ptemp[i] * (S[i + 1] - S[i]);
@@ -214,7 +215,7 @@ void jamesonrk(std::vector <double> dx,
             for(int i = 1; i < nx - 1; i++)
             {
                 ki = i * 3 + k;
-                Wtemp[ki] = W[ki] - (dt[i] / (5 - r)) * Resitemp[ki] / dx[i];
+                Wtemp[ki] = W[ki] - (dt[i] / (5.0 - r)) * Resitemp[ki] / dx[i];
             }
             Wtemp[0 * 3 + k] = W[0 * 3 + k];
             Wtemp[(nx - 1) * 3 + k] = W[(nx - 1) * 3 + k];
@@ -224,7 +225,7 @@ void jamesonrk(std::vector <double> dx,
         {
             rhotemp[i] = Wtemp[i * 3 + 0];
             utemp[i] = Wtemp[i * 3 + 1] / rhotemp[i];
-            ptemp[i] = (gam - 1) * (Wtemp[i * 3 + 2] - rhotemp[i] * utemp[i] / 2);
+            ptemp[i] = (gam - 1) * (Wtemp[i * 3 + 2] - rhotemp[i] * utemp[i] / 2.0);
             ctemp[i] = sqrt(gam * ptemp[i] / rhotemp[i]);
 
             Qtemp[i * 3 + 1] = ptemp[i] * (S[i + 1] - S[i]);

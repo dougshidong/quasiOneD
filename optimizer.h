@@ -1,7 +1,8 @@
 #ifndef optimizer_h
 #define optimizer_h
 
-void design(std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar);
+#include <complex>
+void design(std::vector <std::complex<double> > x, std::vector <std::complex<double> > dx,
+            std::vector <std::complex<double> > S, std::vector <std::complex<double> > designVar);
 
 #endif

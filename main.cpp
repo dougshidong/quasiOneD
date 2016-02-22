@@ -6,14 +6,15 @@
 #include <vector>
 #include "globals.h"
 #include <fenv.h>
+#include <complex>
 
 int main()
 {
-    std::vector <double> x(nx), S(nx + 1);
-    std::vector <double> dx(nx);
-    std::vector <double> geom(3);
-    std::vector <double> W(3 * nx, 0);
-    double fitness;
+    std::vector <std::complex<double> > x(nx), S(nx + 1);
+    std::vector <std::complex<double> > dx(nx);
+    std::vector <std::complex<double> > geom(3);
+    std::vector <std::complex<double> > W(3 * nx, 0);
+    std::complex<double> fitness;
     feenableexcept(FE_INVALID | FE_OVERFLOW);
     
     geom[0] = h_geom;
