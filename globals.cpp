@@ -13,8 +13,8 @@ const int opt = 1;
 const int nDesVar = 3;
 // Input Geometry
 const double a_geom = 0, b_geom = 1;
-//const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 3.00;
-const double h_geom = 0.05, t1_geom = 1.00, t2_geom = 6.00;
+const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 3.00;
+//const double h_geom = 0.05, t1_geom = 1.00, t2_geom = 6.00;
 
 // Fitness Function
 // 0  -  Total Pressure Loss
@@ -50,7 +50,7 @@ const double Min = 0.75;
 const double Ttin = 531.2 / 531.2;
 const double ptin = 2117.0 / 2117.0;
 // Outlet
-const double pexit = 0.22 * ptin;
+const double pexit = 0.92 * ptin;
 // Constant
 const double a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0)/(gam + 1.0)); // used in isentropic nozzle
 

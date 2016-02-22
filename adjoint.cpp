@@ -112,10 +112,14 @@ std::vector <double> adjoint(std::vector <double> x,
     matA = matAt.transpose();
 //  matA = matAFD2.transpose();
     std::cout.precision(17);
-    std::cout<<matAt<<std::endl;
-    std::cout<<matAFD2<<std::endl;
+//  std::cout<<matAt<<std::endl;
+//  std::cout<<matAFD2<<std::endl;
     std::cout<<"(matAFD2 - matAt).norm() / matAt.norm():"<<std::endl;
     std::cout<<(matAFD2 - matAt).norm() / matAt.norm()<<std::endl;
+
+    matA.coeffRef(matA.rows() - 3, matA.cols() - 3) += 0.00001;
+    matA.coeffRef(matA.rows() - 2, matA.cols() - 2) += 0.00001;
+    matA.coeffRef(matA.rows() - 1, matA.cols() - 1) += 0.00001;
 
     // Evaluate dIcdW
     std::vector <double> dIcdW(3 * nx, 0);
@@ -135,7 +139,7 @@ std::vector <double> adjoint(std::vector <double> x,
     // 1 = Dense LU Full Piv
     // 2 = Sparse Iterative BiCGSTAB
     int eig_solv = 0;
-    int directSolve = 0;
+    int directSolve = 1;
     if(directSolve == 1)
     {
         psiV = solveSparseAxb(matA, bvec, eig_solv);
@@ -1413,7 +1417,7 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
     A2 = MatrixXd(A.block(3 * (nx - 2), 3 * (nx - 1), 3, 3));
     A3 = MatrixXd(A.block(3 * (nx - 1), 3 * (nx - 2), 3, 3));
     A4 = MatrixXd(A.block(3 * (nx - 1), 3 * (nx - 1), 3, 3));
-//  A4 = A4 + MatrixXd(3, 3).setIdentity() * 0.01;
+    A4 = A4 + MatrixXd(3, 3).setIdentity() * 0.000001;
 //  std::cout<<A<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<std::endl;
@@ -1431,6 +1435,7 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
     VectorXd fullX(3 * nx);
     fullX.setZero();
     fullX.setOnes();
+    fullX = MatrixXd(A).fullPivLu().solve(b);
 
     VectorXd x1(3 * (nx - 1));
     VectorXd x2(3);
@@ -1440,9 +1445,9 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
 //  b1mod.tail(3) = b1.tail(3) - A2 * x2.tail(3);
 //  b2mod.tail(3) = b2.tail(3) - A3 * x1.tail(3);
 
-    double tol1 = 1e-14;
+    double tol1 = 5e-13;
     double tol2 = tol1;
-    double tol3 = tol1;
+    double tol3 = 1;//tol1;
     int it = 0;
     while(resi1 > tol1 || resi2 > tol2 || resi3 > tol3)
     {
