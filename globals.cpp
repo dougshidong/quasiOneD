@@ -57,7 +57,7 @@ const std::complex<double> a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0)/(gam + 1.0)
 
 // Convergence Settings
 const std::complex<double> CFL = 0.2;
-const std::complex<double> conv = 1e-14;
+const std::complex<double> conv = 1e-16;
 const int maxIt = 50000;
 const int printIt = 1000;
 const int printConv = 0; // 0 to hide real - time convergence

@@ -112,9 +112,9 @@ std::vector <std::complex<double> > adjoint(std::vector <std::complex<double> > 
     std::cout<<"(matAFD2 - matAt).norm() / matAt.norm():"<<std::endl;
     std::cout<<(matAFD2 - matAt).norm() / matAt.norm()<<std::endl;
 
-    matA.coeffRef(matA.rows() - 3, matA.cols() - 3) += 0.00001;
-    matA.coeffRef(matA.rows() - 2, matA.cols() - 2) += 0.00001;
-    matA.coeffRef(matA.rows() - 1, matA.cols() - 1) += 0.00001;
+//  matA.coeffRef(matA.rows() - 3, matA.cols() - 3) += 0.00001;
+//  matA.coeffRef(matA.rows() - 2, matA.cols() - 2) += 0.00001;
+//  matA.coeffRef(matA.rows() - 1, matA.cols() - 1) += 0.00001;
 
     // Evaluate dIcdW
     std::vector <std::complex<double> > dIcdW(3 * nx, 0);

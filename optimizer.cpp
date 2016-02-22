@@ -45,7 +45,7 @@ void design(std::vector <std::complex<double> > x, std::vector <std::complex<dou
 
     std::complex<double> alpha = 1;
 
-    std::complex<double> h = 1e-8;
+    std::complex<double> h = 1e-25;
     std::vector <std::complex<double> > gradient(nDesVar), gradientFD(nDesVar),
                 pk(nDesVar),
                 searchD(nDesVar),
@@ -60,6 +60,14 @@ void design(std::vector <std::complex<double> > x, std::vector <std::complex<dou
     gradient = adjoint(x, dx, S, W, psi, designVar);
     gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
+    std::cout<<"Gradient Relative Error:"<<std::endl;
+    for(int i = 0; i < nDesVar; i++)
+    {
+        double gradientDiff = fabs(std::real((gradient[i] - gradientFD[i]) / (gradient[i])));
+        std::cout<<gradientDiff<<std::endl;
+    }
+
+    
 //    gradient = gradientFD;
       exit(EXIT_FAILURE); 
     // Initialize B
