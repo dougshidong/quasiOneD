@@ -6,10 +6,10 @@
 
 
 // Get primitive variables
-void WtoP(std::vector <double> W,
-          std::vector <double> &rho,
-          std::vector <double> &u,
-          std::vector <double> &e)
+void WtoP(std::vector <long double> W,
+          std::vector <long double> &rho,
+          std::vector <long double> &u,
+          std::vector <long double> &e)
 {
     for(int i = 0; i < nx; i++)
     {
@@ -20,13 +20,13 @@ void WtoP(std::vector <double> W,
 }
 
 // Get more primitive variables
-void WtoP(std::vector <double> W,
-          std::vector <double> &rho,
-          std::vector <double> &u,
-          std::vector <double> &e,
-          std::vector <double> &p,
-          std::vector <double> &c,
-          std::vector <double> &T)
+void WtoP(std::vector <long double> W,
+          std::vector <long double> &rho,
+          std::vector <long double> &u,
+          std::vector <long double> &e,
+          std::vector <long double> &p,
+          std::vector <long double> &c,
+          std::vector <long double> &T)
 {
     for(int i = 0; i < nx; i++)
     {
@@ -41,11 +41,11 @@ void WtoP(std::vector <double> W,
 // Inverse[dW/dWp] or dWp/dW
 // W  = [rho, rho * u, e]
 // Wp = [rho, u, p]
-void dWpdW(std::vector <double> &M,
-           std::vector <double> W,
+void dWpdW(std::vector <long double> &M,
+           std::vector <long double> W,
            int i)
 {
-    double rho, u;
+    long double rho, u;
     rho = W[i * 3 + 0];
     u = W[i * 3 + 1] / rho;
     M[0] = 1.0;
@@ -61,11 +61,11 @@ void dWpdW(std::vector <double> &M,
 // dW/dWp
 // W  = [rho, rho * u, e]
 // Wp = [rho, u, p]
-void dWdWp(std::vector <double> &M,
-           std::vector <double> W,
+void dWdWp(std::vector <long double> &M,
+           std::vector <long double> W,
            int i)
 {
-    double rho, u;
+    long double rho, u;
     rho = W[i * 3 + 0];
     u = W[i * 3 + 1] / rho;
     M[0] = 1.0;
@@ -79,10 +79,10 @@ void dWdWp(std::vector <double> &M,
     M[8] = 1.0 / (gam - 1.0);
 }
 // Get F
-void WtoF(std::vector <double> W,
-          std::vector <double> &F)
+void WtoF(std::vector <long double> W,
+          std::vector <long double> &F)
 {
-    double w1, w2, w3;
+    long double w1, w2, w3;
     for(int i = 0; i < nx; i++)
     {
         w1 = W[i * 3 + 0];
@@ -95,11 +95,11 @@ void WtoF(std::vector <double> W,
 }
 
 // get Q
-void WtoQ(std::vector <double> W,
-          std::vector <double> &Q,
-          std::vector <double> S)
+void WtoQ(std::vector <long double> W,
+          std::vector <long double> &Q,
+          std::vector <long double> S)
 {
-    double rho, u, e, p;
+    long double rho, u, e, p;
     for(int i = 0; i < nx; i++)
     {
         rho = W[i * 3 + 0];

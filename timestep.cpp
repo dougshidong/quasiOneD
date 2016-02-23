@@ -7,15 +7,15 @@
 #include "convert.h"
 #include "globals.h"
 
-std::vector <double> Flux(3 * (nx + 1), 0);
+std::vector <long double> Flux(3 * (nx + 1), 0);
 // Euler Explicit
-void EulerExplicitStep(std::vector <double> S,
-                       std::vector <double> V,
-                       std::vector <double> dt,
-                       std::vector <double> Q,
-                       std::vector <double> &Resi,
-                       std::vector <double> &W,
-                       std::vector <double> F)
+void EulerExplicitStep(std::vector <long double> S,
+                       std::vector <long double> V,
+                       std::vector <long double> dt,
+                       std::vector <long double> Q,
+                       std::vector <long double> &Resi,
+                       std::vector <long double> &W,
+                       std::vector <long double> F)
 {
     int ki, kip;
     getFlux(Flux, W, F);
@@ -40,21 +40,21 @@ void EulerExplicitStep(std::vector <double> S,
     return;
 }
 
-std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-std::vector <double> W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0);
-std::vector <double> F1(3 * nx, 0), F2(3 * nx, 0);
-std::vector <double> Q1(3 * nx, 0), Q2(3 * nx, 0);
-std::vector <double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
+std::vector <long double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+std::vector <long double> W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0);
+std::vector <long double> F1(3 * nx, 0), F2(3 * nx, 0);
+std::vector <long double> Q1(3 * nx, 0), Q2(3 * nx, 0);
+std::vector <long double> utemp(nx), rhotemp(nx), ptemp(nx), ctemp(nx);
 // 4th order Runge - Kutta Stepping Scheme
-void rk4(std::vector <double> dx, 
-         std::vector <double> S, 
-         std::vector <double> dt, 
-         std::vector <double> &W,
-         std::vector <double> F,
-         std::vector <double> Q,    
-         std::vector <double> &Resi)
+void rk4(std::vector <long double> dx, 
+         std::vector <long double> S, 
+         std::vector <long double> dt, 
+         std::vector <long double> &W,
+         std::vector <long double> F,
+         std::vector <long double> Q,    
+         std::vector <long double> &Resi)
 {
-    double ki, kip;
+    long double ki, kip;
 
     getFlux(Flux, W, F);
     // Residual 0
@@ -152,27 +152,27 @@ void rk4(std::vector <double> dx,
         for(int i = 1; i < nx - 1; i++)
         {
             ki = i * 3 + k;
-            W[ki] = ((double)1.0 / 6.0) * (W[ki] + 2 * W1[ki] + 2 * W2[ki] + W3[ki]);
+            W[ki] = ((long double)1.0 / 6.0) * (W[ki] + 2 * W1[ki] + 2 * W2[ki] + W3[ki]);
             Resi[ki] = (2 * Resi0[ki] + 2 * Resi1[ki] + Resi2[ki]) / 6.0;
         }
     }
 }
 
 
-std::vector <double> Resitemp(3 * nx, 0);
-std::vector <double> Wtemp(3 * nx, 0);
-std::vector <double> Ftemp(3 * nx, 0);
-std::vector <double> Qtemp(3 * nx, 0);
+std::vector <long double> Resitemp(3 * nx, 0);
+std::vector <long double> Wtemp(3 * nx, 0);
+std::vector <long double> Ftemp(3 * nx, 0);
+std::vector <long double> Qtemp(3 * nx, 0);
 // Jameson's 4th order Runge - Kutta Stepping Scheme
-void jamesonrk(std::vector <double> dx, 
-         std::vector <double> S,
-         std::vector <double> V,
-         std::vector <double> dt, 
-         std::vector <double> &W,
-         std::vector <double> F,
-         std::vector <double> &Resi)
+void jamesonrk(std::vector <long double> dx, 
+         std::vector <long double> S,
+         std::vector <long double> V,
+         std::vector <long double> dt, 
+         std::vector <long double> &W,
+         std::vector <long double> F,
+         std::vector <long double> &Resi)
 {
-    double ki, kip;
+    long double ki, kip;
 
     // Initialize First Stage
     for(int k = 0; k < 3; k++)

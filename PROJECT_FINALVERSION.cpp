@@ -1,46 +1,46 @@
 #include<stdio.h>
 #include<math.h>
 #include<iostream>
-const double PI = atan(1.0)*4;
+const long double PI = atan(1.0)*4;
 
 // Problem definition
-double h=0.15;
-double t1=0.8;
-double t2=3.0;
+long double h=0.15;
+long double t1=0.8;
+long double t2=3.0;
 
-double gam=1.4;
-double Tt=531.2;
-double pt=2117;
-double R=1716;
-double Minlet=1.2;
-double pexit=0.72*pt;
-double Cv=R/(gam-1);
-double a2=2*gam*Cv*Tt*((gam-1)/(gam+1)); // used in isentropic nozzle
+long double gam=1.4;
+long double Tt=531.2;
+long double pt=2117;
+long double R=1716;
+long double Minlet=1.2;
+long double pexit=0.72*pt;
+long double Cv=R/(gam-1);
+long double a2=2*gam*Cv*Tt*((gam-1)/(gam+1)); // used in isentropic nozzle
 
-double a=0,b=1;         // Bounds on x
+long double a=0,b=1;         // Bounds on x
 const int nx=50;        // Number of grid points
 
-double eps=0.3; // Epsilon
-double CFL=0.4; // CFL
+long double eps=0.3; // Epsilon
+long double CFL=0.4; // CFL
 int maxIt=1;
 
 // Geometry areas
-double shape(double x)
+long double shape(long double x)
 {
     return 1-h*(pow(sin(PI*pow(x,t1)),t2));
 }
 
 // Subsonic inlet boundary
-double SubIsenInP(double m)
+long double SubIsenInP(long double m)
 {
     return pt*pow(1+m*m*(gam-1)/2,-gam/(gam-1));
 }
-double SubIsenInT(double m)
+long double SubIsenInT(long double m)
 {
     return Tt/(1+m*m*(gam-1)/2);
 }
 
-double max3NonAbs(double A, double B, double C)
+long double max3NonAbs(long double A, long double B, long double C)
 {
     if((A)>(B))
     {
@@ -56,7 +56,7 @@ double max3NonAbs(double A, double B, double C)
     }
     return C;
 }
-double max3(double A, double B, double C)
+long double max3(long double A, long double B, long double C)
 {
     if(fabs(A)>fabs(B))
     {
@@ -73,7 +73,7 @@ double max3(double A, double B, double C)
     return fabs(C);
 }
 
-void scalarF(double Flux[][nx-1], double F[][nx], double U[], double c[], double W[][nx])
+void scalarF(long double Flux[][nx-1], long double F[][nx], long double U[], long double c[], long double W[][nx])
 {
     for(int k=0;k<3;k++)
         for(int i=0;i<nx-1;i++)
@@ -84,9 +84,9 @@ void scalarF(double Flux[][nx-1], double F[][nx], double U[], double c[], double
         }
 }
 
-void matrixMult(double A[][3], double B[][3], double result[][3])
+void matrixMult(long double A[][3], long double B[][3], long double result[][3])
 {
-    double temp[3][3];
+    long double temp[3][3];
     for(int row=0;row<3;row++)
         for(int col=0;col<3;col++)
             temp[row][col]=0;
@@ -102,14 +102,14 @@ void matrixMult(double A[][3], double B[][3], double result[][3])
             result[row][col]=temp[row][col];
 }
 
-void StegerWarmingF(double Flux[][nx-1], double W[][nx],double U[], double c[],double rho[])
+void StegerWarmingF(long double Flux[][nx-1], long double W[][nx],long double U[], long double c[],long double rho[])
 {
-    double S[3][3], Sinv[3][3], C[3][3],Cinv[3][3], lambdaP[3][3],lambdaN[3][3];
-    double S2[3][3], Sinv2[3][3], C2[3][3],Cinv2[3][3], lambdaP2[3][3],lambdaN2[3][3];
-    double Ap[3][3],An[3][3];
-    double beta=gam-1;
-    double eigenvalue[3];
-    double eigenvalue2[3];
+    long double S[3][3], Sinv[3][3], C[3][3],Cinv[3][3], lambdaP[3][3],lambdaN[3][3];
+    long double S2[3][3], Sinv2[3][3], C2[3][3],Cinv2[3][3], lambdaP2[3][3],lambdaN2[3][3];
+    long double Ap[3][3],An[3][3];
+    long double beta=gam-1;
+    long double eigenvalue[3];
+    long double eigenvalue2[3];
     for(int i=0;i<nx-1;i++)
         for(int k=0;k<3;k++)
             Flux[k][i]=0;
@@ -226,12 +226,12 @@ void StegerWarmingF(double Flux[][nx-1], double W[][nx],double U[], double c[],d
 
 }
 
-void modifiedStegerWarmingF(double Flux[][nx-1], double W[][nx],double U[], double c[],double rho[])
+void modifiedStegerWarmingF(long double Flux[][nx-1], long double W[][nx],long double U[], long double c[],long double rho[])
 {
-    double S[3][3], Sinv[3][3], C[3][3],Cinv[3][3], lambdaP[3][3],lambdaN[3][3];
-    double Ap[3][3],An[3][3];
-    double beta=gam-1;
-    double eigenvalue[3];
+    long double S[3][3], Sinv[3][3], C[3][3],Cinv[3][3], lambdaP[3][3],lambdaN[3][3];
+    long double Ap[3][3],An[3][3];
+    long double beta=gam-1;
+    long double eigenvalue[3];
     for(int i=0;i<nx-1;i++)
         for(int k=0;k<3;k++)
             Flux[k][i]=0;
@@ -306,16 +306,16 @@ void modifiedStegerWarmingF(double Flux[][nx-1], double W[][nx],double U[], doub
     }
 }
 
-double minn(double a, double b)
+long double minn(long double a, long double b)
 {
     if(fabs(a)>fabs(b))
         return a;
     return b;
 }
-void correctedModifiedStegerWarmingF(double Flux[][nx-1], double W[][nx],double U[], double c[],double rho[],double p[])
+void correctedModifiedStegerWarmingF(long double Flux[][nx-1], long double W[][nx],long double U[], long double c[],long double rho[],long double p[])
 {
-    double MSW[3][nx-1], SW[3][nx-1];
-    double Whalf[3][nx];
+    long double MSW[3][nx-1], SW[3][nx-1];
+    long double Whalf[3][nx];
     modifiedStegerWarmingF(MSW,W,U,c,rho);
     StegerWarmingF(SW,W,U,c,rho);
     for(int k=0;k<3;k++)
@@ -328,20 +328,20 @@ void correctedModifiedStegerWarmingF(double Flux[][nx-1], double W[][nx],double 
             Flux[k][i]=Whalf[k][i]*MSW[k][i]+(1-Whalf[k][i])*SW[k][i];
 }
 
-void RoeF(double Flux[][nx-1], double W[][nx],double F[][nx], double U[], double c[],double rho[],double p[])
+void RoeF(long double Flux[][nx-1], long double W[][nx],long double F[][nx], long double U[], long double c[],long double rho[],long double p[])
 {
-    double epsilon;
-    double temp;
-    double rhoH;
-    double uH;
-    double hH;
-    double cH;
-    double A[3][3];
-    double S[3][3], Sinv[3][3], C[3][3],Cinv[3][3], lambda[3][3];
-    double beta=gam-1;
-    double eigenvalueH[3];
-    double eigenvalueI[3];
-    double eigenvalueIp1[3];
+    long double epsilon;
+    long double temp;
+    long double rhoH;
+    long double uH;
+    long double hH;
+    long double cH;
+    long double A[3][3];
+    long double S[3][3], Sinv[3][3], C[3][3],Cinv[3][3], lambda[3][3];
+    long double beta=gam-1;
+    long double eigenvalueH[3];
+    long double eigenvalueI[3];
+    long double eigenvalueIp1[3];
 
     for(int i=0;i<nx-1;i++)
         for(int k=0;k<3;k++)
@@ -454,34 +454,34 @@ int main()
     FILE *test, *test2;
     test=fopen("test.csv","w");
     test2=fopen("test2.csv","w");
-    double dx=(b-a)/(nx-2);
-    double x[nx];
-    double S[nx-1];
-    double V[nx-2];
-    double T[nx], e[nx], U[nx], p[nx], rho[nx], c[nx], Mach[nx];
-    double W[3][nx], F[3][nx], Q[3][nx];
+    long double dx=(b-a)/(nx-2);
+    long double x[nx];
+    long double S[nx-1];
+    long double V[nx-2];
+    long double T[nx], e[nx], U[nx], p[nx], rho[nx], c[nx], Mach[nx];
+    long double W[3][nx], F[3][nx], Q[3][nx];
 
-    double W0[3][nx],W1[3][nx],W2[3][nx],W3[3][nx];
-    double F0[3][nx],F1[3][nx],F2[3][nx];
-    double Q0[3][nx],Q1[3][nx],Q2[3][nx];
+    long double W0[3][nx],W1[3][nx],W2[3][nx],W3[3][nx];
+    long double F0[3][nx],F1[3][nx],F2[3][nx];
+    long double Q0[3][nx],Q1[3][nx],Q2[3][nx];
 
-    double Utemp[nx];
-    double ptemp[nx], rhotemp[nx], ctemp[nx];
+    long double Utemp[nx];
+    long double ptemp[nx], rhotemp[nx], ctemp[nx];
 
-    double Flux[3][nx-1];
-    double Resi[3][nx];
-    double Resi0[3][nx],Resi1[3][nx],Resi2[3][nx];
+    long double Flux[3][nx-1];
+    long double Resi[3][nx];
+    long double Resi0[3][nx],Resi1[3][nx],Resi2[3][nx];
 
-    double dpdu;
-    double eigenvalues[3];
-    double charRel[3];
-    double MachBound;
-    double dp, drho, du;
-    double timestep;
-    double maxUc;
-    double dt[nx];
-    double normm=1;
-    double conv=pow(10,-13);
+    long double dpdu;
+    long double eigenvalues[3];
+    long double charRel[3];
+    long double MachBound;
+    long double dp, drho, du;
+    long double timestep;
+    long double maxUc;
+    long double dt[nx];
+    long double normm=1;
+    long double conv=pow(10,-13);
     int iterations=0;
 
     // Discretization
@@ -684,7 +684,7 @@ int main()
         for(int k=0;k<3;k++)
             for(int i=1;i<nx-1;i++)
             {
-                W[k][i]=((double)1/6)*(W[k][i]+2*W1[k][i]+2*W2[k][i]+W3[k][i]);
+                W[k][i]=((long double)1/6)*(W[k][i]+2*W1[k][i]+2*W2[k][i]+W3[k][i]);
             }
         for(int k=0;k<3;k++)
             for(int i=0;i<nx;i++)

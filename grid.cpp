@@ -4,10 +4,10 @@
 #include "globals.h"
 
 // Evaluate X
-std::vector <double> evalX(double a, double b)
+std::vector <long double> evalX(long double a, long double b)
 {
-    std::vector <double> x(nx);
-    double dxConst = (b - a)/nx;
+    std::vector <long double> x(nx);
+    long double dxConst = (b - a)/nx;
     
     for(int i = 0; i < nx; i++)
         x[i] = dxConst/2 + dxConst * i;
@@ -17,9 +17,9 @@ std::vector <double> evalX(double a, double b)
 
 //  Evaluate dx
 
-std::vector <double> evalDx(std::vector <double> x)
+std::vector <long double> evalDx(std::vector <long double> x)
 {
-    std::vector <double> dx(nx);
+    std::vector <long double> dx(nx);
     
     dx[0] = x[1] - x[0];
     for(int i = 1; i < nx - 1; i++)
@@ -31,12 +31,12 @@ std::vector <double> evalDx(std::vector <double> x)
     return dx;
 }
 
-std::vector <double> evalS(std::vector <double> geom,
-                           std::vector <double> x,
-                           std::vector <double> dx)
+std::vector <long double> evalS(std::vector <long double> geom,
+                           std::vector <long double> x,
+                           std::vector <long double> dx)
 {
-    std::vector <double> S(nx + 1);
-    double xh;
+    std::vector <long double> S(nx + 1);
+    long double xh;
     // Define Area
     for(int i = 0; i < nx; i++)
     {

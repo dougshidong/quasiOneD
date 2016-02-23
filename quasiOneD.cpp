@@ -7,40 +7,40 @@
 #include "timestep.h"
 #include "globals.h"
 
-double isenP(double pt, double M);
+long double isenP(long double pt, long double M);
 
-double isenT(double Tt, double M);
+long double isenT(long double Tt, long double M);
 
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
+std::vector <long double> calcVolume(std::vector <long double> S, std::vector <long double> dx);
 
-double TotalPressureLoss(std::vector <double> W);
+long double TotalPressureLoss(std::vector <long double> W);
 
-void ioTargetPressure(int io, std::vector <double> &p);
+void ioTargetPressure(int io, std::vector <long double> &p);
 
-double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
-        std::vector <double> dx);
+long double inverseFitness(std::vector <long double> pcurrent, std::vector <long double> ptarget,
+        std::vector <long double> dx);
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void inletBC(std::vector <long double> &W, std::vector <long double> &Resi, long double dt0, long double dx0);
+void outletBC(std::vector <long double> &W, std::vector <long double> &Resi, long double dt0, long double dx0);
 
-double quasiOneD(std::vector <double> x, 
-        std::vector <double> dx, 
-        std::vector <double> S,
-        std::vector <double> designVar,
-        std::vector <double> &W)
+long double quasiOneD(std::vector <long double> x, 
+        std::vector <long double> dx, 
+        std::vector <long double> S,
+        std::vector <long double> designVar,
+        std::vector <long double> &W)
 {
-    std::vector <double> rho(nx), u(nx), e(nx);
-    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-    std::vector <double> F(3 * nx, 0), Q(3 * nx, 0), Resi(3 * nx, 0);
-//  std::vector <std::vector <double> > W(3, std::vector <double> (nx, 0)),
+    std::vector <long double> rho(nx), u(nx), e(nx);
+    std::vector <long double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector <long double> F(3 * nx, 0), Q(3 * nx, 0), Resi(3 * nx, 0);
+//  std::vector <std::vector <long double> > W(3, std::vector <long double> (nx, 0)),
 
-    std::vector <double> dt(nx), V(nx);
+    std::vector <long double> dt(nx), V(nx);
 
     std::vector <int> itV(maxIt/printIt);
-    std::vector <double> normV(maxIt/printIt);
+    std::vector <long double> normV(maxIt/printIt);
 
     int iterlength;
-    double normR = 1.0;
+    long double normR = 1.0;
     int iterations = 0;
 
 
@@ -200,7 +200,7 @@ double quasiOneD(std::vector <double> x,
         return TotalPressureLoss(W);
     else if(fitnessFun == 1)
     {
-        std::vector <double> ptarget(nx, 0);
+        std::vector <long double> ptarget(nx, 0);
         ioTargetPressure(-1, ptarget);
         return inverseFitness(p, ptarget, dx);
     }
@@ -210,28 +210,28 @@ double quasiOneD(std::vector <double> x,
 
 }
 
-double isenP(double pt, double M)
+long double isenP(long double pt, long double M)
 {
     return pt * pow((1 + (gam - 1) / 2 * pow(M, 2)), ( - gam / (gam - 1)));
 }
 
-double isenT(double Tt, double M)
+long double isenT(long double Tt, long double M)
 {
     return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
 }
 
-double TotalPressureLoss(std::vector <double> W)
+long double TotalPressureLoss(std::vector <long double> W)
 {
-    double rhoout = W[(nx - 1) * 3 + 0];
-    double uout = W[(nx - 1) * 3 + 1] / rhoout;
-    double pout = (gam - 1) * (W[(nx - 1) * 3 + 2] - rhoout * pow(uout, 2) / 2);
-    //double Tout = pout/(rhoout * R);
+    long double rhoout = W[(nx - 1) * 3 + 0];
+    long double uout = W[(nx - 1) * 3 + 1] / rhoout;
+    long double pout = (gam - 1) * (W[(nx - 1) * 3 + 2] - rhoout * pow(uout, 2) / 2);
+    //long double Tout = pout/(rhoout * R);
 
-    double ptout_normalized;
+    long double ptout_normalized;
 
-    double ToverTt = 1 - pow(uout, 2) / a2 * (gam - 1) / (gam + 1);
+    long double ToverTt = 1 - pow(uout, 2) / a2 * (gam - 1) / (gam + 1);
 
-    double poverpt = pow(ToverTt, (gam / (gam - 1)));
+    long double poverpt = pow(ToverTt, (gam / (gam - 1)));
 
     ptout_normalized = 1 - (pout / poverpt) / ptin;
 
@@ -239,9 +239,9 @@ double TotalPressureLoss(std::vector <double> W)
 }
 
 // Define Volume
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
+std::vector <long double> calcVolume(std::vector <long double> S, std::vector <long double> dx)
 {
-    std::vector <double> V;
+    std::vector <long double> V;
     int ndx = dx.size();
     for(int i = 0; i < ndx; i++)
         V.push_back((S[i] + S[i + 1]) / 2 * dx[i]);
@@ -250,7 +250,7 @@ std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
 }
 
 // Input/Output Target Pressure Distribution
-void ioTargetPressure(int io, std::vector <double> &p)
+void ioTargetPressure(int io, std::vector <long double> &p)
 {
 
     FILE  * TargetP;
@@ -263,7 +263,9 @@ void ioTargetPressure(int io, std::vector <double> &p)
 //      for(int i = 0; i < nx; i++)
 //          fprintf(TargetP, "%.15f\n", x[i]);
         for(int i = 0; i < nx; i++)
-            fprintf(TargetP, "%.15f\n", p[i] / ptin);
+        {
+            fprintf(TargetP, "%.21Lg\n", p[i] / ptin);
+        }
     }
     // Input
     else
@@ -276,7 +278,7 @@ void ioTargetPressure(int io, std::vector <double> &p)
         if(nxT!=nx) std::cout<< "nx and nxT are different for targetP";
         for(int iT = 0; iT < nxT; iT++)
         {
-            err = fscanf(TargetP, "%lf", &p[iT]);
+            err = fscanf(TargetP, "%Lf\n", &p[iT]);
         }
         if(err != 1) std::cout<< "Err";
     }   
@@ -286,10 +288,10 @@ void ioTargetPressure(int io, std::vector <double> &p)
 
 // Return Inverse Design Fitness
 
-double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
-        std::vector <double> dx)
+long double inverseFitness(std::vector <long double> pcurrent, std::vector <long double> ptarget,
+        std::vector <long double> dx)
 {
-    double fit = 0;
+    long double fit = 0;
     for(int i = 0; i < nx; i++)
     {
         fit += pow(pcurrent[i] / ptin - ptarget[i], 2) * dx[i];
@@ -299,10 +301,10 @@ double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarge
 }
 
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
+void inletBC(std::vector <long double> &W, std::vector <long double> &Resi, long double dt0, long double dx0)
 {
-    double dpdu, dpdx, dudx, dtdx, du, eigenvalue, T0;
-    double rho[2], u[2], e[2], p[2], c[2];
+    long double dpdu, dpdx, dudx, dtdx, du, eigenvalue, T0;
+    long double rho[2], u[2], e[2], p[2], c[2];
     for(int i = 0; i < 2; i++)
     {
         rho[i] = W[i * 3 + 0];
@@ -352,12 +354,12 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
     }
 }
 
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
+void outletBC(std::vector <long double> &W, std::vector <long double> &Resi, long double dt0, long double dx0)
 {
-    double avgc, avgu, dtdx, MachOut;
-    double eigenvalues[3], Ri[3];
-    double dpdx, dudx, du, drho, dp, T;
-    double rho[2], u[2], e[2], p[2], c[2];
+    long double avgc, avgu, dtdx, MachOut;
+    long double eigenvalues[3], Ri[3];
+    long double dpdx, dudx, du, drho, dp, T;
+    long double rho[2], u[2], e[2], p[2], c[2];
 
     for(int i = 0; i < 2; i++)
     {

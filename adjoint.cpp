@@ -17,95 +17,98 @@
 
 using namespace Eigen;
 
-MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
-                  std::vector <double> W);
+typedef Eigen::Matrix< long double , Eigen::Dynamic , 1> VectorXld;
+typedef Eigen::Matrix< long double , Eigen::Dynamic , Eigen::Dynamic > MatrixXld;
 
-void JacobianCenter(std::vector <double> &J,
-                    double u, double c);
+MatrixXld evaldRdS(std::vector <long double> Flux, std::vector <long double> S,
+                  std::vector <long double> W);
 
-SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
-                                  std::vector <double> An,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
-                                  std::vector <double> S,
-                                  double Min);
+void JacobianCenter(std::vector <long double> &J,
+                    long double u, long double c);
 
-SparseMatrix<double> buildAFD2(std::vector <double> W,
-                                  std::vector <double> S,
-                                  double Min);
+SparseMatrix<long double> buildAMatrix(std::vector <long double> Ap,
+                                  std::vector <long double> An,
+                                  std::vector <long double> dBidWi,
+                                  std::vector <long double> dBidWd,
+                                  std::vector <long double> dBodWd,
+                                  std::vector <long double> dBodWo,
+                                  std::vector <long double> dQdW,
+                                  std::vector <long double> dx,
+                                  std::vector <long double> dt,
+                                  std::vector <long double> S,
+                                  long double Min);
 
-VectorXd buildbMatrix(std::vector <double> dIcdW);
+SparseMatrix<long double> buildAFD2(std::vector <long double> W,
+                                  std::vector <long double> S,
+                                  long double Min);
 
-void StegerJac(std::vector <double> W,
-               std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux);
+VectorXld buildbMatrix(std::vector <long double> dIcdW);
 
-void ScalarJac(std::vector <double> W,
-               std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux);
+void StegerJac(std::vector <long double> W,
+               std::vector <long double> &Ap_list,
+               std::vector <long double> &An_list,
+               std::vector <long double> &Flux);
 
-void BCJac(std::vector <double> W,
-           std::vector <double> dt,
-           std::vector <double> dx,
-           std::vector <double> ddtdW,
-           std::vector <double> &dBidWi,
-           std::vector <double> &dBidWd,
-           std::vector <double> &dBodWd,
-           std::vector <double> &dBodWo);
+void ScalarJac(std::vector <long double> W,
+               std::vector <long double> &Ap_list,
+               std::vector <long double> &An_list,
+               std::vector <long double> &Flux);
 
-void evaldIcdW(std::vector <double> &dIcdW,
-               std::vector <double> W,
-               std::vector <double> S);
+void BCJac(std::vector <long double> W,
+           std::vector <long double> dt,
+           std::vector <long double> dx,
+           std::vector <long double> ddtdW,
+           std::vector <long double> &dBidWi,
+           std::vector <long double> &dBidWd,
+           std::vector <long double> &dBodWd,
+           std::vector <long double> &dBodWo);
 
-void evaldQdW(std::vector <double> &dQdW,
-                   std::vector <double> W,
-                   std::vector <double> S);
+void evaldIcdW(std::vector <long double> &dIcdW,
+               std::vector <long double> W,
+               std::vector <long double> S);
 
-VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv);
-VectorXd itSolve(SparseMatrix <double> A, VectorXd b);
+void evaldQdW(std::vector <long double> &dQdW,
+                   std::vector <long double> W,
+                   std::vector <long double> S);
 
-std::vector <double> adjoint(std::vector <double> x, 
-             std::vector <double> dx, 
-             std::vector <double> S,
-             std::vector <double> W,
-             std::vector <double> &psi,
-             std::vector <double> designVar)
+VectorXld solveSparseAxb(SparseMatrix <long double> A, VectorXld b, int eig_solv);
+VectorXld itSolve(SparseMatrix <long double> A, VectorXld b);
+
+std::vector <long double> adjoint(std::vector <long double> x, 
+             std::vector <long double> dx, 
+             std::vector <long double> S,
+             std::vector <long double> W,
+             std::vector <long double> &psi,
+             std::vector <long double> designVar)
 {
     //Get Primitive Variables
-    std::vector <double> rho(nx), u(nx), e(nx);
-    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector <long double> rho(nx), u(nx), e(nx);
+    std::vector <long double> T(nx), p(nx), c(nx), Mach(nx);
     WtoP(W, rho, u, e, p, c, T); 
     
     // Evalutate dt and d(dt)dW
-    std::vector <double> dt(nx, 1), ddtdW(nx, 0);
+    std::vector <long double> dt(nx, 1), ddtdW(nx, 0);
 
     // Evaluate dQdW
-    std::vector <double> dQdW(3 * nx, 0);
+    std::vector <long double> dQdW(3 * nx, 0);
     evaldQdW(dQdW, W, S);
 
     // Get Jacobians and Fluxes
-    std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
-    std::vector <double> Flux(3 * (nx + 1), 0);
+    std::vector <long double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
+    std::vector <long double> Flux(3 * (nx + 1), 0);
     if(FluxScheme == 0) StegerJac(W, Ap_list, An_list, Flux);
     if(FluxScheme == 1) ScalarJac(W, Ap_list, An_list, Flux);
         
     // Transposed Boundary Flux Jacobians
-    std::vector <double> dBidWi(3 * 3, 0);
-    std::vector <double> dBidWd(3 * 3, 0);
-    std::vector <double> dBodWd(3 * 3, 0);
-    std::vector <double> dBodWo(3 * 3, 0);
+    std::vector <long double> dBidWi(3 * 3, 0);
+    std::vector <long double> dBidWd(3 * 3, 0);
+    std::vector <long double> dBodWd(3 * 3, 0);
+    std::vector <long double> dBodWo(3 * 3, 0);
     BCJac(W, dt, dx, ddtdW, dBidWi, dBidWd, dBodWd, dBodWo);
 
     // Build A matrix
-    SparseMatrix <double> matA, matAt;
-    SparseMatrix <double> matAFD, matAFD2;
+    SparseMatrix <long double> matA, matAt;
+    SparseMatrix <long double> matAFD, matAFD2;
     matAt = buildAMatrix(Ap_list, An_list, dBidWi, dBidWd,
                         dBodWd, dBodWo, dQdW, dx, dt, S, u[0]/c[0]);
     matAFD2 = buildAFD2(W, S, u[0]/c[0]);
@@ -117,22 +120,22 @@ std::vector <double> adjoint(std::vector <double> x,
     std::cout<<"(matAFD2 - matAt).norm() / matAt.norm():"<<std::endl;
     std::cout<<(matAFD2 - matAt).norm() / matAt.norm()<<std::endl;
 
-    matA.coeffRef(matA.rows() - 3, matA.cols() - 3) += 0.00001;
-    matA.coeffRef(matA.rows() - 2, matA.cols() - 2) += 0.00001;
-    matA.coeffRef(matA.rows() - 1, matA.cols() - 1) += 0.00001;
+//  matA.coeffRef(matA.rows() - 3, matA.cols() - 3) += 1e-12;
+//  matA.coeffRef(matA.rows() - 2, matA.cols() - 2) += 1e-12;
+//  matA.coeffRef(matA.rows() - 1, matA.cols() - 1) += 1e-12;
 
     // Evaluate dIcdW
-    std::vector <double> dIcdW(3 * nx, 0);
+    std::vector <long double> dIcdW(3 * nx, 0);
     evaldIcdW(dIcdW, W, dx);
 
     // Build B matrix
-    VectorXd bvec(3 * nx);
+    VectorXld bvec(3 * nx);
     bvec.setZero();
     bvec = buildbMatrix(dIcdW);
 //  std::cout<<"Vector B:"<<std::endl;
 //  std::cout<<bvec<<std::endl;
 
-    VectorXd psiV(3 * nx);
+    VectorXld psiV(3 * nx);
     psiV.setZero();
     // Solver type eig_solv
     // 0 = Sparse LU
@@ -171,11 +174,11 @@ std::vector <double> adjoint(std::vector <double> x,
     fclose(Results);
 
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXld dIcdS(nx + 1);
     dIcdS.setZero();
 
     // Evaluate psiV * dRdS
-    VectorXd psidRdS(nx + 1);
+    VectorXld psidRdS(nx + 1);
     psidRdS.setZero();
     for(int i = 2; i < nx - 1; i++)
     for(int k = 0; k < 3; k++)
@@ -210,17 +213,17 @@ std::vector <double> adjoint(std::vector <double> x,
     }
 
     // Finite Difference dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
+    MatrixXld dRdS(3 * nx, nx + 1);
     dRdS = evaldRdS(Flux, S, W);
-    VectorXd psidRdSFD(nx + 1);
+    VectorXld psidRdSFD(nx + 1);
     psidRdSFD.setZero();
     psidRdSFD = psiV.transpose() * dRdS;
     std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
     std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
     // Evaluate dSdDesign
-    MatrixXd dSdDesign(nx + 1, designVar.size());
-    double d1 = designVar[0], d2 = designVar[1], d3 = designVar[2];
-    double xh;
+    MatrixXld dSdDesign(nx + 1, designVar.size());
+    long double d1 = designVar[0], d2 = designVar[1], d3 = designVar[2];
+    long double xh;
     for(int i = 0; i < nx + 1; i++)
     {
         if(i == 0 || i == nx)
@@ -241,10 +244,10 @@ std::vector <double> adjoint(std::vector <double> x,
         }
     }
 
-    VectorXd grad(designVar.size());
+    VectorXld grad(designVar.size());
     grad = psidRdS.transpose() * dSdDesign;
 
-    std::vector <double> gradient(designVar.size());
+    std::vector <long double> gradient(designVar.size());
     for(int iDes = 0; iDes < (int)designVar.size(); iDes++)
     {
        gradient[iDes] = grad(iDes);
@@ -252,15 +255,15 @@ std::vector <double> adjoint(std::vector <double> x,
     std::cout<<"Gradient from Adjoint:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;
 //  std::cout<<"Analytical then FD 1st Block"<<std::endl;
-//  std::cout<<MatrixXd(matAt).block(0, 0, 3, 3)<<std::endl;
+//  std::cout<<MatrixXld(matAt).block(0, 0, 3, 3)<<std::endl;
 //  std::cout<<std::endl;
-//  std::cout<<MatrixXd(matAFD2).block(0, 0, 3, 3)<<std::endl;
+//  std::cout<<MatrixXld(matAFD2).block(0, 0, 3, 3)<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<"Analytical then FD 2nd Block"<<std::endl;
-//  std::cout<<MatrixXd(matAt).block(0, 3, 3, 3)<<std::endl;
+//  std::cout<<MatrixXld(matAt).block(0, 3, 3, 3)<<std::endl;
 //  std::cout<<std::endl;
-//  std::cout<<MatrixXd(matAFD2).block(0, 3, 3, 3)<<std::endl;
+//  std::cout<<MatrixXld(matAFD2).block(0, 3, 3, 3)<<std::endl;
     std::cout<<std::endl;
     std::cout<<std::endl;
     std::cout<<std::endl;
@@ -270,28 +273,28 @@ std::vector <double> adjoint(std::vector <double> x,
 
 // Calculates Jacobian
 // Steger-Warming Flux Splitting
-void StegerJac(std::vector <double> W,
-               std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux)
+void StegerJac(std::vector <long double> W,
+               std::vector <long double> &Ap_list,
+               std::vector <long double> &An_list,
+               std::vector <long double> &Flux)
 {
-    double eps = 0.1;
-    double gam = 1.4;
-    double M[3][3] = {{0}},
+    long double eps = 0.1;
+    long double gam = 1.4;
+    long double M[3][3] = {{0}},
            Minv[3][3] = {{0}},
            N[3][3] = {{0}},
            Ninv[3][3] = {{0}},
            lambdaP[3][3],
            lambdaN[3][3];
-    double lambdaa[3];
+    long double lambdaa[3];
     
     
-    double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
+    long double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
     
-    std::vector <double> rho(nx), u(nx), p(nx), c(nx);
-    std::vector <double> Ap_list1(nx * 3 * 3, 0), An_list1(nx * 3 * 3, 0);
+    std::vector <long double> rho(nx), u(nx), p(nx), c(nx);
+    std::vector <long double> Ap_list1(nx * 3 * 3, 0), An_list1(nx * 3 * 3, 0);
 
-    double beta = gam - 1;
+    long double beta = gam - 1;
 
     for(int i = 0; i < nx; i++)
     {
@@ -398,8 +401,8 @@ void StegerJac(std::vector <double> W,
 
 }
 
-void JacobianCenter(std::vector <double> &J,
-                    double u, double c)
+void JacobianCenter(std::vector <long double> &J,
+                    long double u, long double c)
 {
     J[0] = 0.0;
     J[1] = 1.0;
@@ -413,25 +416,25 @@ void JacobianCenter(std::vector <double> &J,
     J[8] = u * gam;
 }
 
-void ScalarJac(std::vector <double> W,
-               std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux)
+void ScalarJac(std::vector <long double> W,
+               std::vector <long double> &Ap_list,
+               std::vector <long double> &An_list,
+               std::vector <long double> &Flux)
 {
-    std::vector <double> rho(nx), u(nx), e(nx);
-    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector <long double> rho(nx), u(nx), e(nx);
+    std::vector <long double> T(nx), p(nx), c(nx), Mach(nx);
     WtoP(W, rho, u, e, p, c, T); 
 
     int vec_pos, k;
-    double lamb;
+    long double lamb;
 
-    std::vector <double> J(9, 0);
-    std::vector <double> dlambdadWp(3, 0);
-    std::vector <double> dlambdaPdW(3, 0);
-    std::vector <double> dlambdaNdW(3, 0);
-    double dlambdadc, dcdr, dcdp;
-    double dlambdadr, dlambdadu, dlambdadp;
-    std::vector <double> dwpdw(9, 0);
+    std::vector <long double> J(9, 0);
+    std::vector <long double> dlambdadWp(3, 0);
+    std::vector <long double> dlambdaPdW(3, 0);
+    std::vector <long double> dlambdaNdW(3, 0);
+    long double dlambdadc, dcdr, dcdp;
+    long double dlambdadr, dlambdadu, dlambdadp;
+    std::vector <long double> dwpdw(9, 0);
     // A+
     for(int i = 0; i < nx - 1; i++)
     {
@@ -527,9 +530,9 @@ void ScalarJac(std::vector <double> W,
         }
     }
 
-    double avgu, avgc;
+    long double avgu, avgc;
     int ki, kim;
-    std::vector <double> F(3 * nx, 0);
+    std::vector <long double> F(3 * nx, 0);
     WtoF(W, F);
     for(int i = 1; i < nx; i++)
     {
@@ -550,12 +553,12 @@ void ScalarJac(std::vector <double> W,
 
 
 
-void evaldIcdW(std::vector <double> &dIcdW,
-               std::vector <double> W,
-               std::vector <double> dx)
+void evaldIcdW(std::vector <long double> &dIcdW,
+               std::vector <long double> W,
+               std::vector <long double> dx)
 {
-    std::vector <double> ptarget(nx, 0);
-    double dpdw[3], rho, u, p;
+    std::vector <long double> ptarget(nx, 0);
+    long double dpdw[3], rho, u, p;
     ioTargetPressure(-1, ptarget);
     for(int i = 0; i < nx; i++)
     {
@@ -573,11 +576,11 @@ void evaldIcdW(std::vector <double> &dIcdW,
     }
 }
 
-void evaldQdW(std::vector <double> &dQdW,
-                   std::vector <double> W,
-                   std::vector <double> S)
+void evaldQdW(std::vector <long double> &dQdW,
+                   std::vector <long double> W,
+                   std::vector <long double> S)
 {
-    double dpdw[3], rho, u, dS;
+    long double dpdw[3], rho, u, dS;
     for(int i = 0; i < nx; i++)
     {
         rho = W[i * 3 + 0];
@@ -595,17 +598,17 @@ void evaldQdW(std::vector <double> &dQdW,
     }
 }
 
-void BCJac(std::vector <double> W,
-           std::vector <double> dt,
-           std::vector <double> dx,
-           std::vector <double> ddtdW,
-           std::vector <double> &dBidWi,
-           std::vector <double> &dBidWd,
-           std::vector <double> &dBodWd,
-           std::vector <double> &dBodWo)
+void BCJac(std::vector <long double> W,
+           std::vector <long double> dt,
+           std::vector <long double> dx,
+           std::vector <long double> ddtdW,
+           std::vector <long double> &dBidWi,
+           std::vector <long double> &dBidWd,
+           std::vector <long double> &dBodWd,
+           std::vector <long double> &dBodWo)
 {
-    std::vector <double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
-    std::vector <double> dbdwp(9, 0), dwpdw(9);
+    std::vector <long double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector <long double> dbdwp(9, 0), dwpdw(9);
 
     for(int i = 0; i < 9; i++)
     {
@@ -621,8 +624,8 @@ void BCJac(std::vector <double> W,
     // OUTLET JACOBIANS
     // ************************
 
-    double i1, i2;
-    double r1, r2, p1, p2, u1, u2, c1, c2, t1;
+    long double i1, i2;
+    long double r1, r2, p1, p2, u1, u2, c1, c2, t1;
     i1 = nx - 1;
     i2 = nx - 2;
     r1 = rho[i1];
@@ -636,7 +639,7 @@ void BCJac(std::vector <double> W,
     t1 = T[i1];
 
     // Shorthand
-    double gamr, fu, drho, dp, du, cr, uu;
+    long double gamr, fu, drho, dp, du, cr, uu;
     drho = r1 - r2;
     dp = p1 - p2;
     du = u1 - u2;
@@ -644,16 +647,16 @@ void BCJac(std::vector <double> W,
     uu = u1 * u1;
 
     // Speed of Sound
-    double dc1dr1, dc2dr2, dc1dp1, dc2dp2;
+    long double dc1dr1, dc2dr2, dc1dp1, dc2dp2;
     dc1dr1 = - p1 * gam / (2.0 * cr * r1);
     dc2dr2 = - p2 * gam / (2.0 * c2 * r2 * r2);
     dc1dp1 = gam / (2.0 * cr);
     dc2dp2 = gam / (2.0 * c2 * r2);
 
-    double eig1, eig2, eig3;
-    double deig1du1, deig1du2;
-    double deig2dr1, deig2du1, deig2dp1, deig2dr2, deig2du2, deig2dp2;
-    double deig3dr1, deig3du1, deig3dp1, deig3dr2, deig3du2, deig3dp2;
+    long double eig1, eig2, eig3;
+    long double deig1du1, deig1du2;
+    long double deig2dr1, deig2du1, deig2dp1, deig2dr2, deig2du2, deig2dp2;
+    long double deig3dr1, deig3du1, deig3dp1, deig3dr2, deig3du2, deig3dp2;
     // Eigenvalue
     eig1 = (u1 + u2) / 2.0;
     eig2 = eig1 + (c1 + c2) / 2.0;
@@ -677,10 +680,10 @@ void BCJac(std::vector <double> W,
     deig3dp2 = - dc2dp2 / 2.0;
 
     // Riemann invariants
-    double R1, R2, R3;
-    double dR1dr1, dR1du1, dR1dp1, dR1dr2, dR1du2, dR1dp2;
-    double dR2dr1, dR2du1, dR2dp1, dR2dr2, dR2du2, dR2dp2;
-    double dR3dr1, dR3du1, dR3dp1, dR3dr2, dR3du2, dR3dp2;
+    long double R1, R2, R3;
+    long double dR1dr1, dR1du1, dR1dp1, dR1dr2, dR1du2, dR1dp2;
+    long double dR2dr1, dR2du1, dR2dp1, dR2dr2, dR2du2, dR2dp2;
+    long double dR3dr1, dR3du1, dR3dp1, dR3dr2, dR3du2, dR3dp2;
     R1 = - eig1 * (drho - dp / (c1 * c1));
     R2 = - eig2 * (dp + cr * du);
     R3 = - eig3 * (dp - cr * du);
@@ -707,9 +710,9 @@ void BCJac(std::vector <double> W,
     dR3dp2 = eig3 - (dp - cr * du) * deig3dp2;
 
     // dp1/dt
-    double dp1dt;
-    double dp1dtdr1, dp1dtdu1, dp1dtdp1;
-    double dp1dtdr2, dp1dtdu2, dp1dtdp2;
+    long double dp1dt;
+    long double dp1dtdr1, dp1dtdu1, dp1dtdp1;
+    long double dp1dtdr2, dp1dtdu2, dp1dtdp2;
     if(u1 < c1)
     {
         dp1dt = 0;
@@ -732,9 +735,9 @@ void BCJac(std::vector <double> W,
     }
 
     // drho1/dt
-    double dr1dt;
-    double dr1dtdr1, dr1dtdu1, dr1dtdp1;
-    double dr1dtdr2, dr1dtdu2, dr1dtdp2;
+    long double dr1dt;
+    long double dr1dtdr1, dr1dtdu1, dr1dtdp1;
+    long double dr1dtdr2, dr1dtdu2, dr1dtdp2;
     dr1dt = R1 + dp1dt / (c1 * c1);
 
     dr1dtdr1 = dR1dr1 + dp1dtdr1 / (c1 * c1) - 2.0 * dp1dt * dc1dr1 / pow(c1, 3);
@@ -745,9 +748,9 @@ void BCJac(std::vector <double> W,
     dr1dtdp2 = dR1dp2 + dp1dtdp2 / (c1 * c1);
 
     // du1/dt
-    double du1dt;
-    double du1dtdr1, du1dtdu1, du1dtdp1;
-    double du1dtdr2, du1dtdu2, du1dtdp2;
+    long double du1dt;
+    long double du1dtdr1, du1dtdu1, du1dtdp1;
+    long double du1dtdr2, du1dtdu2, du1dtdp2;
     du1dt = (R2 - dp1dt) / (cr);
 
     du1dtdr1 = ( (dp1dt - R2) * r1 * dc1dr1
@@ -760,10 +763,10 @@ void BCJac(std::vector <double> W,
     du1dtdp2 = (dR2dp2 - dp1dtdp2) / cr;
 
     // d(ru)1/dt
-    double dru1dt;
+    long double dru1dt;
     dru1dt = r1 * du1dt + u1 * dr1dt;
-    double dru1dtdr1, dru1dtdu1, dru1dtdp1;
-    double dru1dtdr2, dru1dtdu2, dru1dtdp2;
+    long double dru1dtdr1, dru1dtdu1, dru1dtdp1;
+    long double dru1dtdr2, dru1dtdu2, dru1dtdp2;
     dru1dtdr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1;
     dru1dtdu1 = dr1dt + u1 * dr1dtdu1 + r1 * du1dtdu1;
     dru1dtdp1 = u1 * dr1dtdp1 + r1 * du1dtdp1;
@@ -772,10 +775,10 @@ void BCJac(std::vector <double> W,
     dru1dtdp2 = u1 * dr1dtdp2 + r1 * du1dtdp2;
 
     // de1/dt
-    double de1dt;
+    long double de1dt;
     de1dt = dp1dt * Cv / R + u1 * r1 * du1dt + uu * dr1dt / 2.0;
-    double de1dtdr1, de1dtdu1, de1dtdp1;
-    double de1dtdr2, de1dtdu2, de1dtdp2;
+    long double de1dtdr1, de1dtdu1, de1dtdp1;
+    long double de1dtdr2, de1dtdu2, de1dtdp2;
 
     de1dtdr1 = dp1dtdr1 * Cv / R + uu * dr1dtdr1 / 2.0 + r1 * u1 * du1dtdr1 
                + du1dt * u1;
@@ -882,7 +885,7 @@ void BCJac(std::vector <double> W,
         dR3du2 = cr * eig3 - (dp - cr * du) * deig3du2;
         dR3dp2 = -eig3 - (dp - cr * du) * deig3dp2;
         // dp1
-        double dp1du1_n, dp1du1du1;
+        long double dp1du1_n, dp1du1du1;
         // Same Values
         dp1du1_n = -2.0 * gamr * ptin * u1 * pow(fu, 1.0 / (gam - 1.0)) * gam
                  / (a2 * (gam - 1.0));
@@ -904,13 +907,13 @@ void BCJac(std::vector <double> W,
         du1dtdp2 = dR3dp2 / (dp1du1_n - cr);
 
         // Primitive values at time-step n+1
-        double unp1, pnp1, rnp1, tnp1, funp1;
+        long double unp1, pnp1, rnp1, tnp1, funp1;
         unp1 = u1 + du1dt;
         pnp1 = ptin * pow(1 - gamr * pow(unp1, 2) / a2, gam / (gam - 1.0));
         tnp1 = Ttin * ( 1 - gamr * unp1 * unp1 / a2 );
         rnp1 = pnp1 / (R * tnp1);
         funp1 = 1.0 - gamr * unp1 * unp1 / a2;
-        double dpnp1dunp1;
+        long double dpnp1dunp1;
         dpnp1dunp1 = -2.0 * gamr * ptin * unp1 * pow(funp1, 1.0 / (gam - 1.0)) * gam
                      / (a2 * (gam - 1.0));
         
@@ -925,12 +928,12 @@ void BCJac(std::vector <double> W,
 
         // dr1
         // Total derivative from rho_n+1 to p_n+1 and u_n+1
-        double drnp1dpnp1, drnp1dtnp1, dtnp1dpnp1;
+        long double drnp1dpnp1, drnp1dtnp1, dtnp1dpnp1;
         drnp1dpnp1 = 1 / (R * tnp1);
         drnp1dtnp1 = -pnp1 / (R * tnp1 * tnp1);
         dtnp1dpnp1 = Ttin / ptin * (gam - 1.0) / gam * pow(pnp1 / ptin, - 1.0 / gam);
-        double Drnp1Dpnp1 = drnp1dpnp1 + drnp1dtnp1 * dtnp1dpnp1;
-        double drnp1dunp1 = Drnp1Dpnp1 * dpnp1dunp1;
+        long double Drnp1Dpnp1 = drnp1dpnp1 + drnp1dtnp1 * dtnp1dpnp1;
+        long double drnp1dunp1 = Drnp1Dpnp1 * dpnp1dunp1;
 
         dr1dt = rnp1 - r1;
 
@@ -1016,22 +1019,22 @@ void BCJac(std::vector <double> W,
     }
 }
 
-SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
-                                  std::vector <double> An,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
-                                  std::vector <double> S,
-                                  double Min)
+SparseMatrix<long double> buildAMatrix(std::vector <long double> Ap,
+                                  std::vector <long double> An,
+                                  std::vector <long double> dBidWi,
+                                  std::vector <long double> dBidWd,
+                                  std::vector <long double> dBodWd,
+                                  std::vector <long double> dBodWo,
+                                  std::vector <long double> dQdW,
+                                  std::vector <long double> dx,
+                                  std::vector <long double> dt,
+                                  std::vector <long double> S,
+                                  long double Min)
 {
-    SparseMatrix<double> matA(3 * nx, 3 * nx);
+    SparseMatrix<long double> matA(3 * nx, 3 * nx);
     int Ri, Wi;
     int k, rowi, coli;
-    double val;
+    long double val;
     // Input 4 lines where BC Jacobians occur
     // psi(1), psi(2), psi(n-1), psi(n)
     for(int row = 0; row < 3; row++)
@@ -1151,9 +1154,9 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
     return matA;
 }
 
-VectorXd buildbMatrix(std::vector <double> dIcdW)
+VectorXld buildbMatrix(std::vector <long double> dIcdW)
 {
-    VectorXd matb(3 * nx);
+    VectorXld matb(3 * nx);
 
     for(int i = 0; i < nx; i++)
     for(int k = 0; k < 3; k++)
@@ -1162,15 +1165,15 @@ VectorXd buildbMatrix(std::vector <double> dIcdW)
     return matb;
 }
 
-MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
-                  std::vector <double> W)
+MatrixXld evaldRdS(std::vector <long double> Flux, std::vector <long double> S,
+                  std::vector <long double> W)
 {
-    MatrixXd dRdS(3 * nx, nx + 1);
-    std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-    std::vector <double> Sd(nx + 1, 0);
-    std::vector <double> Q(3 * nx, 0);
-    double h = 0.000000001;
-    double pert;
+    MatrixXld dRdS(3 * nx, nx + 1);
+    std::vector <long double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+    std::vector <long double> Sd(nx + 1, 0);
+    std::vector <long double> Q(3 * nx, 0);
+    long double h = 0.000000001;
+    long double pert;
     int ki, kip;
     dRdS.setZero();
     for(int Ri = 1; Ri < nx - 1; Ri++)
@@ -1212,29 +1215,29 @@ MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
     return dRdS;
 }
 
-SparseMatrix<double> buildAFD2(std::vector <double> W,
-                                  std::vector <double> S,
-                                  double Min)
+SparseMatrix<long double> buildAFD2(std::vector <long double> W,
+                                  std::vector <long double> S,
+                                  long double Min)
 {
-    SparseMatrix<double> matA(3 * nx, 3 * nx);
+    SparseMatrix<long double> matA(3 * nx, 3 * nx);
     int Ri, Wi;
     int rowi, coli;
-    std::vector <double> Wd(3 * nx, 0), F(3 * nx, 0), Q(3 * nx, 0); 
-    std::vector <double> Flux(3 * (nx + 1), 0);
-    std::vector <double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-    std::vector <double> dRdW(9, 0), dRdWp(9, 0), dwdwp(9, 0);
+    std::vector <long double> Wd(3 * nx, 0), F(3 * nx, 0), Q(3 * nx, 0); 
+    std::vector <long double> Flux(3 * (nx + 1), 0);
+    std::vector <long double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+    std::vector <long double> dRdW(9, 0), dRdWp(9, 0), dwdwp(9, 0);
     WtoF(W, F);
     WtoQ(W, Q, S);
     getFlux(Flux, W, F);
     int ki, kip;
-    double pert;
+    long double pert;
 
     // DR/DW
     for(int Ri = 0; Ri < nx; Ri++) // LOOP OVER R
     {
         for(int Wi = 0; Wi < nx; Wi++) // LOOP OVER W
         {
-            double h = 0.00000001;
+            long double h = 0.00000001;
             for(int statei = 0; statei < 3; statei++) // LOOP OVER STATEI
             {
                 for(int i = 0; i < 3 * nx; i++)
@@ -1340,22 +1343,22 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
     return matA;
 }
 
-VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
+VectorXld solveSparseAxb(SparseMatrix <long double> A, VectorXld b, int eig_solv)
 {
-    VectorXd x(3 * nx);
+    VectorXld x(3 * nx);
     x.setZero();
-    MatrixXd matAdense(3 * nx, 3 * nx);
-    MatrixXd eye(3 * nx, 3 * nx);
+    MatrixXld matAdense(3 * nx, 3 * nx);
+    MatrixXld eye(3 * nx, 3 * nx);
     eye.setIdentity();
     matAdense = A * eye;
 
-    double offset = 0;//0.00001;
+    long double offset = 0;//0.00001;
     matAdense = matAdense + eye * offset;
 
-    JacobiSVD<MatrixXd> svd(matAdense);
-    double svdmax = svd.singularValues()(0);
-    double svdmin = svd.singularValues()(svd.singularValues().size()-1);
-    double cond = svdmax / svdmin;
+    JacobiSVD<MatrixXld> svd(matAdense);
+    long double svdmax = svd.singularValues()(0);
+    long double svdmin = svd.singularValues()(svd.singularValues().size()-1);
+    long double cond = svdmax / svdmin;
     std::cout<<"Condition Number SVD"<<std::endl;
     std::cout<<cond<<std::endl;
     std::cout<<"Max/Min Singular Values"<<std::endl;
@@ -1364,7 +1367,7 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
     // Sparse LU
     if(eig_solv == 0)
     {
-        SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
+        SparseLU <SparseMatrix <long double>, COLAMDOrdering< int > > slusolver;
         slusolver.analyzePattern(A);
         slusolver.factorize(A);
         
@@ -1383,7 +1386,7 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
     // Iterative LU
     if(eig_solv == 2)
     {
-        BiCGSTAB<SparseMatrix <double> > itsolver;
+        BiCGSTAB<SparseMatrix <long double> > itsolver;
         itsolver.compute(A);
         if(itsolver.info() == 0)
             std::cout<<"Iterative Factorization success"<<std::endl;
@@ -1399,9 +1402,9 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
     return x;
 }
 
-VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
+VectorXld itSolve(SparseMatrix <long double> A, VectorXld b)
 {
-    double resi1 = 1, resi2 = 1, resi3 = 1;
+    long double resi1 = 1, resi2 = 1, resi3 = 1;
     // Directly Solve the Linear System Iteratively
     // Using Sub-Matrices
     //  --------------
@@ -1409,45 +1412,45 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
     // |--------------| = |    |
     // |  A3   |  A4  |   | b2 |
     //  --------------
-    MatrixXd A1(3 * (nx - 1), 3 * (nx - 1));
-    MatrixXd A2(3 * (nx - 1), 3 * (nx - 1));
-    MatrixXd A3(3 * (nx - 1), 3 * (nx - 1));
-    MatrixXd A4(3 * (nx - 1), 3 * (nx - 1));
-    A1 = MatrixXd(A.block(0, 0, 3 * (nx - 1), 3 * (nx - 1)));
-    A2 = MatrixXd(A.block(3 * (nx - 2), 3 * (nx - 1), 3, 3));
-    A3 = MatrixXd(A.block(3 * (nx - 1), 3 * (nx - 2), 3, 3));
-    A4 = MatrixXd(A.block(3 * (nx - 1), 3 * (nx - 1), 3, 3));
-    A4 = A4 + MatrixXd(3, 3).setIdentity() * 0.000001;
+    MatrixXld A1(3 * (nx - 1), 3 * (nx - 1));
+    MatrixXld A2(3 * (nx - 1), 3 * (nx - 1));
+    MatrixXld A3(3 * (nx - 1), 3 * (nx - 1));
+    MatrixXld A4(3 * (nx - 1), 3 * (nx - 1));
+    A1 = MatrixXld(A.block(0, 0, 3 * (nx - 1), 3 * (nx - 1)));
+    A2 = MatrixXld(A.block(3 * (nx - 2), 3 * (nx - 1), 3, 3));
+    A3 = MatrixXld(A.block(3 * (nx - 1), 3 * (nx - 2), 3, 3));
+    A4 = MatrixXld(A.block(3 * (nx - 1), 3 * (nx - 1), 3, 3));
+    A4 = A4 + MatrixXld(3, 3).setIdentity() * 0.000001;
 //  std::cout<<A<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<std::endl;
 
 
-    VectorXd b1(3 * (nx - 1)), b2(3);
+    VectorXld b1(3 * (nx - 1)), b2(3);
     b1 = b.head(3 * (nx - 1));
     b2 = b.tail(3);
 
-    VectorXd b1mod(3 * (nx - 1)), b2mod(3);
+    VectorXld b1mod(3 * (nx - 1)), b2mod(3);
     b1mod = b1;
     b2mod = b2;
     
-    VectorXd fullX(3 * nx);
+    VectorXld fullX(3 * nx);
     fullX.setZero();
     fullX.setOnes();
-    fullX = MatrixXd(A).fullPivLu().solve(b);
+    fullX = MatrixXld(A).fullPivLu().solve(b);
 
-    VectorXd x1(3 * (nx - 1));
-    VectorXd x2(3);
+    VectorXld x1(3 * (nx - 1));
+    VectorXld x2(3);
     x1 = fullX.head(3 * (nx - 1));
     x2 = fullX.tail(3);
 
 //  b1mod.tail(3) = b1.tail(3) - A2 * x2.tail(3);
 //  b2mod.tail(3) = b2.tail(3) - A3 * x1.tail(3);
 
-    double tol1 = 5e-13;
-    double tol2 = tol1;
-    double tol3 = 1;//tol1;
+    long double tol1 = 5e-13;
+    long double tol2 = tol1;
+    long double tol3 = 1;//tol1;
     int it = 0;
     while(resi1 > tol1 || resi2 > tol2 || resi3 > tol3)
     {
@@ -1469,15 +1472,15 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
                  <<" resi3: "<<resi3
                  <<std::endl;
     }
-    JacobiSVD<MatrixXd> svd(A1);
-    double svdmax = svd.singularValues()(0);
-    double svdmin = svd.singularValues()(svd.singularValues().size()-1);
-    double cond = svdmax / svdmin;
+    JacobiSVD<MatrixXld> svd(A1);
+    long double svdmax = svd.singularValues()(0);
+    long double svdmin = svd.singularValues()(svd.singularValues().size()-1);
+    long double cond = svdmax / svdmin;
     std::cout<<"Condition Number A1"<<std::endl;
     std::cout<<cond<<std::endl;
     std::cout<<"Max/Min Singular Values"<<std::endl;
     std::cout<<svdmax<< " / "<<svdmin<<std::endl;
-    JacobiSVD<MatrixXd> svd2(A4);
+    JacobiSVD<MatrixXld> svd2(A4);
     svdmax = svd2.singularValues()(0);
     svdmin = svd2.singularValues()(svd2.singularValues().size()-1);
     cond = svdmax / svdmin;

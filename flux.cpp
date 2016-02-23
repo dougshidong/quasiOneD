@@ -8,9 +8,9 @@
 
 
 // Get Flux based on FluxScheme
-void getFlux(std::vector <double> &Flux,
-             std::vector <double> W,
-             std::vector <double> F)
+void getFlux(std::vector <long double> &Flux,
+             std::vector <long double> W,
+             std::vector <long double> F)
 {
     if(FluxScheme == 0) // SW
         Flux_StegerWarming(Flux, W);
@@ -19,26 +19,26 @@ void getFlux(std::vector <double> &Flux,
 }
 
 // StegerWarming
-void Flux_StegerWarming(std::vector <double> &Flux,
-                         std::vector <double> W)
+void Flux_StegerWarming(std::vector <long double> &Flux,
+                         std::vector <long double> W)
 {
-    double eps = 0.1;
+    long double eps = 0.1;
 
-    double S[3][3] = {{0}},
+    long double S[3][3] = {{0}},
            Sinv[3][3] = {{0}},
            C[3][3] = {{0}},
            Cinv[3][3] = {{0}},
            lambdaP[3][3],
            lambdaN[3][3];
-    double lambdaa[3];
+    long double lambdaa[3];
     
     
-    double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
+    long double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 
-    std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
+    std::vector <long double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
 
-    double beta = 0.4;//gam-1;
-    double rho, u, e, c;
+    long double beta = 0.4;//gam-1;
+    long double rho, u, e, c;
 
     for(int i = 0; i < nx; i++)
     {
@@ -144,15 +144,15 @@ void Flux_StegerWarming(std::vector <double> &Flux,
 }
 
 
-void Flux_Scalar(std::vector <double> &Flux,
-                 std::vector <double> W,
-                 std::vector <double> F)
+void Flux_Scalar(std::vector <long double> &Flux,
+                 std::vector <long double> W,
+                 std::vector <long double> F)
 {
     int ki, kim;
-    double lambda;
-    double avgu, avgc;
-    double rho, e;
-    std::vector <double> u(nx), c(nx);
+    long double lambda;
+    long double avgu, avgc;
+    long double rho, e;
+    std::vector <long double> u(nx), c(nx);
 
     for(int i = 0; i < nx; i++)
     {

@@ -8,50 +8,53 @@
 #include<iomanip>
 #include<Eigen/Dense>
 #include<stdlib.h>//exit
-std::vector <double> finiteD(std::vector <double> x,
-                             std::vector <double> dx,
-                             std::vector <double> S, 
-                             std::vector <double> designVar, 
-                             double h, 
-                             double currentI);
+std::vector <long double> finiteD(std::vector <long double> x,
+                             std::vector <long double> dx,
+                             std::vector <long double> S, 
+                             std::vector <long double> designVar, 
+                             long double h, 
+                             long double currentI);
 
-double stepBacktrackUncons(std::vector <double> designVar, 
-                           std::vector <double> pk, 
-                           std::vector <double> gradient, 
-                           double currentI, 
-                           std::vector <double> x, 
-                           std::vector <double> dx);
+long double stepBacktrackUncons(std::vector <long double> designVar, 
+                           std::vector <long double> pk, 
+                           std::vector <long double> gradient, 
+                           long double currentI, 
+                           std::vector <long double> x, 
+                           std::vector <long double> dx);
 
-std::vector <double> BFGS(std::vector <double> oldH, 
-                          std::vector <double> gradList, 
-                          std::vector <double> searchD);
+std::vector <long double> BFGS(std::vector <long double> oldH, 
+                          std::vector <long double> gradList, 
+                          std::vector <long double> searchD);
 
-void design(std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar)
+typedef Eigen::Matrix< long double , Eigen::Dynamic , 1> VectorXld;
+typedef Eigen::Matrix< long double , Eigen::Dynamic , Eigen::Dynamic > MatrixXld;
+
+void design(std::vector <long double> x, std::vector <long double> dx,
+            std::vector <long double> S, std::vector <long double> designVar)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector <long double> W(3 * nx, 0);
 
     
-    std::vector <double> normGradList, gradList;
-    std::vector <double> H(nDesVar * nDesVar, 0);
-    double normGrad = 1;
-    double tolGrad = 1e-10;
-    double currentI;
+    std::vector <long double> normGradList, gradList;
+    std::vector <long double> H(nDesVar * nDesVar, 0);
+    long double normGrad = 1;
+    long double tolGrad = 1e-10;
+    long double currentI;
 
     int maxDesign = 10000;
 
     int printConv = 1;
 
-    double alpha = 1;
+    long double alpha = 1;
 
-    double h = 1e-8;
-    std::vector <double> gradient(nDesVar), gradientFD(nDesVar),
+    long double h = 1e-8;
+    std::vector <long double> gradient(nDesVar), gradientFD(nDesVar),
                 pk(nDesVar),
                 searchD(nDesVar),
                 dgradient(nDesVar);
 
     int rc;
-    std::vector <double> psi(3 * nx, 0);
+    std::vector <long double> psi(3 * nx, 0);
     
     quasiOneD(x, dx, S, designVar, W);
     
@@ -62,7 +65,7 @@ void design(std::vector <double> x, std::vector <double> dx,
     std::cout<<"Gradient Relative Error:"<<std::endl;
     for(int i = 0; i < nDesVar; i++)
     {
-        double gradientDiff = fabs((gradient[i] - gradientFD[i]) / gradient[i]);
+        long double gradientDiff = fabs((gradient[i] - gradientFD[i]) / gradient[i]);
         std::cout<<gradientDiff<<std::endl;
     }
 //    gradient = gradientFD;
@@ -186,15 +189,16 @@ void design(std::vector <double> x, std::vector <double> dx,
 
 }
 
-std::vector <double> BFGS(std::vector <double> oldH,
-                          std::vector <double> gradList,
-                          std::vector <double> searchD)
+std::vector <long double> BFGS(std::vector <long double> oldH,
+                          std::vector <long double> gradList,
+                          std::vector <long double> searchD)
 {
     int ls = gradList.size();
     int rc;
-    std::vector <double> newH(nDesVar * nDesVar);
-    Eigen::VectorXd dg(nDesVar), dx(nDesVar);
-    Eigen::MatrixXd dH(nDesVar, nDesVar), a(nDesVar, nDesVar), b(nDesVar, nDesVar);
+    std::vector <long double> newH(nDesVar * nDesVar);
+
+    VectorXld dg(nDesVar), dx(nDesVar);
+    MatrixXld dH(nDesVar, nDesVar), a(nDesVar, nDesVar), b(nDesVar, nDesVar);
 
     for(int i = 0; i < nDesVar; i++)
     {
@@ -202,7 +206,7 @@ std::vector <double> BFGS(std::vector <double> oldH,
         dx(i) = searchD[i];
     }
     
-    Eigen::Map <Eigen::Matrix<double, - 1, - 1, Eigen::RowMajor> > 
+    Eigen::Map <Eigen::Matrix<long double, - 1, - 1, Eigen::RowMajor> > 
         cH(oldH.data(), nDesVar, nDesVar);
 
     a = ((dx.transpose() * dg + dg.transpose() * cH * dg)(0) * (dx * dx.transpose()))
@@ -228,25 +232,25 @@ std::vector <double> BFGS(std::vector <double> oldH,
     return newH;
 }
 
-std::vector <double> finiteD(std::vector <double> x, 
-                             std::vector <double> dx,
-                             std::vector <double> S, 
-                             std::vector <double> designVar, 
-                             double h, 
-                             double currentI)
+std::vector <long double> finiteD(std::vector <long double> x, 
+                             std::vector <long double> dx,
+                             std::vector <long double> S, 
+                             std::vector <long double> designVar, 
+                             long double h, 
+                             long double currentI)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector <long double> W(3 * nx, 0);
 
     // Method
     // 1  =  Forward
     // 2  =  Backward
     // 3  =  Central
-    std::vector <double> grad(nx);
-    std::vector <double> tempS(nx + 1);
+    std::vector <long double> grad(nx);
+    std::vector <long double> tempS(nx + 1);
     
-    double I0, I1, I2, dh;
+    long double I0, I1, I2, dh;
 
-    std::vector <double> tempD(nDesVar);
+    std::vector <long double> tempD(nDesVar);
 
     if(currentI < 0 && gradientType != 3)
     {
@@ -333,23 +337,23 @@ std::vector <double> finiteD(std::vector <double> x,
 
 
 
-double stepBacktrackUncons(std::vector <double> designVar,
-                           std::vector <double> pk,
-                           std::vector <double> gradient, 
-                           double currentI,
-                           std::vector <double> x, 
-                           std::vector <double> dx)
+long double stepBacktrackUncons(std::vector <long double> designVar,
+                           std::vector <long double> pk,
+                           std::vector <long double> gradient, 
+                           long double currentI,
+                           std::vector <long double> x, 
+                           std::vector <long double> dx)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector <long double> W(3 * nx, 0);
 
-    double alpha = 1;
-    double c1 = 1e-4;
-    std::vector <double> tempS(nx + 1);
-    double newVal;
+    long double alpha = 1;
+    long double c1 = 1e-4;
+    std::vector <long double> tempS(nx + 1);
+    long double newVal;
 
-    double c_pk_grad = 0;
+    long double c_pk_grad = 0;
 
-    std::vector <double> tempD(nDesVar);
+    std::vector <long double> tempD(nDesVar);
 
     for(int i = 0; i < nDesVar; i++)
     {

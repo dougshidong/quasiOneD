@@ -3,10 +3,10 @@
 
 #include<vector>
 
-std::vector <double> adjoint(std::vector <double> x, 
-                             std::vector <double> dx, 
-                             std::vector <double> S,
-                             std::vector <double> W,
-                             std::vector <double> &psi,
-                             std::vector <double> designVar);
+std::vector <long double> adjoint(std::vector <long double> x, 
+                             std::vector <long double> dx, 
+                             std::vector <long double> S,
+                             std::vector <long double> W,
+                             std::vector <long double> &psi,
+                             std::vector <long double> designVar);
 #endif

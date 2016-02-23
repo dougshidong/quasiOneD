@@ -3,31 +3,31 @@
 
 #include<vector>
 
-void WtoP(std::vector <double> W,
-          std::vector <double> &rho,
-          std::vector <double> &u,
-          std::vector <double> &e);
+void WtoP(std::vector <long double> W,
+          std::vector <long double> &rho,
+          std::vector <long double> &u,
+          std::vector <long double> &e);
 
-void WtoP(std::vector <double> W,
-          std::vector <double> &rho,
-          std::vector <double> &e,
-          std::vector <double> &u,
-          std::vector <double> &p,
-          std::vector <double> &c,
-          std::vector <double> &T);
+void WtoP(std::vector <long double> W,
+          std::vector <long double> &rho,
+          std::vector <long double> &e,
+          std::vector <long double> &u,
+          std::vector <long double> &p,
+          std::vector <long double> &c,
+          std::vector <long double> &T);
 
-void dWpdW(std::vector <double> &M,
-           std::vector <double> W,
+void dWpdW(std::vector <long double> &M,
+           std::vector <long double> W,
            int k);
 
-void dWdWp(std::vector <double> &M,
-           std::vector <double> W,
+void dWdWp(std::vector <long double> &M,
+           std::vector <long double> W,
            int k);
 
-void WtoF(std::vector <double> W,
-          std::vector <double> &F);
+void WtoF(std::vector <long double> W,
+          std::vector <long double> &F);
 
-void WtoQ(std::vector <double> W,
-          std::vector <double> &Q,
-          std::vector <double> S);
+void WtoQ(std::vector <long double> W,
+          std::vector <long double> &Q,
+          std::vector <long double> S);
 #endif

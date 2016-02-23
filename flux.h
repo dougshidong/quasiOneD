@@ -3,14 +3,14 @@
 
 #include<vector>
 
-void getFlux(std::vector <double> &Flux,
-             std::vector <double> W,
-             std::vector <double> F);
+void getFlux(std::vector <long double> &Flux,
+             std::vector <long double> W,
+             std::vector <long double> F);
 
-void Flux_StegerWarming(std::vector <double> &Flux,
-                         std::vector <double> W);
+void Flux_StegerWarming(std::vector <long double> &Flux,
+                         std::vector <long double> W);
 
-void Flux_Scalar(std::vector <double> &Flux,
-                 std::vector <double> W,
-                 std::vector <double> F);
+void Flux_Scalar(std::vector <long double> &Flux,
+                 std::vector <long double> W,
+                 std::vector <long double> F);
 #endif

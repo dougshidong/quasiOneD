@@ -1,17 +1,17 @@
-extern const double gam;
-extern const double R;
-extern const double Cv;
+extern const long double gam;
+extern const long double R;
+extern const long double Cv;
 
-extern const double Min;
-extern const double Ttin; 
-extern const double ptin;
+extern const long double Min;
+extern const long double Ttin; 
+extern const long double ptin;
 
-extern const double pexit;
+extern const long double pexit;
 
-extern const double a2;
+extern const long double a2;
 
-extern const double CFL;
-extern const double conv;
+extern const long double CFL;
+extern const long double conv;
 
 extern const int maxIt;
 
@@ -23,4 +23,4 @@ extern const int StepScheme;
 
 extern const int FluxScheme;
 
-extern double Scalareps;
+extern long double Scalareps;

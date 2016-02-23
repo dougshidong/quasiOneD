@@ -9,11 +9,11 @@
 
 int main()
 {
-    std::vector <double> x(nx), S(nx + 1);
-    std::vector <double> dx(nx);
-    std::vector <double> geom(3);
-    std::vector <double> W(3 * nx, 0);
-    double fitness;
+    std::vector <long double> x(nx), S(nx + 1);
+    std::vector <long double> dx(nx);
+    std::vector <long double> geom(3);
+    std::vector <long double> W(3 * nx, 0);
+    long double fitness;
     feenableexcept(FE_INVALID | FE_OVERFLOW);
     
     geom[0] = h_geom;

@@ -3,26 +3,26 @@
 
 #include<vector>
 
-void EulerExplicitStep(std::vector <double> S,
-                std::vector <double> V,
-                std::vector <double> dt,
-                std::vector <double> Q,
-                std::vector <double> &Resi,
-                std::vector <double> &W,
-                std::vector <double> F);
+void EulerExplicitStep(std::vector <long double> S,
+                std::vector <long double> V,
+                std::vector <long double> dt,
+                std::vector <long double> Q,
+                std::vector <long double> &Resi,
+                std::vector <long double> &W,
+                std::vector <long double> F);
 
-void rk4(std::vector <double> dx, std::vector <double> S, 
-                std::vector <double> dt, 
-                std::vector <double> &W,
-                std::vector <double> F,
-                std::vector <double> Q, 
-                std::vector <double> &Resi);
+void rk4(std::vector <long double> dx, std::vector <long double> S, 
+                std::vector <long double> dt, 
+                std::vector <long double> &W,
+                std::vector <long double> F,
+                std::vector <long double> Q, 
+                std::vector <long double> &Resi);
 
-void jamesonrk(std::vector <double> dx,
-         std::vector <double> S, 
-         std::vector <double> V, 
-         std::vector <double> dt, 
-         std::vector <double> &W,
-         std::vector <double> F,
-         std::vector <double> &Resi);
+void jamesonrk(std::vector <long double> dx,
+         std::vector <long double> S, 
+         std::vector <long double> V, 
+         std::vector <long double> dt, 
+         std::vector <long double> &W,
+         std::vector <long double> F,
+         std::vector <long double> &Resi);
 #endif

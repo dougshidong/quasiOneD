@@ -3,17 +3,17 @@
 
 #include<vector>
 
-double quasiOneD(std::vector <double> x, 
-                 std::vector <double> dx, 
-                 std::vector <double> S,
-                 std::vector <double> designVar,
-                 std::vector <double> &W);
+long double quasiOneD(std::vector <long double> x, 
+                 std::vector <long double> dx, 
+                 std::vector <long double> S,
+                 std::vector <long double> designVar,
+                 std::vector <long double> &W);
 
-double TotalPressureLoss(std::vector <double> W);
+long double TotalPressureLoss(std::vector <long double> W);
 
-void ioTargetPressure(int io, std::vector <double> &p);
+void ioTargetPressure(int io, std::vector <long double> &p);
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void inletBC(std::vector <long double> &W, std::vector <long double> &Resi, long double dt0, long double dx0);
+void outletBC(std::vector <long double> &W, std::vector <long double> &Resi, long double dt0, long double dx0);
 
 #endif
