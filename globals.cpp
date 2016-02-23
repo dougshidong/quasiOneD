@@ -14,8 +14,8 @@ const int opt = 1;
 const int nDesVar = 3;
 // Input Geometry
 const std::complex<double> a_geom = 0, b_geom = 1;
-//const std::complex<double> h_geom = 0.10, t1_geom = 0.80, t2_geom = 3.00;
-const std::complex<double> h_geom = 0.05, t1_geom = 1.00, t2_geom = 6.00;
+const std::complex<double> h_geom = 0.10, t1_geom = 0.80, t2_geom = 3.00;
+//const std::complex<double> h_geom = 0.05, t1_geom = 1.00, t2_geom = 6.00;
 
 // Fitness Function
 // 0  -  Total Pressure Loss
@@ -47,7 +47,7 @@ const std::complex<double> R = 1716.0 / 1716.0;
 const std::complex<double> Cv = R / (gam - 1.0);
 
 // Inlet
-const std::complex<double> Min = 0.75;
+const std::complex<double> Min = 1.75;
 const std::complex<double> Ttin = 531.2 / 531.2;
 const std::complex<double> ptin = 2117.0 / 2117.0;
 // Outlet

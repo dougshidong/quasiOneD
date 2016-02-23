@@ -262,7 +262,7 @@ void ioTargetPressure(int io, std::vector <std::complex<double> > &p)
 //      for(int i = 0; i < nx; i++)
 //          fprintf(TargetP, "%.15f\n", x[i]);
         for(int i = 0; i < nx; i++)
-            fprintf(TargetP, "%.15f + i%.15f\n", std::real(p[i] / ptin), std::imag(p[i] / ptin));
+            fprintf(TargetP, "%.17f + i%.17f\n", std::real(p[i] / ptin), std::imag(p[i] / ptin));
     }
     // Input
     else
@@ -275,7 +275,7 @@ void ioTargetPressure(int io, std::vector <std::complex<double> > &p)
         if(nxT!=nx) std::cout<< "nx and nxT are different for targetP";
         for(int iT = 0; iT < nxT; iT++)
         {
-            err = fscanf(TargetP, "%.15lf + i%15lf\n", &re, &im);
+            err = fscanf(TargetP, "%lf + i%lf\n", &re, &im);
             p[iT] = re + im * std::complex<double>(0.0, 1.0);
         }
         if(err != 1) std::cout<< "Err";
@@ -292,6 +292,8 @@ std::complex<double> inverseFitness(std::vector <std::complex<double> > pcurrent
     std::complex<double> fit = 0;
     for(int i = 0; i < nx; i++)
     {
+        std::cout<<ptarget[i]<<std::endl;
+        std::cout<<pcurrent[i] / ptin <<std::endl;
         fit += pow(pcurrent[i] / ptin - ptarget[i], 2.0) * dx[i];
     }
     std::cout<<"InverseFitness =  "<<fit / 2.0<<std::endl;

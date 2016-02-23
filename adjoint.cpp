@@ -1151,7 +1151,7 @@ SparseMatrix<std::complex<double> > buildAFD2(std::vector <std::complex<double> 
             coli = Wi * 3 + col;
             matA.coeffRef(rowi, coli) = 0;
             if(row == col)
-                matA.coeffRef(rowi, coli) = 1;
+                matA.coeffRef(rowi, coli) = -1;
 
             // R1, W0
             Ri = 1;
