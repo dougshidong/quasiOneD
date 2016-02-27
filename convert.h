@@ -3,6 +3,10 @@
 
 #include<vector>
 
+
+void getp(std::vector <double> W,
+          std::vector <double> &p);
+
 void WtoP(std::vector <double> W,
           std::vector <double> &rho,
           std::vector <double> &u,

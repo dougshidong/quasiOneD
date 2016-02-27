@@ -1,73 +1,25 @@
 // Calculates the discrete costate fluxes
 #include<iostream>
 #include<math.h>
-#include"quasiOneD.h"
 #include<vector>
 #include<Eigen/Eigen>
 #include <stdio.h>
 #include <iomanip>
+#include "adjoint.h"
+#include"quasiOneD.h"
 #include "globals.h"
 #include "convert.h"
 #include "flux.h"
 
 using namespace Eigen;
 
-MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
-                  std::vector <double> W);
-
-void JacobianCenter(std::vector <double> &J,
-                    double u, double c);
-
-SparseMatrix<double> evaldRdW(std::vector <double> Ap,
-                                  std::vector <double> An,
-                                  std::vector <double> W,
-                                  std::vector <double> dQdW,
-                                  std::vector <double> dx,
-                                  std::vector <double> dt,
-                                  std::vector <double> S,
-                                  double Min);
-
-SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
-                                  std::vector <double> S,
-                                  double Min);
-
-VectorXd buildbMatrix(std::vector <double> dIcdW);
-
-void StegerJac(std::vector <double> W,
-               std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux);
-
-void ScalarJac(std::vector <double> W,
-               std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux);
-
-void BCJac(std::vector <double> W,
-           std::vector <double> dt,
-           std::vector <double> dx,
-           std::vector <double> &dBidWi,
-           std::vector <double> &dBidWd,
-           std::vector <double> &dBodWd,
-           std::vector <double> &dBodWo);
-
-void evaldIcdW(std::vector <double> &dIcdW,
-               std::vector <double> W,
-               std::vector <double> S);
-
-void evaldQdW(std::vector <double> &dQdW,
-                   std::vector <double> W,
-                   std::vector <double> S);
-
-VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv);
-VectorXd itSolve(SparseMatrix <double> A, VectorXd b);
-
-VectorXd adjoint(std::vector <double> x, 
-             std::vector <double> dx, 
-             std::vector <double> S,
-             std::vector <double> W,
-             std::vector <double> &psi,
-             std::vector <double> designVar)
+VectorXd adjoint(
+    std::vector <double> x, 
+    std::vector <double> dx, 
+    std::vector <double> S,
+    std::vector <double> W,
+    std::vector <double> &psi,
+    std::vector <double> designVar)
 {
     //Get Primitive Variables
     std::vector <double> rho(nx), u(nx), e(nx);
@@ -85,7 +37,7 @@ VectorXd adjoint(std::vector <double> x,
     std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
     std::vector <double> Flux(3 * (nx + 1), 0);
     if(FluxScheme == 0) StegerJac(W, Ap_list, An_list, Flux);
-    if(FluxScheme == 1) ScalarJac(W, Ap_list, An_list, Flux);
+    if(FluxScheme == 1) ScalarJac(W, Ap_list, An_list);
         
     // Transposed Boundary Flux Jacobians
     std::vector <double> dBidWi(3 * 3, 0);
@@ -110,14 +62,10 @@ VectorXd adjoint(std::vector <double> x,
 //  dRdWt.coeffRef(dRdWt.rows() - 2, dRdWt.cols() - 2) += 0.00001;
 //  dRdWt.coeffRef(dRdWt.rows() - 1, dRdWt.cols() - 1) += 0.00001;
 
-    // Evaluate dIcdW
-    std::vector <double> dIcdW(3 * nx, 0);
-    evaldIcdW(dIcdW, W, dx);
-
     // Build B matrix
+    // Evaluate dIcdW
     VectorXd bvec(3 * nx);
-    bvec.setZero();
-    bvec = buildbMatrix(dIcdW);
+    bvec = -evaldIcdW(W, dx);
 //  std::cout<<"Vector B:"<<std::endl;
 //  std::cout<<bvec<<std::endl;
 
@@ -131,7 +79,7 @@ VectorXd adjoint(std::vector <double> x,
     int directSolve = 1;
     if(directSolve == 1)
     {
-        psiV = solveSparseAxb(dRdWt, bvec, eig_solv);
+        psiV = solveSparseAXB(dRdWt, bvec, eig_solv);
     }
     else
     {
@@ -163,77 +111,32 @@ VectorXd adjoint(std::vector <double> x,
     VectorXd dIcdS(nx + 1);
     dIcdS.setZero();
 
+    // Get Fluxes
+    getFlux(Flux, W);
+
     // Evaluate psiV * dRdS
     VectorXd psidRdS(nx + 1);
-    psidRdS.setZero();
-    for(int i = 2; i < nx - 1; i++)
-    for(int k = 0; k < 3; k++)
-    {
-        psidRdS(i) += psiV((i - 1) * 3 + k) * Flux[i * 3 + k];
-        psidRdS(i) -= psiV(i * 3 + k) * Flux[i * 3 + k];
-        if(k == 1)
-        {
-            psidRdS(i) -= psiV((i - 1) * 3 + k) * p[i - 1];
-            psidRdS(i) += psiV(i * 3 + k) * p[i];
-        }
-    }
-
-    // Evaluate psiV * dRdS neat the Boundaries
-    for(int k = 0; k < 3; k++)
-    {
-        // Cell 0 Inlet is not a function of the shape
-
-        // Cell 1
-        psidRdS(1) -= psiV(1 * 3 + k) * Flux[1 * 3 + k];
-
-        // Cell nx - 1
-        psidRdS(nx - 1) += psiV((nx - 2) * 3 + k) * Flux[(nx - 1) * 3 + k];
-
-        // Cell nx Outlet is not a function of the shape
-
-        if(k == 1)
-        {
-            psidRdS(1) += psiV(1 * 3 + k) * p[1];
-            psidRdS(nx - 1) -= psiV((nx - 2) * 3 + k) * p[nx - 1];
-        }
-    }
+    psidRdS = evalpsidRdS(psiV, Flux, p);
 
     // Finite Difference dRdS
     MatrixXd dRdS(3 * nx, nx + 1);
+    MatrixXd dRdSFD(3 * nx, nx + 1);
     dRdS = evaldRdS(Flux, S, W);
+    dRdSFD = evaldRdS_FD(Flux, S, W);
+    std::cout<<"(dRdSFD - dRdS).norm() / dRdS.norm()"<<std::endl;
+    std::cout<<(dRdSFD - dRdS).norm() / dRdS.norm()<<std::endl;
+
     VectorXd psidRdSFD(nx + 1);
     psidRdSFD.setZero();
     psidRdSFD = psiV.transpose() * dRdS;
-//  std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
-//  std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
+    std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
+    std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
     // Evaluate dSdDesign
     MatrixXd dSdDesign(nx + 1, designVar.size());
-    double d1 = designVar[0];
-    double d2 = designVar[1];
-    double d3 = designVar[2];
-    double xh;
-    for(int i = 0; i < nx + 1; i++)
-    {
-        if(i == 0 || i == nx)
-        {
-            dSdDesign(i, 0) = 0;
-            dSdDesign(i, 1) = 0;
-            dSdDesign(i, 2) = 0;
-        }
-        else
-        {
-            xh = fabs(x[i] - dx[i] / 2.0);
-            dSdDesign(i, 0) = - pow(sin(PI * pow(xh, d2)), d3);
-            dSdDesign(i, 1) = - d1 * d3 * PI * pow(xh, d2)
-                              * cos(PI * pow(xh, d2)) * log(xh)
-                              * pow(sin(PI * pow(xh, d2)), d3 - 1);
-            dSdDesign(i, 2) = - d1 * log(sin(PI * pow(xh, d2)))
-                              * pow(sin(PI * pow(xh, d2)), d3);
-        }
-    }
+    dSdDesign = evaldSdDesign(x, dx, designVar);
 
     VectorXd grad(designVar.size());
-    grad = psidRdS.transpose() * dSdDesign;
+    grad = psidRdSFD.transpose() * dSdDesign;
 
     std::cout<<"Gradient from Adjoint:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;
@@ -399,8 +302,7 @@ void JacobianCenter(std::vector <double> &J,
 
 void ScalarJac(std::vector <double> W,
                std::vector <double> &Ap_list,
-               std::vector <double> &An_list,
-               std::vector <double> &Flux)
+               std::vector <double> &An_list)
 {
     std::vector <double> rho(nx), u(nx), e(nx);
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
@@ -501,34 +403,45 @@ void ScalarJac(std::vector <double> W,
             }
         }
     }
-
-    double avgu, avgc;
-    int ki, kim;
-    std::vector <double> F(3 * nx, 0);
-    WtoF(W, F);
-    for(int i = 1; i < nx; i++)
-    {
-        avgu = ( u[i - 1] + u[i] ) / 2.0;
-        avgc = ( c[i - 1] + c[i] ) / 2.0;
-        lamb = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ),
-                           fabs(avgu - avgc) );
-
-        for(int k = 0; k < 3; k++)
-        {
-            ki = i * 3 + k;
-            kim = (i - 1) * 3 + k;
-            Flux[ki] = 0.5 * (F[kim] + F[ki]) - 0.5 * Scalareps * lamb * (W[ki] - W[kim]);
-        }
-    }
-
 }
 
 
-
-void evaldIcdW(std::vector <double> &dIcdW,
-               std::vector <double> W,
-               std::vector <double> dx)
+MatrixXd evaldSdDesign(
+    std::vector <double> x, 
+    std::vector <double> dx, 
+    std::vector <double> designVar)
 {
+    MatrixXd dSdDesign(nx + 1, designVar.size());
+    double d1 = designVar[0];
+    double d2 = designVar[1];
+    double d3 = designVar[2];
+    double xh;
+    for(int i = 0; i < nx + 1; i++)
+    {
+        if(i == 0 || i == nx)
+        {
+            dSdDesign(i, 0) = 0;
+            dSdDesign(i, 1) = 0;
+            dSdDesign(i, 2) = 0;
+        }
+        else
+        {
+            xh = fabs(x[i] - dx[i] / 2.0);
+            dSdDesign(i, 0) = - pow(sin(PI * pow(xh, d2)), d3);
+            dSdDesign(i, 1) = - d1 * d3 * PI * pow(xh, d2)
+                              * cos(PI * pow(xh, d2)) * log(xh)
+                              * pow(sin(PI * pow(xh, d2)), d3 - 1);
+            dSdDesign(i, 2) = - d1 * log(sin(PI * pow(xh, d2)))
+                              * pow(sin(PI * pow(xh, d2)), d3);
+        }
+    }
+    return dSdDesign;
+}
+
+VectorXd evaldIcdW(std::vector <double> W, std::vector <double> dx)
+{
+    VectorXd dIcdW(3 * nx);
+
     std::vector <double> ptarget(nx, 0);
     double dpdw[3], rho, u, p;
     ioTargetPressure(-1, ptarget);
@@ -546,6 +459,7 @@ void evaldIcdW(std::vector <double> &dIcdW,
         dIcdW[i * 3 + 1] = (p / ptin - ptarget[i]) * dpdw[1] * dx[i] / ptin;
         dIcdW[i * 3 + 2] = (p / ptin - ptarget[i]) * dpdw[2] * dx[i] / ptin;
     }
+    return dIcdW;
 }
 
 void evaldQdW(std::vector <double> &dQdW,
@@ -1133,7 +1047,77 @@ VectorXd buildbMatrix(std::vector <double> dIcdW)
     return matb;
 }
 
+VectorXd evalpsidRdS(
+    VectorXd psiV,
+    std::vector <double> Flux,
+    std::vector <double> p)
+{
+    VectorXd psidRdS(nx + 1);
+    psidRdS.setZero();
+    for(int i = 2; i < nx - 1; i++)
+    for(int k = 0; k < 3; k++)
+    {
+        psidRdS(i) += psiV((i - 1) * 3 + k) * Flux[i * 3 + k];
+        psidRdS(i) -= psiV(i * 3 + k) * Flux[i * 3 + k];
+        if(k == 1)
+        {
+            psidRdS(i) -= psiV((i - 1) * 3 + k) * p[i - 1];
+            psidRdS(i) += psiV(i * 3 + k) * p[i];
+        }
+    }
+
+    // Evaluate psiV * dRdS neat the Boundaries
+    for(int k = 0; k < 3; k++)
+    {
+        // Cell 0 Inlet is not a function of the shape
+
+        // Cell 1
+        psidRdS(1) -= psiV(1 * 3 + k) * Flux[1 * 3 + k];
+
+        // Cell nx - 1
+        psidRdS(nx - 1) += psiV((nx - 2) * 3 + k) * Flux[(nx - 1) * 3 + k];
+
+        // Cell nx Outlet is not a function of the shape
+
+        if(k == 1)
+        {
+            psidRdS(1) += psiV(1 * 3 + k) * p[1];
+            psidRdS(nx - 1) -= psiV((nx - 2) * 3 + k) * p[nx - 1];
+        }
+    }
+    return psidRdS;
+}
+
 MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
+                  std::vector <double> W)
+{
+    MatrixXd dRdS(3 * nx, nx + 1);
+    std::vector <double> Q(3 * nx, 0), p(nx);
+    WtoQ(W, Q, S);
+    getp(W, p);
+    int Si, kR, kS;
+    dRdS.setZero();
+    for(int Ri = 1; Ri < nx - 1; Ri++)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            kR = Ri * 3 + k;
+
+            Si = Ri;
+            kS = Si * 3 + k;
+            dRdS(kR, Si) = -Flux[kS];
+            if(k == 1) dRdS(kR, Si) += p[Ri];
+
+            Si = Ri + 1;
+            kS = Si * 3 + k;
+            dRdS(kR, Si) = Flux[kS];
+            if(k == 1) dRdS(kR, Si) += -p[Ri];
+        }
+    }
+    return dRdS;
+}
+
+MatrixXd evaldRdS_FD(std::vector <double> Flux, std::vector <double> S,
                   std::vector <double> W)
 {
     MatrixXd dRdS(3 * nx, nx + 1);
@@ -1196,7 +1180,7 @@ SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
     std::vector <double> dRdW_block(9, 0), dRdWp(9, 0), dwdwp(9, 0);
     WtoF(W, F);
     WtoQ(W, Q, S);
-    getFlux(Flux, W, F);
+    getFlux(Flux, W);
     int ki, kip;
     double pert;
 
@@ -1224,7 +1208,7 @@ SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
                 {
                     WtoF(Wd, F);
                     WtoQ(Wd, Q, S);
-                    getFlux(Flux, Wd, F);
+                    getFlux(Flux, Wd);
                     
                     for(int resii = 0; resii < 3; resii++)
                     {
@@ -1248,7 +1232,7 @@ SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
                 {
                     WtoF(Wd, F);
                     WtoQ(Wd, Q, S);
-                    getFlux(Flux, Wd, F);
+                    getFlux(Flux, Wd);
                     
                     for(int resii = 0; resii < 3; resii++)
                     {
@@ -1311,10 +1295,10 @@ SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
     return dRdW;
 }
 
-VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
+MatrixXd solveSparseAXB(SparseMatrix <double> A, MatrixXd B, int eig_solv)
 {
-    VectorXd x(3 * nx);
-    x.setZero();
+    MatrixXd X(A.rows(), B.cols());
+    X.setZero();
     MatrixXd matAdense(3 * nx, 3 * nx);
     MatrixXd eye(3 * nx, 3 * nx);
     eye.setIdentity();
@@ -1343,13 +1327,13 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
             std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
     
         // Solve for X
-        x = slusolver.solve(b);
+        X = slusolver.solve(B);
     }
     // Dense LU full pivoting
     if(eig_solv == 1)
     {
         // Full Pivoting LU Factorization
-        x = matAdense.fullPivLu().solve(b);
+        X = matAdense.fullPivLu().solve(B);
     }
     // Iterative LU
     if(eig_solv == 2)
@@ -1362,12 +1346,12 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
             std::cout<<"Factorization failed. Error: "<<itsolver.info()<<std::endl;
         std::cout << "#iterations:     " << itsolver.iterations() << std::endl;
         std::cout << "estimated error: " << itsolver.error()      << std::endl;
-        x = itsolver.solve(b);
+        X = itsolver.solve(B);
     }
-//  std::cout<<"||Ax - b||"<<std::endl;
-//  std::cout<<(matAdense * x - b).norm()<<std::endl;
+//  std::cout<<"||Ax - B||"<<std::endl;
+//  std::cout<<(matAdense * X - B).norm()<<std::endl;
 
-    return x;
+    return X;
 }
 
 VectorXd itSolve(SparseMatrix <double> A, VectorXd b)

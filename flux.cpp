@@ -5,17 +5,16 @@
 #include<iostream>
 #include"globals.h"
 #include"flux.h"
-
+#include"convert.h"
 
 // Get Flux based on FluxScheme
 void getFlux(std::vector <double> &Flux,
-             std::vector <double> W,
-             std::vector <double> F)
+             std::vector <double> W)
 {
     if(FluxScheme == 0) // SW
         Flux_StegerWarming(Flux, W);
     else if(FluxScheme == 1) // Scalar
-        Flux_Scalar(Flux, W, F);
+        Flux_Scalar(Flux, W);
 }
 
 // StegerWarming
@@ -143,16 +142,17 @@ void Flux_StegerWarming(std::vector <double> &Flux,
 
 }
 
-
-void Flux_Scalar(std::vector <double> &Flux,
-                 std::vector <double> W,
-                 std::vector <double> F)
+std::vector <double> F(3 * nx);
+void Flux_Scalar(std::vector <double> &Flux, std::vector <double> W)
 {
     int ki, kim;
     double lambda;
     double avgu, avgc;
     double rho, e;
     std::vector <double> u(nx), c(nx);
+    
+    // Get Convective Variables
+    WtoF(W, F);
 
     for(int i = 0; i < nx; i++)
     {

@@ -31,7 +31,7 @@ double quasiOneD(std::vector <double> x,
 {
     std::vector <double> rho(nx), u(nx), e(nx);
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-    std::vector <double> F(3 * nx, 0), Q(3 * nx, 0), Resi(3 * nx, 0);
+    std::vector <double> Resi(3 * nx, 0);
 //  std::vector <std::vector <double> > W(3, std::vector <double> (nx, 0)),
 
     std::vector <double> dt(nx), V(nx);
@@ -68,21 +68,12 @@ double quasiOneD(std::vector <double> x,
         e[i] = rho[i] * (Cv * T[i] + 0.5 * pow(u[i], 2));
     }
 
-    // State and Flux Vectors Initialization
+    // State Vectors Initialization
     for(int i = 0; i < nx; i++)
     {
         W[i * 3 + 0] = rho[i];
         W[i * 3 + 1] = rho[i] * u[i];
         W[i * 3 + 2] = e[i];
-
-        F[i * 3 + 0] = rho[i] * u[i];
-        F[i * 3 + 1] = rho[i] * u[i] * u[i] + p[i];
-        F[i * 3 + 2] = ( e[i] + p[i] ) * u[i];
-    }
-
-    for(int i = 0; i < nx; i++)
-    {
-        Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);
     }
 
     while(normR > conv && iterations < maxIt)
@@ -105,18 +96,7 @@ double quasiOneD(std::vector <double> x,
             dt[i] = (CFL * dx[i]) / fabs(u[i] + c[i]);
 
         // Step in Time
-        if(StepScheme == 0)
-        {
-            EulerExplicitStep(S, V, dt, Q, Resi, W, F);
-        }
-        else if(StepScheme == 1)
-        {
-            rk4(dx, S, dt, W, F, Q, Resi);
-        }
-        else if(StepScheme == 2)
-        {
-            jamesonrk(dx, S, V, dt, W, F, Resi);
-        }
+        stepInTime(S, dx, dt, Resi, W);
 
         // Update Inlet BC W[0]
         inletBC(W, Resi, dt[0], dx[0]);
@@ -135,16 +115,6 @@ double quasiOneD(std::vector <double> x,
             c[i] = sqrt((gam * p[i]) / rho[i]);// Speed of sound
             Mach[i] = u[i] / c[i];      // Mach number
         }
-
-        // Update vectors 
-        for(int i = 0; i < nx; i++)
-        {
-            F[i * 3 + 0] = rho[i] * u[i];
-            F[i * 3 + 1] = rho[i] * u[i] * u[i] + p[i];
-            F[i * 3 + 2] = (e[i] + p[i]) * u[i];
-
-            Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);
-        }
         
         // Calculating the norm of the density residual
         normR = 0;
@@ -162,7 +132,7 @@ double quasiOneD(std::vector <double> x,
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-//  std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
     
 
     FILE  * Results;

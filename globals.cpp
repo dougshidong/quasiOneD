@@ -66,7 +66,7 @@ const int printW = 0;
 // 0   -   Euler Explicit
 // 1   -   Runge - Kutta 4th order
 // 2   -   Jameson's Runge-Kutta 4th order
-const int StepScheme = 0;
+const int StepScheme = 2;
 
 // Flux Scheme
 // 0   -   Steger Warming (SW)

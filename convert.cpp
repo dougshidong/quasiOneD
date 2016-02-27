@@ -5,6 +5,16 @@
 #include"globals.h"
 
 
+// Get pressure
+void getp(std::vector <double> W,
+          std::vector <double> &p)
+{
+    for(int i = 0; i < nx; i++)
+    {
+        p[i] = (gam - 1) * ( W[i * 3 + 2] - (pow(W[i * 3 + 1], 2) / W[i * 3 + 0]) / 2 );
+    }
+}
+
 // Get primitive variables
 void WtoP(std::vector <double> W,
           std::vector <double> &rho,

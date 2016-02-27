@@ -4,7 +4,7 @@ INCLEI  = ./eigen/
 #DEBUG	= -g -Wall
 DEBUG	= -O3
 CPPOBJ	= main.o quasiOneD.o grid.o optimizer.o flux.o adjoint.o timestep.o globals.o \
-		  convert.o
+		  convert.o directDifferentiation.o
 CPPH	= quasiOneD.h
 CFLAGS	= -Wall -c $(DEBUG) -I $(INCLEI)
 LFLAGS  = -Wall $(DEBUG)
@@ -37,6 +37,9 @@ timestep.o : timestep.h timestep.cpp flux.h convert.h
 
 adjoint.o : adjoint.h adjoint.cpp
 	$(CC) $(CFLAGS) adjoint.cpp
+
+directDifferentiation.o : directDifferentiation.h directDifferentiation.cpp
+	$(CC) $(CFLAGS) directDifferentiation.cpp
 
 globals.o : globals.h globals.cpp
 	$(CC) $(CFLAGS) globals.cpp

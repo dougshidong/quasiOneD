@@ -3,6 +3,7 @@
 #include"quasiOneD.h"
 #include"grid.h"
 #include"adjoint.h"
+#include"directDifferentiation.h"
 #include"globals.h"
 #include<vector>
 #include<iomanip>
@@ -55,23 +56,30 @@ void design(std::vector <double> x, std::vector <double> dx,
 
     double h = 1e-8;
 
-    VectorXd gradient(nDesVar), gradientFD(nDesVar),
-                pk(nDesVar),
-                searchD(nDesVar),
-                dgradient(nDesVar);
+    VectorXd pk(nDesVar), searchD(nDesVar), dgradient(nDesVar);
 
     std::vector <double> psi(3 * nx, 0);
     
     quasiOneD(x, dx, S, designVar, W);
     
     currentI = quasiOneD(x, dx, S, designVar, W);
-    gradient = adjoint(x, dx, S, W, psi, designVar);
+    
+    VectorXd gradientAV(nDesVar), gradientFD(nDesVar), gradientDD(nDesVar);
+    gradientAV = adjoint(x, dx, S, W, psi, designVar);
+    gradientDD = directDifferentiation(x, dx, S, W, designVar);
     gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
     std::cout<<"Gradient Relative Error:"<<std::endl;
+    std::cout<<"(GRAD - GRADDD) / GRAD"<<std::endl;
     for(int i = 0; i < nDesVar; i++)
     {
-        double gradientDiff = fabs((gradient[i] - gradientFD[i]) / gradient[i]);
+        double gradientDiff = fabs((gradientAV[i] - gradientDD[i]) / gradientAV[i]);
+        std::cout<<gradientDiff<<std::endl;
+    }
+    std::cout<<"(GRADFD - GRADFD) / GRAD"<<std::endl;
+    for(int i = 0; i < nDesVar; i++)
+    {
+        double gradientDiff = fabs((gradientAV[i] - gradientFD[i]) / gradientAV[i]);
         std::cout<<gradientDiff<<std::endl;
     }
     exit(EXIT_FAILURE);
@@ -84,7 +92,6 @@ void design(std::vector <double> x, std::vector <double> dx,
         {
             H(r, c) = 1;
         }
-        
     }
     H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
 
@@ -110,11 +117,11 @@ void design(std::vector <double> x, std::vector <double> dx,
         currentI = quasiOneD(x, dx, S, designVar, W);
 
         gradientFD = finiteD(x, dx, S, designVar, h, currentI);
-        gradient = adjoint(x, dx, S, W, psi, designVar);
+        gradientAV = adjoint(x, dx, S, W, psi, designVar);
 
         for(int i = 0; i < nDesVar; i++)
         {
-            gradList.push_back(gradient[i]);
+            gradList.push_back(gradientAV[i]);
         }
 
 //      1  =  Steepest Descent
@@ -123,7 +130,7 @@ void design(std::vector <double> x, std::vector <double> dx,
         if(descentType == 1)
         {
             for(int i = 0; i < nDesVar; i++)
-                pk[i] =  - gradient[i];
+                pk[i] =  - gradientAV[i];
         }
         if(descentType == 4)
         {
@@ -141,7 +148,7 @@ void design(std::vector <double> x, std::vector <double> dx,
                 pk[r] = 0;
                 for(int c = 0; c<nDesVar; c++)
                 {
-                    pk[r] +=  - H(r, c) * gradient[c];
+                    pk[r] +=  - H(r, c) * gradientAV[c];
                 }
             }
         }
@@ -149,7 +156,7 @@ void design(std::vector <double> x, std::vector <double> dx,
         for(int i = 0; i < nDesVar; i++)
             std::cout<<pk[i]<<std::endl;
 
-        alpha = stepBacktrackUncons(designVar, pk, gradient, currentI, x, dx);
+        alpha = stepBacktrackUncons(designVar, pk, gradientAV, currentI, x, dx);
         std::cout<<"Alpha = "<<alpha<<std::endl;
         for(int i = 0; i < nDesVar; i++)
         {
@@ -166,7 +173,7 @@ void design(std::vector <double> x, std::vector <double> dx,
 
         normGrad = 0;
         for(int i = 0; i < nDesVar; i++)
-            normGrad += pow(gradient[i], 2);
+            normGrad += pow(gradientAV[i], 2);
         normGrad = sqrt(normGrad);
         normGradList.push_back(normGrad);
         
@@ -175,7 +182,7 @@ void design(std::vector <double> x, std::vector <double> dx,
 
     std::cout<<"Final Gradient:"<<std::endl;
     for(int i = 0; i < nDesVar; i++)
-        std::cout<<gradient[i]<<std::endl;
+        std::cout<<gradientAV[i]<<std::endl;
 
     std::cout<<std::endl<<"Final Design:"<<std::endl;
     for(int i = 0; i < nDesVar; i++)
