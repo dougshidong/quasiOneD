@@ -4,11 +4,6 @@
 #include"quasiOneD.h"
 #include<vector>
 #include<Eigen/Eigen>
-//#include<Eigen/Dense>
-//#include<Eigen/Sparse>
-//#include <Eigen/IterativeLinearSolvers>
-//#include<Eigen/SparseLU>
-//#include<Eigen/LU>
 #include <stdio.h>
 #include <iomanip>
 #include "globals.h"
@@ -23,19 +18,16 @@ MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
 void JacobianCenter(std::vector <double> &J,
                     double u, double c);
 
-SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
+SparseMatrix<double> evaldRdW(std::vector <double> Ap,
                                   std::vector <double> An,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
+                                  std::vector <double> W,
                                   std::vector <double> dQdW,
                                   std::vector <double> dx,
                                   std::vector <double> dt,
                                   std::vector <double> S,
                                   double Min);
 
-SparseMatrix<double> buildAFD2(std::vector <double> W,
+SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
                                   std::vector <double> S,
                                   double Min);
 
@@ -54,7 +46,6 @@ void ScalarJac(std::vector <double> W,
 void BCJac(std::vector <double> W,
            std::vector <double> dt,
            std::vector <double> dx,
-           std::vector <double> ddtdW,
            std::vector <double> &dBidWi,
            std::vector <double> &dBidWd,
            std::vector <double> &dBodWd,
@@ -71,7 +62,7 @@ void evaldQdW(std::vector <double> &dQdW,
 VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv);
 VectorXd itSolve(SparseMatrix <double> A, VectorXd b);
 
-std::vector <double> adjoint(std::vector <double> x, 
+VectorXd adjoint(std::vector <double> x, 
              std::vector <double> dx, 
              std::vector <double> S,
              std::vector <double> W,
@@ -84,7 +75,7 @@ std::vector <double> adjoint(std::vector <double> x,
     WtoP(W, rho, u, e, p, c, T); 
     
     // Evalutate dt and d(dt)dW
-    std::vector <double> dt(nx, 1), ddtdW(nx, 0);
+    std::vector <double> dt(nx, 1);
 
     // Evaluate dQdW
     std::vector <double> dQdW(3 * nx, 0);
@@ -101,25 +92,23 @@ std::vector <double> adjoint(std::vector <double> x,
     std::vector <double> dBidWd(3 * 3, 0);
     std::vector <double> dBodWd(3 * 3, 0);
     std::vector <double> dBodWo(3 * 3, 0);
-    BCJac(W, dt, dx, ddtdW, dBidWi, dBidWd, dBodWd, dBodWo);
 
     // Build A matrix
-    SparseMatrix <double> matA, matAt;
+    SparseMatrix <double> dRdWt, dRdW;
     SparseMatrix <double> matAFD, matAFD2;
-    matAt = buildAMatrix(Ap_list, An_list, dBidWi, dBidWd,
-                        dBodWd, dBodWo, dQdW, dx, dt, S, u[0]/c[0]);
-    matAFD2 = buildAFD2(W, S, u[0]/c[0]);
-    matA = matAt.transpose();
-//  matA = matAFD2.transpose();
+    dRdW = evaldRdW(Ap_list, An_list, W, dQdW, dx, dt, S, u[0]/c[0]);
+    matAFD2 = evaldRdW_FD(W, S, u[0]/c[0]);
+    dRdWt = dRdW.transpose();
+//  dRdWt = matAFD2.transpose();
     std::cout.precision(17);
-//  std::cout<<matAt<<std::endl;
+//  std::cout<<dRdW<<std::endl;
 //  std::cout<<matAFD2<<std::endl;
-    std::cout<<"(matAFD2 - matAt).norm() / matAt.norm():"<<std::endl;
-    std::cout<<(matAFD2 - matAt).norm() / matAt.norm()<<std::endl;
+//  std::cout<<"(matAFD2 - dRdW).norm() / dRdW.norm():"<<std::endl;
+//  std::cout<<(matAFD2 - dRdW).norm() / dRdW.norm()<<std::endl;
 
-    matA.coeffRef(matA.rows() - 3, matA.cols() - 3) += 0.00001;
-    matA.coeffRef(matA.rows() - 2, matA.cols() - 2) += 0.00001;
-    matA.coeffRef(matA.rows() - 1, matA.cols() - 1) += 0.00001;
+//  dRdWt.coeffRef(dRdWt.rows() - 3, dRdWt.cols() - 3) += 0.00001;
+//  dRdWt.coeffRef(dRdWt.rows() - 2, dRdWt.cols() - 2) += 0.00001;
+//  dRdWt.coeffRef(dRdWt.rows() - 1, dRdWt.cols() - 1) += 0.00001;
 
     // Evaluate dIcdW
     std::vector <double> dIcdW(3 * nx, 0);
@@ -142,11 +131,11 @@ std::vector <double> adjoint(std::vector <double> x,
     int directSolve = 1;
     if(directSolve == 1)
     {
-        psiV = solveSparseAxb(matA, bvec, eig_solv);
+        psiV = solveSparseAxb(dRdWt, bvec, eig_solv);
     }
     else
     {
-        psiV = itSolve(matA, bvec);
+        psiV = itSolve(dRdWt, bvec);
     }
 
     // If supersonic copy psi2 onto psi1 garbage
@@ -157,8 +146,8 @@ std::vector <double> adjoint(std::vector <double> x,
         psiV(2) = psiV(5);
     }
 
-    std::cout<<"Adjoint Result:"<<std::endl;
-    std::cout<<psiV<<std::endl;
+//  std::cout<<"Adjoint Result:"<<std::endl;
+//  std::cout<<psiV<<std::endl;
 
     // Save Adjoint 
     FILE *Results;
@@ -215,11 +204,13 @@ std::vector <double> adjoint(std::vector <double> x,
     VectorXd psidRdSFD(nx + 1);
     psidRdSFD.setZero();
     psidRdSFD = psiV.transpose() * dRdS;
-    std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
-    std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
+//  std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
+//  std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
     // Evaluate dSdDesign
     MatrixXd dSdDesign(nx + 1, designVar.size());
-    double d1 = designVar[0], d2 = designVar[1], d3 = designVar[2];
+    double d1 = designVar[0];
+    double d2 = designVar[1];
+    double d3 = designVar[2];
     double xh;
     for(int i = 0; i < nx + 1; i++)
     {
@@ -244,27 +235,20 @@ std::vector <double> adjoint(std::vector <double> x,
     VectorXd grad(designVar.size());
     grad = psidRdS.transpose() * dSdDesign;
 
-    std::vector <double> gradient(designVar.size());
-    for(int iDes = 0; iDes < (int)designVar.size(); iDes++)
-    {
-       gradient[iDes] = grad(iDes);
-    }
     std::cout<<"Gradient from Adjoint:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;
 //  std::cout<<"Analytical then FD 1st Block"<<std::endl;
-//  std::cout<<MatrixXd(matAt).block(0, 0, 3, 3)<<std::endl;
+//  std::cout<<MatrixXd(dRdW).block(0, 0, 3, 3)<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<MatrixXd(matAFD2).block(0, 0, 3, 3)<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<"Analytical then FD 2nd Block"<<std::endl;
-//  std::cout<<MatrixXd(matAt).block(0, 3, 3, 3)<<std::endl;
+//  std::cout<<MatrixXd(dRdW).block(0, 3, 3, 3)<<std::endl;
 //  std::cout<<std::endl;
 //  std::cout<<MatrixXd(matAFD2).block(0, 3, 3, 3)<<std::endl;
     std::cout<<std::endl;
-    std::cout<<std::endl;
-    std::cout<<std::endl;
-    return gradient;
+    return grad;
 }
 
 
@@ -474,15 +458,6 @@ void ScalarJac(std::vector <double> W,
             }
         }
     }
-    // dF/dW (Jacobian at the Outlet if using interpolated ghost cell)
-//  JacobianCenter(J, u[nx-1], c[nx-1]);
-//  for(int row = 0; row < 3; row++)
-//  for(int col = 0; col < 3; col++)
-//  {
-//      vec_pos = ((nx - 1) * 9) + (row * 3) + col; // NOT Transposed
-//      k = row * 3 + col;
-//      Ap_list[vec_pos] = J[k];
-//  }
     
     // A-
     for(int i = 1; i < nx; i++)
@@ -598,7 +573,6 @@ void evaldQdW(std::vector <double> &dQdW,
 void BCJac(std::vector <double> W,
            std::vector <double> dt,
            std::vector <double> dx,
-           std::vector <double> ddtdW,
            std::vector <double> &dBidWi,
            std::vector <double> &dBidWd,
            std::vector <double> &dBodWd,
@@ -622,7 +596,7 @@ void BCJac(std::vector <double> W,
     // ************************
 
     double i1, i2;
-    double r1, r2, p1, p2, u1, u2, c1, c2, t1;
+    double r1, r2, p1, p2, u1, u2, c1, c2;
     i1 = nx - 1;
     i2 = nx - 2;
     r1 = rho[i1];
@@ -633,7 +607,6 @@ void BCJac(std::vector <double> W,
     u2 = u[i2];
     c1 = c[i1];
     c2 = c[i2];
-    t1 = T[i1];
 
     // Shorthand
     double gamr, fu, drho, dp, du, cr, uu;
@@ -760,8 +733,8 @@ void BCJac(std::vector <double> W,
     du1dtdp2 = (dR2dp2 - dp1dtdp2) / cr;
 
     // d(ru)1/dt
-    double dru1dt;
-    dru1dt = r1 * du1dt + u1 * dr1dt;
+//  double dru1dt;
+//  dru1dt = r1 * du1dt + u1 * dr1dt;
     double dru1dtdr1, dru1dtdu1, dru1dtdp1;
     double dru1dtdr2, dru1dtdu2, dru1dtdp2;
     dru1dtdr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1;
@@ -772,8 +745,8 @@ void BCJac(std::vector <double> W,
     dru1dtdp2 = u1 * dr1dtdp2 + r1 * du1dtdp2;
 
     // de1/dt
-    double de1dt;
-    de1dt = dp1dt * Cv / R + u1 * r1 * du1dt + uu * dr1dt / 2.0;
+//  double de1dt;
+//  de1dt = dp1dt * Cv / R + u1 * r1 * du1dt + uu * dr1dt / 2.0;
     double de1dtdr1, de1dtdu1, de1dtdp1;
     double de1dtdr2, de1dtdu2, de1dtdp2;
 
@@ -841,7 +814,6 @@ void BCJac(std::vector <double> W,
         u2 = u[i2];
         c1 = c[i1];
         c2 = c[i2];
-        t1 = T[i1];
 
         // Shorthand
         drho = r2 - r1;
@@ -943,7 +915,7 @@ void BCJac(std::vector <double> W,
         dr1dtdp2 = drnp1dunp1 * du1dtdp2;
 
         // dru1/dt
-        dru1dt = r1 * du1dt + u1 * dr1dt;
+//      dru1dt = r1 * du1dt + u1 * dr1dt;
 
         dru1dtdr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1;
         dru1dtdu1 = dr1dt + u1 * dr1dtdu1 + r1 * du1dtdu1;
@@ -953,7 +925,7 @@ void BCJac(std::vector <double> W,
         dru1dtdp2 = u1 * dr1dtdp2 + r1 * du1dtdp2;
 
         // de1/dt
-        de1dt = dp1dt / (gam - 1.0) + r1 * u1 * du1dt + uu * dr1dt / 2.0;
+//      de1dt = dp1dt / (gam - 1.0) + r1 * u1 * du1dt + uu * dr1dt / 2.0;
 
         de1dtdr1 = dp1dtdr1 * Cv / R + uu * dr1dtdr1 / 2.0 + r1 * u1 * du1dtdr1 
                    + du1dt * u1;
@@ -1016,22 +988,21 @@ void BCJac(std::vector <double> W,
     }
 }
 
-SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
+SparseMatrix<double> evaldRdW(std::vector <double> Ap,
                                   std::vector <double> An,
-                                  std::vector <double> dBidWi,
-                                  std::vector <double> dBidWd,
-                                  std::vector <double> dBodWd,
-                                  std::vector <double> dBodWo,
+                                  std::vector <double> W,
                                   std::vector <double> dQdW,
                                   std::vector <double> dx,
                                   std::vector <double> dt,
                                   std::vector <double> S,
                                   double Min)
 {
-    SparseMatrix<double> matA(3 * nx, 3 * nx);
+    SparseMatrix<double> dRdW(3 * nx, 3 * nx);
     int Ri, Wi;
     int k, rowi, coli;
     double val;
+    std::vector <double> dBidWi(9), dBidWd(9), dBodWd(9), dBodWo(9);
+    BCJac(W, dt, dx, dBidWi, dBidWd, dBodWd, dBodWo);
     // Input 4 lines where BC Jacobians occur
     // psi(1), psi(2), psi(n-1), psi(n)
     for(int row = 0; row < 3; row++)
@@ -1047,7 +1018,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
             coli = Wi * 3 + col;
 
             val = - dBidWi[k];
-            matA.insert(rowi, coli) = val;
+            dRdW.insert(rowi, coli) = val;
 
             // d(inlet)/d(domain)
             // R0, W1
@@ -1057,7 +1028,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
             coli = Wi * 3 + col;
 
             val = - dBidWd[k];
-            matA.insert(rowi, coli) = val;
+            dRdW.insert(rowi, coli) = val;
 
             // d(outlet)/d(outlet)
             // R = nx - 1, W = nx - 1
@@ -1067,7 +1038,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
             coli = Wi * 3 + col;
 
             val = - dBodWo[k];
-            matA.insert(rowi, coli) = val;
+            dRdW.insert(rowi, coli) = val;
 
             // d(outlet)/d(domain)
             // R = nx - 1, W = nx - 2
@@ -1077,7 +1048,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
             coli = Wi * 3 + col;
 
             val = - dBodWd[k];
-            matA.insert(rowi, coli) = val;
+            dRdW.insert(rowi, coli) = val;
         }
     }
     for(int Ri = 1; Ri < nx - 1; Ri++)
@@ -1093,7 +1064,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
                 coli = Wi * 3 + col;
 
                 val = - Ap[Wi * 9 + k] * S[Ri];
-                matA.insert(rowi, coli) = val;
+                dRdW.insert(rowi, coli) = val;
             }
         }
 
@@ -1114,7 +1085,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
                     val -= dQdW[Wi * 3 + col];
                 }
 
-                matA.insert(rowi, coli) = val;
+                dRdW.insert(rowi, coli) = val;
             }
         }
 
@@ -1129,7 +1100,7 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
                 coli = Wi * 3 + col;
 
                 val = An[Wi * 9 + k] * S[Ri + 1];
-                matA.insert(rowi, coli) = val;
+                dRdW.insert(rowi, coli) = val;
             }
         }
     }
@@ -1145,10 +1116,10 @@ SparseMatrix<double> buildAMatrix(std::vector <double> Ap,
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
     
-            matA.coeffRef(rowi, coli) = 0;
+            dRdW.coeffRef(rowi, coli) = 0;
         }
     }
-    return matA;
+    return dRdW;
 }
 
 VectorXd buildbMatrix(std::vector <double> dIcdW)
@@ -1212,17 +1183,17 @@ MatrixXd evaldRdS(std::vector <double> Flux, std::vector <double> S,
     return dRdS;
 }
 
-SparseMatrix<double> buildAFD2(std::vector <double> W,
+SparseMatrix<double> evaldRdW_FD(std::vector <double> W,
                                   std::vector <double> S,
                                   double Min)
 {
-    SparseMatrix<double> matA(3 * nx, 3 * nx);
+    SparseMatrix<double> dRdW(3 * nx, 3 * nx);
     int Ri, Wi;
     int rowi, coli;
     std::vector <double> Wd(3 * nx, 0), F(3 * nx, 0), Q(3 * nx, 0); 
     std::vector <double> Flux(3 * (nx + 1), 0);
     std::vector <double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-    std::vector <double> dRdW(9, 0), dRdWp(9, 0), dwdwp(9, 0);
+    std::vector <double> dRdW_block(9, 0), dRdWp(9, 0), dwdwp(9, 0);
     WtoF(W, F);
     WtoQ(W, Q, S);
     getFlux(Flux, W, F);
@@ -1290,7 +1261,7 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
                 for(int resii = 0; resii < 3; resii++)
                 {
                     ki = Ri * 3 + resii;
-                    dRdW[resii * 3 + statei] = (Resi1[ki] - Resi2[ki]) / (2 * pert);
+                    dRdW_block[resii * 3 + statei] = (Resi1[ki] - Resi2[ki]) / (2 * pert);
                 }
                 
             } // END STATEI LOOP
@@ -1301,15 +1272,15 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             for(int k = 0; k < 3; k++)
-                dRdWp[row * 3 + col] += dRdW[row * 3 + k] * dwdwp[k * 3 + col];
+                dRdWp[row * 3 + col] += dRdW_block[row * 3 + k] * dwdwp[k * 3 + col];
 
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 rowi = Ri * 3 + row;
                 coli = Wi * 3 + col;
-                matA.insert(rowi, coli) = dRdW[row * 3 + col];
-//                matA.coeffRef(rowi, coli) = dRdWp[row * 3 + col];
+                dRdW.insert(rowi, coli) = dRdW_block[row * 3 + col];
+//                dRdW.coeffRef(rowi, coli) = dRdWp[row * 3 + col];
             }
         }  // END LOOP OVER W
     } // END LOOP OVER R
@@ -1324,9 +1295,9 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
             Wi = 0;
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
-            matA.coeffRef(rowi, coli) = 0;
+            dRdW.coeffRef(rowi, coli) = 0;
             if(row == col)
-                matA.coeffRef(rowi, coli) = 1;
+                dRdW.coeffRef(rowi, coli) = 1;
 
             // R1, W0
             Ri = 1;
@@ -1334,10 +1305,10 @@ SparseMatrix<double> buildAFD2(std::vector <double> W,
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
     
-            matA.coeffRef(rowi, coli) = 0;
+            dRdW.coeffRef(rowi, coli) = 0;
         }
     }
-    return matA;
+    return dRdW;
 }
 
 VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
@@ -1356,10 +1327,10 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
     double svdmax = svd.singularValues()(0);
     double svdmin = svd.singularValues()(svd.singularValues().size()-1);
     double cond = svdmax / svdmin;
-    std::cout<<"Condition Number SVD"<<std::endl;
-    std::cout<<cond<<std::endl;
-    std::cout<<"Max/Min Singular Values"<<std::endl;
-    std::cout<<svdmax<< " / "<<svdmin<<std::endl;
+//  std::cout<<"Condition Number SVD"<<std::endl;
+//  std::cout<<cond<<std::endl;
+//  std::cout<<"Max/Min Singular Values"<<std::endl;
+//  std::cout<<svdmax<< " / "<<svdmin<<std::endl;
 
     // Sparse LU
     if(eig_solv == 0)
@@ -1393,8 +1364,8 @@ VectorXd solveSparseAxb(SparseMatrix <double> A, VectorXd b, int eig_solv)
         std::cout << "estimated error: " << itsolver.error()      << std::endl;
         x = itsolver.solve(b);
     }
-    std::cout<<"||Ax - b||"<<std::endl;
-    std::cout<<(matAdense * x - b).norm()<<std::endl;
+//  std::cout<<"||Ax - b||"<<std::endl;
+//  std::cout<<(matAdense * x - b).norm()<<std::endl;
 
     return x;
 }

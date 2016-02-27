@@ -3,6 +3,7 @@
 #include "optimizer.h"
 #include "adjoint.h"
 #include <iostream>
+#include <stdio.h>
 #include <vector>
 #include "globals.h"
 #include <fenv.h>
@@ -11,7 +12,7 @@ int main()
 {
     std::vector <double> x(nx), S(nx + 1);
     std::vector <double> dx(nx);
-    std::vector <double> geom(3);
+    std::vector <double> geom(nDesVar);
     std::vector <double> W(3 * nx, 0);
     double fitness;
     feenableexcept(FE_INVALID | FE_OVERFLOW);
@@ -29,5 +30,40 @@ int main()
     if(opt == 1)
         design(x, dx, S, geom);
 
+    int nI = 25;
+    double hs = 0.04, he = 0.11, dh = (he - hs) / (nI - 1);
+    double t1s = 0.7, t1e = 1.1, dt1 = (t1e - t1s) / (nI - 1);
+    double t2s = 1.0, t2e = 9.0, dt2 = (t2e - t2s) / (nI - 1);
+
+//  FILE  * Results;
+//  Results = fopen("CostPlot.dat", "w");
+//  fprintf(Results, "%d\n", nI);
+//  for(int i = 0; i < nI; i++)
+//      fprintf(Results, "%.15f\n", hs + i * dh);
+//  for(int i = 0; i < nI; i++)
+//      fprintf(Results, "%.15f\n", t1s + i * dt1);
+//  for(int i = 0; i < nI; i++)
+//      fprintf(Results, "%.15f\n", t2s + i * dt2);
+
+//  for(int i = 0; i < nI; i++)
+//  {
+//      std::cout<<"i: "<<i<<std::endl;
+//      for(int j = 0; j < nI; j++)
+//      {
+//          for(int k = 0; k < nI; k++)
+//          {
+//              std::cout<<"j: "<<j<<std::endl;
+//              geom[0] = hs + i * dh;
+//              geom[1] = t1s + j * dt1;
+//              geom[2] = t2_geom + k * dt2;
+//              S = evalS(geom, x, dx);
+//              
+//              fitness = quasiOneD(x, dx, S, geom, W);
+//              fprintf(Results, "%.15f\n", fitness);
+//          }
+//      }
+//  }
+
+//  fclose(Results);
     return 0;
 }

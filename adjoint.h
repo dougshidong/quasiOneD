@@ -2,8 +2,8 @@
 #define adjoint_h
 
 #include<vector>
-
-std::vector <double> adjoint(std::vector <double> x, 
+#include<Eigen/Dense>
+Eigen::VectorXd adjoint(std::vector <double> x, 
                              std::vector <double> dx, 
                              std::vector <double> S,
                              std::vector <double> W,

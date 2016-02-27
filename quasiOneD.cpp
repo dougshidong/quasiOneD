@@ -162,7 +162,7 @@ double quasiOneD(std::vector <double> x,
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+//  std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
     
 
     FILE  * Results;
@@ -294,7 +294,7 @@ double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarge
     {
         fit += pow(pcurrent[i] / ptin - ptarget[i], 2) * dx[i];
     }
-    std::cout<<"InverseFitness =  "<<fit / 2<<std::endl;
+//  std::cout<<"InverseFitness =  "<<fit / 2<<std::endl;
     return fit / 2;
 }
 
