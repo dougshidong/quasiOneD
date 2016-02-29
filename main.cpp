@@ -12,23 +12,29 @@ int main()
 {
     std::vector <double> x(nx), S(nx + 1);
     std::vector <double> dx(nx);
-    std::vector <double> geom(nDesVar);
     std::vector <double> W(3 * nx, 0);
     double fitness;
     feenableexcept(FE_INVALID | FE_OVERFLOW);
-    
+
+    // Initialize Shape
+    std::vector <double> geom(3);
     geom[0] = h_geom;
     geom[1] = t1_geom;
     geom[2] = t2_geom;
-    
     x = evalX(a_geom, b_geom);
     dx = evalDx(x);
-    S = evalS(geom, x, dx);
+    S = evalS(geom, x, dx, 1);
 
-    if(opt == 0)
-        fitness = quasiOneD(x, dx, S, geom, W);
+    if(opt == 0) fitness = quasiOneD(x, dx, S, geom, W);
     if(opt == 1)
-        design(x, dx, S, geom);
+    {
+        if(desParam == 0) nDesVar = nx + 1;
+        if(desParam == 1) nDesVar = 3;
+        std::vector <double> desVar(nDesVar);
+        if(desParam == 0) desVar = S;
+        if(desParam == 1) desVar = geom;
+        design(x, dx, S, desVar);
+    }
 
     int nI = 25;
     double hs = 0.04, he = 0.11, dh = (he - hs) / (nI - 1);

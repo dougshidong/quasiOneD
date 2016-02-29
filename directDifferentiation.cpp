@@ -7,6 +7,9 @@
 #include "adjoint.h"
 #include "convert.h"
 #include "flux.h"
+#include "residualDerivative.h"
+#include "parametrization.h"
+
 
 using namespace Eigen;
 VectorXd directDifferentiation(
@@ -33,9 +36,6 @@ VectorXd directDifferentiation(
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
     WtoP(W, rho, u, e, p, c, T); 
 
-    // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
-    dIcdS.setZero();
 
     // Evaluate dIcdW
     VectorXd dIcdW(3 * nx);
@@ -48,6 +48,20 @@ VectorXd directDifferentiation(
     // Evaluate dRdS
     MatrixXd dRdS(3 * nx, nx + 1);
     dRdS = evaldRdS_FD(Flux, S, W);
+    
+    // Evaluate dSdDesign
+    MatrixXd dSdDesign(nx + 1, designVar.size());
+    dSdDesign = evaldSdDesign(x, dx, designVar);
+    
+    //Evaluate dRdDesign
+    MatrixXd dRdDesign(3 * nx, nDesVar);
+    dRdDesign = dRdS * dSdDesign;
+    
+    // Evaluate dIcdS
+    VectorXd dIcdS(nx + 1);
+    dIcdS.setZero();
+    VectorXd dIcdDesign(nDesVar);
+    dIcdDesign = dIcdS.transpose() * dSdDesign;
 
     // Evaluate dQdW
     std::vector <double> dQdW(3 * nx, 0);
@@ -63,25 +77,17 @@ VectorXd directDifferentiation(
     dRdW = evaldRdW(Ap_list, An_list, W, dQdW, dx, dt, S, u[0]/c[0]);
 
     // Solve DWDS
-    MatrixXd DWDS(3 * nx, nx + 1);
+    MatrixXd DWDDesign(3 * nx, nDesVar);
     // Solver type eig_solv
     // 0 = Sparse LU
     // 1 = Dense LU Full Piv
     // 2 = Sparse Iterative BiCGSTAB
     int eig_solv = 0;
-    DWDS = solveSparseAXB(-dRdW, dRdS, eig_solv);
+    DWDDesign = solveSparseAXB(-dRdW, dRdDesign, eig_solv);
 
     // Evaluate DIDS
-    VectorXd DIDS(nx + 1);
-    DIDS = (dIcdS.transpose() + dIcdW.transpose() * DWDS);
-
-    // Evaluate dSdDesign
-    MatrixXd dSdDesign(nx + 1, designVar.size());
-    dSdDesign = evaldSdDesign(x, dx, designVar);
-    
-    // Evaluate dIdDesign
-    VectorXd dIdDesign(designVar.size());
-    dIdDesign = DIDS.transpose() * dSdDesign;
+    VectorXd dIdDesign(nDesVar);
+    dIdDesign = (dIcdDesign.transpose() + dIcdW.transpose() * DWDDesign);
 
     VectorXd grad(designVar.size());
     grad = dIdDesign;

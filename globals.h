@@ -4,7 +4,8 @@ extern const int nx;
 
 extern const int opt;
 
-extern const int nDesVar;
+extern const int desParam;
+extern int nDesVar;
 extern const double a_geom, b_geom;
 extern const double h_geom, t1_geom, t2_geom;
 

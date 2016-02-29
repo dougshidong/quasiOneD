@@ -1,14 +1,15 @@
 #include<iostream>
 #include<math.h>
+#include<vector>
+#include<iomanip>
+#include<Eigen/Dense>
+#include<stdlib.h>//exit
 #include"quasiOneD.h"
 #include"grid.h"
 #include"adjoint.h"
 #include"directDifferentiation.h"
 #include"globals.h"
-#include<vector>
-#include<iomanip>
-#include<Eigen/Dense>
-#include<stdlib.h>//exit
+#include"analyticHessian.h"
 
 using namespace Eigen;
 VectorXd finiteD(std::vector <double> x,
@@ -70,18 +71,24 @@ void design(std::vector <double> x, std::vector <double> dx,
     gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
     std::cout<<"Gradient Relative Error:"<<std::endl;
-    std::cout<<"(GRAD - GRADDD) / GRAD"<<std::endl;
-    for(int i = 0; i < nDesVar; i++)
-    {
-        double gradientDiff = fabs((gradientAV[i] - gradientDD[i]) / gradientAV[i]);
-        std::cout<<gradientDiff<<std::endl;
-    }
-    std::cout<<"(GRADFD - GRADFD) / GRAD"<<std::endl;
-    for(int i = 0; i < nDesVar; i++)
-    {
-        double gradientDiff = fabs((gradientAV[i] - gradientFD[i]) / gradientAV[i]);
-        std::cout<<gradientDiff<<std::endl;
-    }
+    std::cout<<"Norm(AV - DD)/Norm(AV): ";
+    std::cout<<(gradientAV - gradientDD).norm() / gradientAV.norm()<<std::endl;
+//  std::cout<<"(GRAD - GRADDD) / GRAD"<<std::endl;
+//  for(int i = 0; i < nDesVar; i++)
+//  {
+//      double gradientDiff = fabs((gradientAV[i] - gradientDD[i]) / gradientAV[i]);
+//      std::cout<<gradientDiff<<std::endl;
+//  }
+    std::cout<<"Norm(AV - FD)/Norm(AV): ";
+    std::cout<<(gradientAV - gradientFD).norm() / gradientAV.norm()<<std::endl;
+//  std::cout<<"(GRADFD - GRADFD) / GRAD"<<std::endl;
+//  for(int i = 0; i < nDesVar; i++)
+//  {
+//      double gradientDiff = fabs((gradientAV[i] - gradientFD[i]) / gradientAV[i]);
+//      std::cout<<gradientDiff<<std::endl;
+//  }
+    std::cout<<"Norm(DD - FD)/Norm(DD): ";
+    std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
     exit(EXIT_FAILURE);
 
     // Initialize B
@@ -94,6 +101,8 @@ void design(std::vector <double> x, std::vector <double> dx,
         }
     }
     H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
+    int Hmethod = 0;
+    H = getAnalyticHessian(Hmethod);
 
     normGradList.push_back(1);
     int iDesign = 0;
@@ -113,7 +122,7 @@ void design(std::vector <double> x, std::vector <double> dx,
 
 
         }
-        S = evalS(designVar, x, dx);
+        S = evalS(designVar, x, dx, desParam);
         currentI = quasiOneD(x, dx, S, designVar, W);
 
         gradientFD = finiteD(x, dx, S, designVar, h, currentI);
@@ -189,7 +198,7 @@ void design(std::vector <double> x, std::vector <double> dx,
         std::cout<<designVar[i]<<std::endl;
 
 
-    S = evalS(designVar, x, dx);
+    S = evalS(designVar, x, dx, desParam);
 
     std::cout<<"Fitness: "<<quasiOneD(x, dx, S, designVar, W)<<std::endl;
 
@@ -261,26 +270,26 @@ VectorXd finiteD(std::vector <double> x,
         if(gradientType == 1)
         {
             tempD[i] += dh;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I1 = quasiOneD(x, dx, tempS, tempD, W);
             grad[i] = (I1 - I0) / dh;
         }
         else if(gradientType == 2)
         {
             tempD[i] -= dh;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I2 = quasiOneD(x, dx, tempS, tempD, W);
             grad[i] = (I0 - I2) / dh;
         }
         else if(gradientType == 3)
         {
             tempD[i] += dh;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I1 = quasiOneD(x, dx, tempS, tempD, W);
             tempD = designVar;
 
             tempD[i] -= dh;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I2 = quasiOneD(x, dx, tempS, tempD, W);
             grad[i] = (I1 - I2) / (2 * dh);
         }
@@ -325,7 +334,7 @@ double stepBacktrackUncons(std::vector <double> designVar,
         tempD[i] = designVar[i] + alpha * pk[i];
     }
 
-    tempS = evalS(tempD, x, dx);
+    tempS = evalS(tempD, x, dx, desParam);
     newVal = quasiOneD(x, dx, tempS, tempD, W);
 
 
@@ -336,7 +345,7 @@ double stepBacktrackUncons(std::vector <double> designVar,
     
         for(int i = 0; i < nDesVar; i++)
             tempD[i] = designVar[i] + alpha * pk[i];
-        tempS = evalS(tempD, x, dx);
+        tempS = evalS(tempD, x, dx, desParam);
         newVal = quasiOneD(x, dx, tempS, tempD, W);
         std::cout<<"newVal: "<<newVal<<std::endl;
         std::cout<<"currentI + alpha/2.0 * c_pk_grad: "<<
@@ -382,23 +391,23 @@ MatrixXd finiteD2(std::vector <double> x,
             tempD = designVar;
             tempD[i] += dhi;
             tempD[j] += dhj;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I1 = quasiOneD(x, dx, tempS, tempD, W);
 
             tempD = designVar;
             tempD[i] += dhi;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I2 = quasiOneD(x, dx, tempS, tempD, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I3 = quasiOneD(x, dx, tempS, tempD, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] -= dhj;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I4 = quasiOneD(x, dx, tempS, tempD, W);
             Hessian(i, j) = (-I1 + 16*I2 - 30*I + 16*I3 - I4) / (12 * dhi * dhj);
         }
@@ -407,25 +416,25 @@ MatrixXd finiteD2(std::vector <double> x,
             tempD = designVar;
             tempD[i] += dhi;
             tempD[j] += dhj;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I1 = quasiOneD(x, dx, tempS, tempD, W);
 
             tempD = designVar;
             tempD[i] += dhi;
             tempD[j] -= dhj;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I2 = quasiOneD(x, dx, tempS, tempD, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] += dhj;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I3 = quasiOneD(x, dx, tempS, tempD, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] -= dhj;
-            tempS = evalS(tempD, x, dx);
+            tempS = evalS(tempD, x, dx, desParam);
             I4 = quasiOneD(x, dx, tempS, tempD, W);
 
             Hessian(i, j) = (I1 - I2 - I3 + I4) / (4 * dhi * dhj);

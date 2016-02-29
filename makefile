@@ -14,8 +14,12 @@ $(EXEC): $(OBJ_FILES)
 	g++ $(LFLAGS) -o $@ $^
 
 obj/%.o: %.cpp
+	mkdir -p $(OBJDIR)
 	g++ $(CFLAGS) -c -o $@ $<
 
 clean:
 	@rm -f $(EXEC) $(wildcard *.o)
 	@rm -rf $(OBJDIR)
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)

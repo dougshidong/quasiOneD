@@ -106,8 +106,6 @@ void rk4(
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
-    double ki, kip;
-
     // Residual 0
     getFlux(Flux, W);
     getDomainResi(W, Flux, S, Resi0);
@@ -175,8 +173,6 @@ void jamesonrk(
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
-    double ki, kip;
-
     // Initialize First Stage
     for(int k = 0; k < 3; k++)
     {
