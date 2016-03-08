@@ -13,7 +13,7 @@
 #include"globals.h"
 #include"convert.h"
 #include"flux.h"
-#include"residualDerivative.h"
+#include"residuald1.h"
 #include"parametrization.h"
 
 using namespace Eigen;
@@ -34,26 +34,10 @@ VectorXd adjoint(
     // Evalutate dt and d(dt)dW
     std::vector <double> dt(nx, 1);
 
-    // Evaluate dQdW
-    std::vector <double> dQdW(3 * nx, 0);
-    evaldQdW(dQdW, W, S);
-
-    // Get Jacobians and Fluxes
-    std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
-    std::vector <double> Flux(3 * (nx + 1), 0);
-    if(FluxScheme == 0) StegerJac(W, Ap_list, An_list, Flux);
-    if(FluxScheme == 1) ScalarJac(W, Ap_list, An_list);
-        
-    // Transposed Boundary Flux Jacobians
-    std::vector <double> dBidWi(3 * 3, 0);
-    std::vector <double> dBidWd(3 * 3, 0);
-    std::vector <double> dBodWd(3 * 3, 0);
-    std::vector <double> dBodWo(3 * 3, 0);
-
     // Build A matrix
     SparseMatrix <double> dRdWt, dRdW;
     SparseMatrix <double> matAFD, matAFD2;
-    dRdW = evaldRdW(Ap_list, An_list, W, dQdW, dx, dt, S, u[0]/c[0]);
+    dRdW = evaldRdW(W, dx, dt, S, u[0]/c[0]);
     matAFD2 = evaldRdW_FD(W, S, u[0]/c[0]);
     dRdWt = dRdW.transpose();
 //  dRdWt = matAFD2.transpose();
@@ -116,6 +100,7 @@ VectorXd adjoint(
     dIcdS.setZero();
 
     // Get Fluxes
+    std::vector <double> Flux(3 * (nx + 1), 0);
     getFlux(Flux, W);
 
     // Evaluate psiV * dRdS

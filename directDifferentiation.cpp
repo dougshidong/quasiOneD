@@ -7,7 +7,7 @@
 #include "adjoint.h"
 #include "convert.h"
 #include "flux.h"
-#include "residualDerivative.h"
+#include "residuald1.h"
 #include "parametrization.h"
 
 
@@ -63,18 +63,10 @@ VectorXd directDifferentiation(
     VectorXd dIcdDesign(nDesVar);
     dIcdDesign = dIcdS.transpose() * dSdDesign;
 
-    // Evaluate dQdW
-    std::vector <double> dQdW(3 * nx, 0);
-    evaldQdW(dQdW, W, S);
-
-    // Get Jacobians
-    std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
-    if(FluxScheme == 1) ScalarJac(W, Ap_list, An_list);
-
     // Evaluate dRdW
     std::vector <double> dt(nx, 1);
     SparseMatrix <double> dRdW;
-    dRdW = evaldRdW(Ap_list, An_list, W, dQdW, dx, dt, S, u[0]/c[0]);
+    dRdW = evaldRdW(W, dx, dt, S, u[0]/c[0]);
 
     // Solve DWDS
     MatrixXd DWDDesign(3 * nx, nDesVar);

@@ -89,6 +89,9 @@ void design(std::vector <double> x, std::vector <double> dx,
 //  }
     std::cout<<"Norm(DD - FD)/Norm(DD): ";
     std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
+
+    int Hmethod = 0;
+    H = getAnalyticHessian(W, S, Hmethod);
     exit(EXIT_FAILURE);
 
     // Initialize B
@@ -101,8 +104,6 @@ void design(std::vector <double> x, std::vector <double> dx,
         }
     }
     H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
-    int Hmethod = 0;
-    H = getAnalyticHessian(Hmethod);
 
     normGradList.push_back(1);
     int iDesign = 0;
