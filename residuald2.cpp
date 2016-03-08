@@ -86,37 +86,34 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
     std::vector <double> S)
 {
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
-    SparseMatrix <double> dRdWdSi(3 * nx, nx + 1);
+    SparseMatrix <double> ddRdWdSi(3 * nx, nx + 1);
 
     SparseMatrix <double> ddRidWdS(3 * nx, nx + 1);
     for(int Ri = 0; Ri < 3 * nx; Ri++)
         ddRdWdS[Ri] = ddRidWdS;
 
-    double Resi0, Resi1, Resi2, Resi3, Resi4;
+    double Resi1, Resi2, Resi3, Resi4;
     std::vector <double> Flux(3 * (nx + 1), 0);
     std::vector <double> Wd(3 * nx, 0);
     std::vector <double> Sd(nx + 1, 0);
     std::vector <double> Q(3 * nx, 0);
-    double h = 0.0000001;
+    double h = 1e-6;
     double pertW, pertS;
-    int ki, kip;
+    int Rik, Rikp;
     for(int Ri = 1; Ri < nx - 1; Ri++)
     {
         std::cout<<"Ri is "<<Ri<<std::endl;
         for(int k = 0; k < 3; k++)
         {
-            ki = Ri * 3 + k;
-            kip = (Ri + 1) * 3 + k;
-            
-            WtoQ(W, Q, S);
-            getFlux(Flux, W);
-            Resi0 = Flux[kip] * S[Ri + 1] - Flux[ki] * S[Ri] - Q[ki];
+            Rik = Ri * 3 + k;
+            Rikp = (Ri + 1) * 3 + k;
 
             for(int Wi = 0; Wi < 3 * nx; Wi++)
             {
                 pertW = W[Wi] * h;
                 for(int Si = 0; Si < nx + 1; Si++)
                 {
+                    pertS = S[Si] * h;
                     for(int m = 0; m < 3 * nx; m++)
                         Wd[m] = W[m];
                     for(int m = 0; m < nx + 1; m++)
@@ -125,14 +122,13 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
                     Wd[Wi] = W[Wi];
                     Sd[Si] = S[Si];
 
-                    pertS = S[Si] * h;
                     Wd[Wi] = W[Wi] + pertW;
                     Sd[Si] = S[Si] + pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
                     
-                    Resi1 = Flux[kip] * Sd[Ri + 1] - Flux[ki] * Sd[Ri] - Q[ki];
+                    Resi1 = Flux[Rikp] * Sd[Ri + 1] - Flux[Rik] * Sd[Ri] - Q[Rik];
                     
                     // R2
                     Wd[Wi] = W[Wi];
@@ -145,40 +141,41 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
 
-                    Resi2 = Flux[kip] * Sd[Ri + 1] - Flux[ki] * Sd[Ri] - Q[ki];
+                    Resi2 = Flux[Rikp] * Sd[Ri + 1] - Flux[Rik] * Sd[Ri] - Q[Rik];
                     
                     // R3
                     Wd[Wi] = W[Wi];
                     Sd[Si] = S[Si];
 
                     pertS = S[Si] * h;
-                    Wd[Wi] = W[Wi] + pertW;
-                    Sd[Si] = S[Si] - pertS;
+                    Wd[Wi] = W[Wi] - pertW;
+                    Sd[Si] = S[Si] + pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
 
-                    Resi3 = Flux[kip] * Sd[Ri + 1] - Flux[ki] * Sd[Ri] - Q[ki];
+                    Resi3 = Flux[Rikp] * Sd[Ri + 1] - Flux[Rik] * Sd[Ri] - Q[Rik];
 
                     // R4
                     Wd[Wi] = W[Wi];
                     Sd[Si] = S[Si];
 
                     pertS = S[Si] * h;
-                    Wd[Wi] = W[Wi] + pertW;
+                    Wd[Wi] = W[Wi] - pertW;
                     Sd[Si] = S[Si] - pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
 
-                    Resi4 = Flux[kip] * Sd[Ri + 1] - Flux[ki] * Sd[Ri] - Q[ki];
+                    Resi4 = Flux[Rikp] * Sd[Ri + 1] - Flux[Rik] * Sd[Ri] - Q[Rik];
 
-                    ddRdWdS[ki].insert(Wi, Si) = (Resi1 - Resi2 - Resi3 + Resi4)
+                    ddRdWdS[Rik].insert(Wi, Si) = (Resi1 - Resi2 - Resi3 + Resi4)
                                                  / (4 * pertW * pertS);
                 }// Si Loop
             }// Wi Loop
         }// k Loop
     }// Ri Loop
+    std::cout<<ddRdWdS[10]<<std::endl<<std::endl;
     return ddRdWdS;
 }
 
@@ -188,10 +185,10 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
 {
     // Allocate ddRdWdS Sparse Matrix
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
-    SparseMatrix <double> dRdWdSi(3 * nx, nx + 1);
-    dRdWdSi.reserve(3 * 9 * (nx - 2));
-    for(int Si = 0; Si < nx + 1; Si++)
-        ddRdWdS[Si] = dRdWdSi;
+    SparseMatrix <double> ddRidWdS(3 * nx, nx + 1);
+    ddRidWdS.reserve(9 * 2); // 9 State Variables and 2 Areas affect the Residual
+    for(int Ri = 0; Ri < 3 * nx; Ri++)
+        ddRdWdS[Ri] = ddRidWdS;
 
     // Get Jacobians and Fluxes
     std::vector <double> Ap(nx * 3 * 3, 0), An(nx * 3 * 3, 0);
@@ -200,82 +197,61 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
     std::vector <double> dpdW(3 * nx, 0);
     dpdW = evaldpdW(W, S);
 
-    int Wi, k, rowi, coli;
+    int Wi, Si, k, rowi, coli;
+    int Rik, Wik;
     double val;
-    for(int Si = 1; Si < nx; Si++)
+    for(int Ri = 1; Ri < nx - 1; Ri++)
     {
-        for(int Ri = 1; Ri < nx - 1; Ri++)
+    for(int Rk = 0; Rk < 3; Rk++)
+    {
+        Rik = Ri * 3 + Rk;
+        // Positive Jacobian of Left Incoming Flux
+        Si = Ri;
+        Wi = Ri - 1;
+        for(int Wk = 0; Wk < 3; Wk++)
         {
-            Wi = Ri - 1;
-            if(Ri == Si && Wi >= 0)
+            Wik = Wi * 3 + Wk;
+            val = -Ap[Wi * 9 + Rk * 3 + Wk];
+            ddRdWdS[Rik].insert(Wik, Si) = val;
+        }
+        // Negative Jacobian of Left Incoming Flux
+        Si = Ri;
+        Wi = Ri;
+        for(int Wk = 0; Wk < 3; Wk++)
+        {
+            Wik = Wi * 3 + Wk;
+            val = -An[Wi * 9 + Rk * 3 + Wk];
+            if(Rk == 1) 
             {
-                for(int row = 0; row < 3; row++)
-                for(int col = 0; col < 3; col++)
-                {
-                    k = row * 3 + col;
-                    rowi = Ri * 3 + row;
-                    coli = Wi * 3 + col;
-
-                    val = - Ap[Wi * 9 + k];
-                    ddRdWdS[Si].insert(rowi, coli) = val;
-                }
+                val -= -dpdW[Wi * 3 + Wk];
             }
-
-            Wi = Ri;
-            if(Ri == Si && Wi >= 0 && Wi <= nx - 1)
+            ddRdWdS[Rik].insert(Wik, Si) = val;
+        }
+        // Positive Jacobian of Right Incoming Flux
+        Si = Ri + 1;
+        Wi = Ri;
+        for(int Wk = 0; Wk < 3; Wk++)
+        {
+            Wik = Wi * 3 + Wk;
+            val = Ap[Wi * 9 + Rk * 3 + Wk];
+            if(Rk == 1) 
             {
-                for(int row = 0; row < 3; row++)
-                for(int col = 0; col < 3; col++)
-                {
-                    k = row * 3 + col;
-                    rowi = Ri * 3 + row;
-                    coli = Wi * 3 + col;
-
-                    val -= An[Wi * 9 + k];
-                    if(row == 1) 
-                    {
-                        val += dpdW[Wi * 3 + col];
-                    }
-
-                    ddRdWdS[Si].insert(rowi, coli) = val;
-                }
+                val -= dpdW[Wi * 3 + Wk];
             }
-
-            if((Ri + 1) == Si && Wi >= 0 && Wi <= nx - 1)
-            {
-                for(int row = 0; row < 3; row++)
-                for(int col = 0; col < 3; col++)
-                {
-                    k = row * 3 + col;
-                    rowi = Ri * 3 + row;
-                    coli = Wi * 3 + col;
-
-                    val = Ap[Wi * 9 + k];
-                    if(row == 1) 
-                    {
-                        val -= dpdW[Wi * 3 + col];
-                    }
-
-                    ddRdWdS[Si].insert(rowi, coli) = val;
-                }
-            }
-
-            Wi = Ri + 1;
-            if(Ri + 1 == Si && Wi <= nx - 1)
-            {
-                for(int row = 0; row < 3; row++)
-                for(int col = 0; col < 3; col++)
-                {
-                    k = row * 3 + col;
-                    rowi = Ri * 3 + row;
-                    coli = Wi * 3 + col;
-
-                    val = An[Wi * 9 + k];
-                    ddRdWdS[Si].insert(rowi, coli) = val;
-                }
-            }
-        } // Ri Loop
-    } // Si Loop
+            ddRdWdS[Rik].insert(Wik, Si) = val;
+        }
+        // Negative Jacobian of Right Incoming Flux
+        Si = Ri + 1;
+        Wi = Ri + 1;
+        for(int Wk = 0; Wk < 3; Wk++)
+        {
+            Wik = Wi * 3 + Wk;
+            val = An[Wi * 9 + Rk * 3 + Wk];
+            ddRdWdS[Rik].insert(Wik, Si) = val;
+        }
+    }// Rk Loop
+    }// Ri Loop
+    std::cout<<ddRdWdS[10]<<std::endl<<std::endl;
     return ddRdWdS;
 }
 

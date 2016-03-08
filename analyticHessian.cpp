@@ -49,10 +49,12 @@ MatrixXd directDirectHessian(
     ddRdWdSFD = evalddRdWdS_FD(W, S);
 
     double sum=0;
-    for(int i = 0; i<3*nx; i++)
+    for(int i = 4; i < 3 * nx - 3; i++)
     {
-        sum += (ddRdWdS[i] - ddRdWdSFD[i]).norm();
+        sum += (ddRdWdS[i] - ddRdWdSFD[i]).norm() / (ddRdWdS[i]).norm();
+        std::cout<<(ddRdWdS[i] - ddRdWdSFD[i]).norm() / (ddRdWdS[i].norm())<<std::endl;
     }
+    std::cout<<"FD vs AN:  "<<sum<<std::endl;
 
 
     std::vector < SparseMatrix <double> > ddRdWdW(3 * nx);
