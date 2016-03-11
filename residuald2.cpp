@@ -18,63 +18,294 @@ void evalddFluxdWdW(
     std::vector <MatrixXd> &ddFluxdWdW3,
     std::vector <double> W);
 
+void evalddScalarFluxdWdW_FD(
+    std::vector <MatrixXd> &ddFluxdWdW1,
+    int ii, int jj,
+    std::vector <double> W);
+
+
+std::vector <MatrixXd> evalddQdWdW(std::vector <double> W);
+
+std::vector <SparseMatrix <double> > evalddRdWdW_FD(
+    std::vector <double> W,
+    std::vector <double> S)
+{
+    std::vector <SparseMatrix <double> > ddRdWdW_FD(3 * nx);
+
+    SparseMatrix <double> ddRidWdW_FD(3 * nx, 3 * nx);
+    for(int Ri = 0; Ri < 3 * nx; Ri++)
+        ddRdWdW_FD[Ri] = ddRidWdW_FD;
+
+    double Resi0, Resi1, Resi2, Resi3, Resi4;
+    std::vector <double> Flux(3 * (nx + 1), 0);
+    std::vector <double> Wd(3 * nx, 0);
+    std::vector <double> Q(3 * nx, 0);
+    double h = 1e-4;
+    double pertWi, pertWj;
+    int Rik, Rikp;
+    for(int Ri = 1; Ri < nx - 1; Ri++)
+    {
+//      std::cout<<"Ri is "<<Ri<<std::endl;
+        for(int k = 0; k < 3; k++)
+        {
+            Rik = Ri * 3 + k;
+            Rikp = (Ri + 1) * 3 + k;
+
+            for(int Wi = (Ri - 1) * 3; Wi <= (Ri + 1) * 3 + 2; Wi++)
+            {
+                pertWi = W[Wi] * h;
+                for(int Wj = (Ri - 1) * 3; Wj <= (Ri + 1) * 3 + 2; Wj++)
+                {
+                    pertWj = W[Wj] * h;
+                    if(Wi != Wj)
+                    {
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        // R1
+                        Wd[Wi] = W[Wi] + pertWi;
+                        Wd[Wj] = W[Wj] + pertWj;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+                        
+                        Resi1 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        
+                        // R2
+                        Wd[Wi] = W[Wi] + pertWi;
+                        Wd[Wj] = W[Wj] - pertWj;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+
+                        Resi2 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        
+                        // R3
+                        Wd[Wi] = W[Wi] - pertWi;
+                        Wd[Wj] = W[Wj] + pertWj;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+
+                        Resi3 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+
+                        // R4
+                        Wd[Wi] = W[Wi] - pertWi;
+                        Wd[Wj] = W[Wj] - pertWj;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+
+                        Resi4 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+
+                        ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
+                                                     / (4 * pertWi * pertWj);
+                        
+                        // Symmetry
+//                      ddRdWdW_FD[Rik].insert(Wj, Wi) = ddRdWdW_FD[Rik].coeffRef(Wi, Wj);
+                        // Reset Wd 
+                        Wd[Wi] = W[Wi];
+                        Wd[Wj] = W[Wj];
+                    }
+                    else
+                    {
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+                        
+                        Resi0 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+
+                        // R1
+                        Wd[Wi] = W[Wi] + 2.0 * pertWi;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+                        
+                        Resi1 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        
+                        // R2
+                        Wd[Wi] = W[Wi] + pertWi;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+
+                        Resi2 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        
+                        // R3
+                        Wd[Wi] = W[Wi] - pertWi;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+
+                        Resi3 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+
+                        // R4
+                        Wd[Wi] = W[Wi] - 2.0 * pertWi;
+
+                        WtoQ(Wd, Q, S);
+                        getFlux(Flux, Wd);
+
+                        Resi4 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+
+                        ddRdWdW_FD[Rik].insert(Wi, Wj) = (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
+                                                     / (12 * pertWi * pertWj);
+                        // Reset Wd 
+                        Wd[Wi] = W[Wi];
+                        Wd[Wj] = W[Wj];
+                    }
+                }// Wj Loop
+            }// Wi Loop
+        }// k Loop
+    }// Ri Loop
+    return ddRdWdW_FD;
+}
 // Calculates Residual Hessian
 std::vector < SparseMatrix <double> > evalddRdWdW(
     std::vector <double> W,
     std::vector <double> S)
 {
     std::vector <SparseMatrix <double> > ddRdWdW(3 * nx);
-    SparseMatrix <double> ddRdWd_Rik(3 * nx, 3 * nx);
+    SparseMatrix <double> ddRidWdW(3 * nx, 3 * nx);
 
+    for(int Ri = 0; Ri < 3 * nx; Ri++)
+        ddRdWdW[Ri] = ddRidWdW;
 
-    // Flux Hessian 
-    // ddFluxdWdW1 = Flux(i+1/2) / W(i, i)
-    // ddFluxdWdW2 = Flux(i+1/2) / W(i + 1, i + 1)
-    // ddFluxdWdW3 = Flux(i+1/2) / W(i, i + 1)
-    // ddFluxdWdW4 = ddFluxdWdW3 (not required)
-    std::vector <MatrixXd> 
-        ddFluxdWdW1(3 * nx), ddFluxdWdW2(3 * nx), ddFluxdWdW3(3 * nx);
-
+    // Evaluate ddFluxdWdW
+    // ddFluxdWdW1 = Flux(i) / W(i-1, i-1)
+    // ddFluxdWdW2 = Flux(i) / W(i  , i  )
+    // ddFluxdWdW3 = Flux(i) / W(i-1, i  )
+    // ddFluxdWdW4 = TRANSPOSE(ddFluxdWdW3)
+    std::vector <MatrixXd> ddFluxdWdW1(3 * (nx + 1)),
+                           ddFluxdWdW2(3 * (nx + 1)),
+                           ddFluxdWdW3(3 * (nx + 1));
     evalddFluxdWdW(ddFluxdWdW1, ddFluxdWdW2, ddFluxdWdW3, W);
-    int Rki, Rkip;
-    int Wi0, Wi1, Wi2;
-    SparseMatrix <double> ddRdWdW_Rik(3 * nx, 3 * nx);
+
+//  Validated with FD    
+//  std::vector <MatrixXd> ddFluxdWdW1_FD(3 * (nx + 1)),
+//                         ddFluxdWdW2_FD(3 * (nx + 1)),
+//                         ddFluxdWdW3_FD(3 * (nx + 1)),
+//                         ddFluxdWdW4_FD(3 * (nx + 1));
+//  evalddScalarFluxdWdW_FD(ddFluxdWdW1_FD, -1, -1, W);
+//  evalddScalarFluxdWdW_FD(ddFluxdWdW2_FD,  0,  0, W);
+//  evalddScalarFluxdWdW_FD(ddFluxdWdW3_FD, -1,  0, W);
+//  evalddScalarFluxdWdW_FD(ddFluxdWdW4_FD,  0, -1, W);
+//  for(int i = 4; i < 3 * nx - 3; i++)
+//  {
+//      std::cout<<(ddFluxdWdW1[i] - ddFluxdWdW1_FD[i]).norm() / (ddFluxdWdW1[i].norm())<<std::endl;
+//  }
+
+    // Evaluate ddQdWdW
+    std::vector <MatrixXd> ddQdWdW(3 * nx);
+    ddQdWdW = evalddQdWdW(W);
+
+    int Rik, Rikp;
+    int Wi1, Wi2;
     for(int Ri = 1; Ri < nx - 1; Ri++)
     {
         for(int Rk = 0; Rk < 3; Rk++)
         {
-            Rki = Ri * 3 + Rk;
-            Rkip = (Ri + 1) * 3 + Rk;
+            Rik = Ri * 3 + Rk;
+            Rikp = (Ri + 1) * 3 + Rk;
 
-            // R(i) = Flux(i) * S(i) + Flux(i-1) * S(i-1) - Q(i)
+            // R(i) = Flux(i + 1) * S(i + 1) - Flux(i) * S(i) - Q(i)
+
+            // ***************
+            // Diagonal Terms
+            // ***************
 
             //ddR(i) / dW(i-1)dW(i-1)
-            // = ddFlux(i-1) / dW(i-1)dW(i-1) * S(i-1)
-            ddRdWdW_Rik.setZero();
-            for(int row; row < 3; row++)
-            for(int col; col < 3; col++)
+            // = - ddFlux(i) / dW(i-1)dW(i-1) * S(i)
+            Wi1 = Ri - 1;
+            Wi2 = Ri - 1;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
             {
-                ddRdWdW_Rik.insert(row, col) = -ddFluxdWdW1[Rki].coeffRef(row, col) * S[Ri];
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                            -ddFluxdWdW1[Rik].coeffRef(row, col) * S[Ri];
             }
-            ddRdWdW[Rki] = ddRdWdW_Rik;
+//          if(Rik == 25*3)
+//          {
+//              std::cout<<ddRdWdW[Rik]<<std::endl;
+//              std::cout<<ddFluxdWdW1[Rik]<<std::endl;
+//          }
 
+            //ddR(i) / dW(i)dW(i)
+            // = ddFlux(i + 1) / dW(i)dW(i) * S(i + 1) 
+            //   - ddFlux(i) / dW(i)dW(i) * S(i)
+            //   - ddQ(i) / dW(i)dW(i) * dS
+            Wi1 = Ri;
+            Wi2 = Ri;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                            ddFluxdWdW1[Rikp].coeffRef(row, col) * S[Ri + 1]
+                            - ddFluxdWdW2[Rik].coeffRef(row, col) * S[Ri]
+                            - ddQdWdW[Rik].coeffRef(row, col) * (S[Ri + 1] - S[Ri]);
+            }
+            
             //ddR(i) / dW(i+1)dW(i+1)
             // = ddFlux(i+1) / dW(i+1)dW(i+1) * S(i+1)
-            ddRdWdW_Rik.setZero();
-            for(int row; row < 3; row++)
-            for(int col; col < 3; col++)
+            Wi1 = Ri + 1;
+            Wi2 = Ri + 1;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
             {
-                ddRdWdW_Rik.insert(row, col) = -ddFluxdWdW1[Rkip].coeffRef(row, col) * S[Ri + 1];
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                            ddFluxdWdW2[Rikp].coeffRef(row, col) * S[Ri + 1];
             }
-            ddRdWdW[Rki] = ddRdWdW_Rik;
 
+            // *******************
+            // Off-Diagonal Terms
+            // *******************
+            
+            // R(i) = Flux(i + 1) * S(i + 1) - Flux(i) * S(i) - Q(i)
+
+            //ddR(i) / dW(i-1)dW(i)
+            // = ddFlux(i) / dW(i-1)dW(i) * S(i)
+            Wi1 = Ri - 1;
+            Wi2 = Ri;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                    -ddFluxdWdW3[Rik].coeffRef(row, col) * S[Ri];
+            }
+            //ddR(i) / dW(i)dW(i-1)
+            // = (ddFlux(i) / dW(i-1)dW(i) * S(i)).transpose()
+            Wi1 = Ri;
+            Wi2 = Ri - 1;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                    -ddFluxdWdW3[Rik].coeffRef(col, row) * S[Ri];
+            }
+            
             //ddR(i) / dW(i)dW(i+1)
+            // = ddFlux(i) / dW(i)dW(i+1) * S(i+1)
             Wi1 = Ri;
             Wi2 = Ri + 1;
-
-            //ddR(i) / dW(i+1)dW(i)
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                    ddFluxdWdW3[Rikp].coeffRef(row, col) * S[Ri + 1];
+            }
+            //ddR(i) / dW(i+1)dW(i) Symmetry
+            // = (ddFlux(i) / dW(i)dW(i+1) * S(i+1)).transpose()
             Wi1 = Ri + 1;
             Wi2 = Ri;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
+                    ddFluxdWdW3[Rikp].coeffRef(col, row) * S[Ri + 1];
+            }
+
+            //ddR(i) / dW(i-1)dW(i+1) = 0
+            //ddR(i) / dW(i+1)dW(i-1) = 0 
         }
 
     }
@@ -86,7 +317,6 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
     std::vector <double> S)
 {
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
-    SparseMatrix <double> ddRdWdSi(3 * nx, nx + 1);
 
     SparseMatrix <double> ddRidWdS(3 * nx, nx + 1);
     for(int Ri = 0; Ri < 3 * nx; Ri++)
@@ -97,21 +327,20 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
     std::vector <double> Wd(3 * nx, 0);
     std::vector <double> Sd(nx + 1, 0);
     std::vector <double> Q(3 * nx, 0);
-    double h = 1e-6;
+    double h = 1e-4;
     double pertW, pertS;
     int Rik, Rikp;
     for(int Ri = 1; Ri < nx - 1; Ri++)
     {
-        std::cout<<"Ri is "<<Ri<<std::endl;
         for(int k = 0; k < 3; k++)
         {
             Rik = Ri * 3 + k;
             Rikp = (Ri + 1) * 3 + k;
 
-            for(int Wi = 0; Wi < 3 * nx; Wi++)
+            for(int Wi = (Ri - 1) * 3; Wi <= (Ri + 1) * 3 + 2; Wi++)
             {
                 pertW = W[Wi] * h;
-                for(int Si = 0; Si < nx + 1; Si++)
+                for(int Si = Ri; Si <= Ri+1; Si++)
                 {
                     pertS = S[Si] * h;
                     for(int m = 0; m < 3 * nx; m++)
@@ -175,7 +404,6 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
             }// Wi Loop
         }// k Loop
     }// Ri Loop
-    std::cout<<ddRdWdS[10]<<std::endl<<std::endl;
     return ddRdWdS;
 }
 
@@ -197,7 +425,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
     std::vector <double> dpdW(3 * nx, 0);
     dpdW = evaldpdW(W, S);
 
-    int Wi, Si, k, rowi, coli;
+    int Wi, Si;
     int Rik, Wik;
     double val;
     for(int Ri = 1; Ri < nx - 1; Ri++)
@@ -251,7 +479,6 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
         }
     }// Rk Loop
     }// Ri Loop
-    std::cout<<ddRdWdS[10]<<std::endl<<std::endl;
     return ddRdWdS;
 }
 
@@ -274,6 +501,9 @@ std::vector <MatrixXd> evalddQdWdW(std::vector <double> W)
         ddQidWdW(1, 1) = (1.0 - gam) / rho;
         ddQidWdW(0, 1) = u * (gam - 1.0) / rho;
         ddQidWdW(1, 0) = ddQidWdW(0, 1);
+        // (:,3) = 0
+        // (3,:) = 0
+        ddQdWdW[i * 3 + 1] = ddQidWdW;
     }
     return ddQdWdW;
 }
@@ -287,7 +517,7 @@ std::vector <MatrixXd> evalddFdWdW(double rho, double u, double p)
     // F2
     ddfidWdW(0, 0) = -(u * u * (gam - 3.0) / rho);
     ddfidWdW(1, 1) = (3.0 - gam) / rho;
-    ddfidWdW(0, 1) = (u * u * (gam - 3.0) / rho);
+    ddfidWdW(0, 1) = (u * (gam - 3.0) / rho);
     ddfidWdW(1, 0) = ddfidWdW(0, 1);
     ddFdWdW[1] = ddfidWdW;
     // F3
@@ -299,7 +529,8 @@ std::vector <MatrixXd> evalddFdWdW(double rho, double u, double p)
     ddfidWdW(2, 2) = 0;
 
     ddfidWdW(0, 1) = (- 2.0 * p * gam 
-                    + u * u * (5.0 * gam * gam - 11.0 * gam + 6.0) )
+                    + rho * pow(u, 2.0)
+                    * (5.0 * gam * gam - 11.0 * gam + 6.0) )
                     / (2.0 * pow(rho, 2.0) * (gam - 1.0));
     ddfidWdW(1, 0) = ddfidWdW(0, 1);
 
@@ -307,7 +538,7 @@ std::vector <MatrixXd> evalddFdWdW(double rho, double u, double p)
     ddfidWdW(2, 0) = ddfidWdW(0, 2);
 
     ddfidWdW(1, 2) = gam / rho;
-    ddfidWdW(2, 1) = ddfidWdW(0, 2);
+    ddfidWdW(2, 1) = ddfidWdW(1, 2);
 
     ddFdWdW[2] = ddfidWdW;
 
@@ -327,23 +558,154 @@ MatrixXd evalddlambdadWdW(std::vector <double> W, int i)
     ddlambdadWdWp(0, 0) = ( 6.0 * p * gam
                           + rho * u * (8.0 * c - u * gam * (gam - 1.0)) )
                           / (16.0 * c * pow(rho, 3.0));
+    ddlambdadWdWp(1, 1) = -c * (gam - 1.0) / (4.0 * p);
+    ddlambdadWdWp(2, 2) = c * (1.0 - gam) / (8.0 * p * p);
+
     ddlambdadWdWp(0, 1) = 0.25 * (c * u * (gam - 1.0) / p - 2.0 / rho);
-    ddlambdadWdWp(0, 2) = - ( gam * gam * ( 2.0 * p + u * u * (gam - 1.0) * rho ) )
+    ddlambdadWdWp(0, 2) = - ( gam * gam * ( 2.0 * p + rho * u * u * (gam - 1.0) ) )
                           / ( 16.0 * pow(c * rho, 3) );
 
     ddlambdadWdWp(1, 0) = (-4.0 + u * gam * (gam - 1) / c)
                           / (8.0 * rho * rho);
-    ddlambdadWdWp(1, 1) = -c * (gam - 1.0) / (4.0 * p);
     ddlambdadWdWp(1, 2) = c * u * (gam - 1.0) / (8.0 * p * p);
 
     ddlambdadWdWp(2, 0) = - gam * (gam - 1.0)
                           / (8.0 * c * rho * rho);
     ddlambdadWdWp(2, 1) = 0.0;
-    ddlambdadWdWp(2, 2) = c * (1.0 - gam) / (8.0 * p * p); 
 
     return ddlambdadWdWp * dWpdW(W, i);
 }
 
+void evalddScalarFluxdWdW_FD(
+    std::vector <MatrixXd> &ddFluxdWdW1,
+    int ii, int jj,
+    std::vector <double> W)
+{
+    int Fluxik;
+    int Wi1, Wi2, Wi, Wj;
+    double pertWi, pertWj;
+    double Flux0, Flux1, Flux2, Flux3, Flux4;
+    double h = 1e-3;
+    std::vector <double> Flux(3 * (nx + 1), 0);
+    std::vector <double> Wd(3 * nx, 0);
+    std::vector <double> Q(3 * nx, 0);
+
+    MatrixXd dummy(3,3);
+    dummy.setZero();
+    for(int k = 0; k < 3 * (nx + 1); k++)
+    {
+        ddFluxdWdW1[k] = dummy;
+    }
+    for(int Fluxi = 1; Fluxi < nx; Fluxi++)
+    {
+        Wi1 = Fluxi + ii;
+        Wi2 = Fluxi + jj;
+        for(int Fluxk = 0; Fluxk < 3; Fluxk++)
+        {
+            Fluxik = Fluxi * 3 + Fluxk;
+            for(int row = 0; row < 3; row++)
+            for(int col = 0; col < 3; col++)
+            {
+                Wi = Wi1 * 3 + row;
+                Wj = Wi2 * 3 + col;
+                pertWi = W[Wi] * h;
+                pertWj = W[Wj] * h;
+
+                for(int m = 0; m < 3 * nx; m++)
+                {
+                    Wd[m] = W[m];
+                }
+
+                if(row != col || ii!=jj)
+                {
+                    // ddFluxdWdW1 = ddFlux(i)/dW(i-1)dW(i-1)
+                    // R1
+                    Wd[Wi] = W[Wi] + pertWi;
+                    Wd[Wj] = W[Wj] + pertWj;
+
+                    getFlux(Flux, Wd);
+                    
+                    Flux1 = Flux[Fluxik];
+                    
+                    // R2
+                    Wd[Wi] = W[Wi] + pertWi;
+                    Wd[Wj] = W[Wj] - pertWj;
+
+                    getFlux(Flux, Wd);
+
+                    Flux2 = Flux[Fluxik];
+                    
+                    // R3
+                    Wd[Wi] = W[Wi] - pertWi;
+                    Wd[Wj] = W[Wj] + pertWj;
+
+                    getFlux(Flux, Wd);
+
+                    Flux3 = Flux[Fluxik];
+
+                    // R4
+                    Wd[Wi] = W[Wi] - pertWi;
+                    Wd[Wj] = W[Wj] - pertWj;
+
+                    getFlux(Flux, Wd);
+
+                    Flux4 = Flux[Fluxik];
+                    
+                    ddFluxdWdW1[Fluxik](row, col) = 
+                                (Flux1 - Flux2 - Flux3 + Flux4) / (4.0 * pertWi * pertWj);
+                    
+                    // Symmetry
+                    //ddFluxdWdW1[Fluxik](col, row) = ddFluxdWdW1[Fluxik](row, col);
+                    // Reset Wd 
+                    Wd[Wi] = W[Wi];
+                    Wd[Wj] = W[Wj];
+                }   
+                else
+                {
+                    getFlux(Flux, W);
+                    
+                    Flux0 = Flux[Fluxik];
+
+                    // R1
+                    Wd[Wi] = W[Wi] + 2.0 * pertWi;
+
+                    getFlux(Flux, Wd);
+                    
+                    Flux1 = Flux[Fluxik];
+                    
+                    // R2
+                    Wd[Wi] = W[Wi] + pertWi;
+
+                    getFlux(Flux, Wd);
+
+                    Flux2 = Flux[Fluxik];
+                    
+                    // R3
+                    Wd[Wi] = W[Wi] - pertWi;
+
+                    getFlux(Flux, Wd);
+
+                    Flux3 = Flux[Fluxik];
+
+                    // R4
+                    Wd[Wi] = W[Wi] - 2.0 * pertWi;
+
+                    getFlux(Flux, Wd);
+
+                    Flux4 = Flux[Fluxik];
+
+                    ddFluxdWdW1[Fluxik](row, col) = 
+                                    (-Flux1 + 16*Flux2 - 30*Flux0 + 16*Flux3 - Flux4)
+                                                 / (12 * pertWi * pertWj);
+                    // Reset Wd 
+                    Wd[Wi] = W[Wi];
+                    Wd[Wj] = W[Wj];
+                }
+            } // row col loop
+        }// Fluxk
+    }//Fluxi
+    
+}
 void evalddScalarFluxdWdW(
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,
@@ -375,7 +737,7 @@ void evalddScalarFluxdWdW(
         ddlambdadWdW[Wi] = evalddlambdadWdW(W, Wi);
     }
 
-    int Fluxkim, Fluxki, Fluxkip;
+    int Fluxkim, Fluxki;
     MatrixXd ddFluxidWdW(3, 3);
     for(int Fluxi = 1; Fluxi < nx; Fluxi++)
     {
@@ -383,7 +745,6 @@ void evalddScalarFluxdWdW(
         {
             Fluxkim = (Fluxi - 1) * 3 + Fluxk;
             Fluxki = Fluxi * 3 + Fluxk;
-            Fluxkip = (Fluxi + 1) * 3 + Fluxk;
             // ddFluxdWdW1 = F(i+1/2) / W(i, i)
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
@@ -391,9 +752,14 @@ void evalddScalarFluxdWdW(
                 ddFluxidWdW(row, col) = 0.5 * ddFdWdW[Fluxkim](row, col)
                     - 0.5 * Scalareps * ddlambdadWdW[Fluxi - 1](row, col) 
                     * (W[Fluxki] - W[Fluxkim]);
-                if(row == col)
+
+                if(row == Fluxk)
                 {
-                    ddFluxidWdW(row, col) += dlambdadW[Fluxi - 1](row);
+                    ddFluxidWdW(row, col) += 0.5 * Scalareps * dlambdadW[Fluxi - 1](col);
+                }
+                if(col == Fluxk)
+                {
+                    ddFluxidWdW(row, col) += 0.5 * Scalareps * dlambdadW[Fluxi - 1](row);
                 }
             }
             ddFluxdWdW1[Fluxki] = ddFluxidWdW;
@@ -403,11 +769,15 @@ void evalddScalarFluxdWdW(
             for(int col = 0; col < 3; col++)
             {
                 ddFluxidWdW(row, col) = 0.5 * ddFdWdW[Fluxki](row, col)
-                    - 0.5 * Scalareps * ddlambdadWdW[Fluxi - 1](row, col) 
+                    - 0.5 * Scalareps * ddlambdadWdW[Fluxi](row, col) 
                     * (W[Fluxki] - W[Fluxkim]);
-                if(row == col)
+                if(row == Fluxk)
                 {
-                    ddFluxidWdW(row, col) -= dlambdadW[Fluxi](row);
+                    ddFluxidWdW(row, col) -= 0.5 * Scalareps * dlambdadW[Fluxi](col);
+                }
+                if(col == Fluxk)
+                {
+                    ddFluxidWdW(row, col) -= 0.5 * Scalareps * dlambdadW[Fluxi](row);
                 }
             }
             ddFluxdWdW2[Fluxki] = ddFluxidWdW;
@@ -416,7 +786,12 @@ void evalddScalarFluxdWdW(
             ddFluxidWdW.setZero();
             for(int row = 0; row < 3; row++)
             {
-                ddFluxidWdW(row, row) = dlambdadW[Fluxi](row) - dlambdadW[Fluxi - 1](row);
+                ddFluxidWdW(row, Fluxk) -= 0.5 * Scalareps * dlambdadW[Fluxi - 1](row);
+            }
+            for(int col = 0; col < 3; col++)
+            {
+                // Important to have += since one of the entries is non-zero
+                ddFluxidWdW(Fluxk, col) += 0.5 * Scalareps * dlambdadW[Fluxi](col);
             }
             ddFluxdWdW3[Fluxki] = ddFluxidWdW;
         }
