@@ -7,6 +7,7 @@
 #include"flux.h"
 #include"quasiOneD.h"
 #include"residuald1.h"
+#include"BCDerivatives.h"
 
 using namespace Eigen;
 
@@ -160,17 +161,65 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
     }// Ri Loop
     return ddRdWdW_FD;
 }
+
 // Calculates Residual Hessian
 std::vector < SparseMatrix <double> > evalddRdWdW(
     std::vector <double> W,
     std::vector <double> S)
 {
     std::vector <SparseMatrix <double> > ddRdWdW(3 * nx);
-    SparseMatrix <double> ddRidWdW(3 * nx, 3 * nx);
+    SparseMatrix <double> dummySMat(3 * nx, 3 * nx);
 
-    for(int Ri = 0; Ri < 3 * nx; Ri++)
-        ddRdWdW[Ri] = ddRidWdW;
+    for(int Ri = 0; Ri < nx; Ri++)
+    {
+        for(int Rk = 0; Rk < 3; Rk++)
+        {
+            ddRdWdW[Ri * 3 + Rk] = dummySMat;
+        }
+    }
+    // ********************************
+    // BC Residual Hessian
+    // ********************************
+    // Inlet and Outlet Residual Hessian
+    // ddRindWdW contains 3 matrices: dr1/dWdW, dr2/dWdW, dr3/dWdW
+    // 6 state variables affect the inlet/outlet residuals
+    std::vector <MatrixXd> ddRindWdW(3);
+    std::vector <MatrixXd> ddRoutdWdW(3);
+    MatrixXd dummyMat(6, 6);
+    for(int Rk = 0; Rk < 3; Rk++)
+    {
+        ddRindWdW[Rk] = dummyMat;
+        ddRoutdWdW[Rk] = dummyMat;
+    }
+    HessianBC_FD(W, ddRindWdW, ddRoutdWdW);
+//  std::cout<<"ddRdWdW_in"<<std::endl;
+//  std::cout<<ddRindWdW[0]<<std::endl;
+//  std::cout<<ddRindWdW[1]<<std::endl;
+//  std::cout<<ddRindWdW[2]<<std::endl;
+//  std::cout<<"ddRdWdW_out"<<std::endl;
+//  std::cout<<ddRoutdWdW[0]<<std::endl;
+//  std::cout<<ddRoutdWdW[1]<<std::endl;
+//  std::cout<<ddRoutdWdW[2]<<std::endl;
+    for(int Rk = 0; Rk < 3; Rk++)
+    {
+      for(int row = 0; row < 6; row++)
+      {
+        for(int col = 0; col < 6; col++)
+        {
+          // Inlet
+          ddRdWdW[Rk].insert(row, col) = ddRindWdW[Rk](row, col);
+          // Outlet
+          int rowi = (nx - 2) * 3 + row;
+          int coli = (nx - 2) * 3 + col;
+          ddRdWdW[(nx - 1) * 3 + Rk].insert(rowi, coli) = ddRindWdW[Rk](row, col);
+        }
+      }
+    }
 
+    // ********************************
+    // Domain Residual Hessian
+    // Validated with FD
+    // ********************************
     // Evaluate ddFluxdWdW
     // ddFluxdWdW1 = Flux(i) / W(i-1, i-1)
     // ddFluxdWdW2 = Flux(i) / W(i  , i  )
@@ -180,20 +229,6 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
                            ddFluxdWdW2(3 * (nx + 1)),
                            ddFluxdWdW3(3 * (nx + 1));
     evalddFluxdWdW(ddFluxdWdW1, ddFluxdWdW2, ddFluxdWdW3, W);
-
-//  Validated with FD
-//  std::vector <MatrixXd> ddFluxdWdW1_FD(3 * (nx + 1)),
-//                         ddFluxdWdW2_FD(3 * (nx + 1)),
-//                         ddFluxdWdW3_FD(3 * (nx + 1)),
-//                         ddFluxdWdW4_FD(3 * (nx + 1));
-//  evalddScalarFluxdWdW_FD(ddFluxdWdW1_FD, -1, -1, W);
-//  evalddScalarFluxdWdW_FD(ddFluxdWdW2_FD,  0,  0, W);
-//  evalddScalarFluxdWdW_FD(ddFluxdWdW3_FD, -1,  0, W);
-//  evalddScalarFluxdWdW_FD(ddFluxdWdW4_FD,  0, -1, W);
-//  for(int i = 4; i < 3 * nx - 3; i++)
-//  {
-//      std::cout<<(ddFluxdWdW1[i] - ddFluxdWdW1_FD[i]).norm() / (ddFluxdWdW1[i].norm())<<std::endl;
-//  }
 
     // Evaluate ddQdWdW
     std::vector <MatrixXd> ddQdWdW(3 * nx);

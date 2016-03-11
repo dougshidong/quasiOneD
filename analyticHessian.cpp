@@ -41,26 +41,27 @@ MatrixXd directDirectHessian(
     // ------ = ------ + ----- --- + (----- + ---- ---) --- + --- (------ + ----- ---)
     // DSiDSj   dSidSj   dSidW dSj   (dWdSj   dWdW dSj) dSi   dW  (dSidSj   dSidW dSj)
     //
-    //
-    //
+
+    //Get Primitive Variables
+    std::vector <double> rho(nx), u(nx), e(nx);
+    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+    WtoP(W, rho, u, e, p, c, T);
+
+    // Evaluate dRdW
+    std::vector <double> dt(nx, 1);
+    SparseMatrix <double> dRdW;
+    dRdW = evaldRdW(W, dx, dt, S, u[0]/c[0]);
+
+    // Evaluate ddRdWdS
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
     ddRdWdS = evalddRdWdS(W, S);
-    std::vector <SparseMatrix <double> > ddRdWdSFD(3 * nx);
-    ddRdWdSFD = evalddRdWdS_FD(W, S);
 
-//  double sum=0;
-//  for(int i = 4; i < 3 * nx - 3; i++)
-//  {
-//      sum += (ddRdWdS[i] - ddRdWdSFD[i]).norm() / (ddRdWdS[i]).norm();
-//      std::cout<<(ddRdWdS[i] - ddRdWdSFD[i]).norm() / (ddRdWdS[i].norm())<<std::endl;
-//  }
-//  std::cout<<"FD vs AN:  "<<sum<<std::endl;
-
+    // Evaluate ddRdWdW
     std::vector < SparseMatrix <double> > ddRdWdW(3 * nx);
     ddRdWdW = evalddRdWdW(W, S);
 
-    std::vector < SparseMatrix <double> > ddRdWdW_FD(3 * nx);
-    ddRdWdW_FD = evalddRdWdW_FD(W, S);
+//  std::vector < SparseMatrix <double> > ddRdWdW_FD(3 * nx);
+//  ddRdWdW_FD = evalddRdWdW_FD(W, S);
 //  Confirmed domain ddRdWdW through Finite Difference
 //  for(int i = 4; i < 3 * nx - 3; i++)
 //  {
@@ -79,6 +80,7 @@ MatrixXd directDirectHessian(
 //  std::cout<<std::endl;
 //  MatrixXd matout3 = (matout1 - matout2);
 //  std::cout<<matout3<<std::endl;
+
 
     MatrixXd Hessian(nDesVar, nDesVar);
     return Hessian;

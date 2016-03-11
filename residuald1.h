@@ -1,5 +1,5 @@
-#ifndef residualDerivative_h
-#define residualDerivative_h
+#ifndef residuald1_h
+#define residuald1_h
 
 #include<vector>
 #include<Eigen/Sparse>
@@ -32,15 +32,6 @@ void ScalarJac(
     std::vector <double> W,
     std::vector <double> &Ap_list,
     std::vector <double> &An_list);
-
-void BCJac(
-    std::vector <double> W,
-    std::vector <double> dt,
-    std::vector <double> dx,
-    std::vector <double> &dBidWi,
-    std::vector <double> &dBidWd,
-    std::vector <double> &dBodWd,
-    std::vector <double> &dBodWo);
 
 std::vector <double> evaldpdW(
     std::vector <double> W,

@@ -36,7 +36,6 @@ VectorXd directDifferentiation(
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
     WtoP(W, rho, u, e, p, c, T);
 
-
     // Evaluate dIcdW
     VectorXd dIcdW(3 * nx);
     dIcdW = evaldIcdW(W, dx);
