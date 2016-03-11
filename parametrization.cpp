@@ -3,8 +3,8 @@
 #include"globals.h"
 
 Eigen::MatrixXd evaldSdDesign(
-    std::vector <double> x, 
-    std::vector <double> dx, 
+    std::vector <double> x,
+    std::vector <double> dx,
     std::vector <double> designVar)
 {
     Eigen::MatrixXd dSdDesign(nx + 1, designVar.size());

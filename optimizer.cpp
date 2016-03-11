@@ -12,36 +12,44 @@
 #include"analyticHessian.h"
 
 using namespace Eigen;
-VectorXd finiteD(std::vector <double> x,
-                             std::vector <double> dx,
-                             std::vector <double> S, 
-                             std::vector <double> designVar, 
-                             double h, 
-                             double currentI);
+VectorXd finiteD(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    double h,
+    double currentI);
 
 MatrixXd finiteD2(std::vector <double> x,
-                  std::vector <double> dx,
-                  std::vector <double> S, 
-                  std::vector <double> designVar, 
-                  double h, 
-                  double currentI,
-                  int &possemidef);
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    double h,
+    double currentI,
+    int &possemidef);
 
-double stepBacktrackUncons(std::vector <double> designVar, 
-                           VectorXd pk, 
-                           VectorXd gradient, 
-                           double currentI, 
-                           std::vector <double> x, 
-                           std::vector <double> dx);
+double stepBacktrackUncons(
+    std::vector <double> designVar,
+    VectorXd pk,
+    VectorXd gradient,
+    double currentI,
+    std::vector <double> x,
+    std::vector <double> dx);
 
-MatrixXd BFGS(MatrixXd oldH, std::vector <double> gradList, VectorXd searchD);
+MatrixXd BFGS(
+    MatrixXd oldH,
+    std::vector <double> gradList,
+    VectorXd searchD);
 
-void design(std::vector <double> x, std::vector <double> dx,
-            std::vector <double> S, std::vector <double> designVar)
+void design(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar)
 {
     std::vector <double> W(3 * nx, 0);
 
-    
+
     std::vector <double> normGradList, gradList;
     MatrixXd H(nDesVar, nDesVar), H_FD(nDesVar, nDesVar), H_BFGS(nDesVar, nDesVar);
     double normGrad = 1;
@@ -60,11 +68,11 @@ void design(std::vector <double> x, std::vector <double> dx,
     VectorXd pk(nDesVar), searchD(nDesVar), dgradient(nDesVar);
 
     std::vector <double> psi(3 * nx, 0);
-    
+
     quasiOneD(x, dx, S, designVar, W);
-    
+
     currentI = quasiOneD(x, dx, S, designVar, W);
-    
+
     VectorXd gradientAV(nDesVar), gradientFD(nDesVar), gradientDD(nDesVar);
     gradientAV = adjoint(x, dx, S, W, psi, designVar);
     gradientDD = directDifferentiation(x, dx, S, W, designVar);
@@ -186,7 +194,7 @@ void design(std::vector <double> x, std::vector <double> dx,
             normGrad += pow(gradientAV[i], 2);
         normGrad = sqrt(normGrad);
         normGradList.push_back(normGrad);
-        
+
         std::cout<<"End of Design Iteration: "<<iDesign<<std::endl<<std::endl<<std::endl;
     }
 
@@ -207,7 +215,10 @@ void design(std::vector <double> x, std::vector <double> dx,
     return;
 }
 
-MatrixXd BFGS(MatrixXd oldH, std::vector <double> gradList, VectorXd searchD)
+MatrixXd BFGS(
+    MatrixXd oldH,
+    std::vector <double> gradList,
+    VectorXd searchD)
 {
     int ls = gradList.size();
     Eigen::MatrixXd newH(nDesVar, nDesVar);
@@ -219,7 +230,7 @@ MatrixXd BFGS(MatrixXd oldH, std::vector <double> gradList, VectorXd searchD)
         dg(i) = gradList[ls - nDesVar + i] - gradList[ls - 2 * nDesVar + i];
         dx(i) = searchD[i];
     }
-    
+
     a = ((dx.transpose() * dg + dg.transpose() * oldH * dg)(0) * (dx * dx.transpose()))
          / ((dx.transpose() * dg)(0) * (dx.transpose() * dg)(0));
     b = (oldH * dg * dx.transpose() + dx * dg.transpose() * oldH) / (dx.transpose() * dg)(0);
@@ -234,12 +245,13 @@ MatrixXd BFGS(MatrixXd oldH, std::vector <double> gradList, VectorXd searchD)
     return newH;
 }
 
-VectorXd finiteD(std::vector <double> x, 
-                             std::vector <double> dx,
-                             std::vector <double> S, 
-                             std::vector <double> designVar, 
-                             double h, 
-                             double currentI)
+VectorXd finiteD(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    double h,
+    double currentI)
 {
     std::vector <double> W(3 * nx, 0);
 
@@ -249,7 +261,7 @@ VectorXd finiteD(std::vector <double> x,
     // 3  =  Central
     VectorXd grad(nDesVar);
     std::vector <double> tempS(nx + 1);
-    
+
     double I0, I1, I2, dh;
 
     std::vector <double> tempD(nDesVar);
@@ -260,7 +272,7 @@ VectorXd finiteD(std::vector <double> x,
     }
     else
     {
-        I0 = currentI;    
+        I0 = currentI;
     }
     for(int i = 0; i < nDesVar; i++)
     {
@@ -302,14 +314,13 @@ VectorXd finiteD(std::vector <double> x,
     return grad;
 }
 
-
-
-double stepBacktrackUncons(std::vector <double> designVar,
-                           VectorXd pk,
-                           VectorXd gradient, 
-                           double currentI,
-                           std::vector <double> x, 
-                           std::vector <double> dx)
+double stepBacktrackUncons(
+    std::vector <double> designVar,
+    VectorXd pk,
+    VectorXd gradient,
+    double currentI,
+    std::vector <double> x,
+    std::vector <double> dx)
 {
     std::vector <double> W(3 * nx, 0);
 
@@ -329,7 +340,7 @@ double stepBacktrackUncons(std::vector <double> designVar,
 
 //    c_pk_grad *= c1;
     c_pk_grad = sqrt(c_pk_grad);
-    
+
     for(int i = 0; i < nDesVar; i++)
     {
         tempD[i] = designVar[i] + alpha * pk[i];
@@ -343,7 +354,7 @@ double stepBacktrackUncons(std::vector <double> designVar,
     {
         alpha = alpha * 0.5;
         std::cout<<"Alpha Reduction: "<<alpha<<std::endl;
-    
+
         for(int i = 0; i < nDesVar; i++)
             tempD[i] = designVar[i] + alpha * pk[i];
         tempS = evalS(tempD, x, dx, desParam);
@@ -354,20 +365,21 @@ double stepBacktrackUncons(std::vector <double> designVar,
     }
 
     return alpha;
-}   
+}
 
-MatrixXd finiteD2(std::vector <double> x, 
-                  std::vector <double> dx,
-                  std::vector <double> S, 
-                  std::vector <double> designVar, 
-                  double h, 
-                  double currentI,
-                  int &possemidef)
+MatrixXd finiteD2(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    double h,
+    double currentI,
+    int &possemidef)
 {
     std::vector <double> W(3 * nx, 0);
     MatrixXd Hessian(nDesVar, nDesVar);
     std::vector <double> tempS(nx + 1);
-    
+
     double I, I1, I2, I3, I4, dhi, dhj;
 
     std::vector <double> tempD(nDesVar);
@@ -380,7 +392,7 @@ MatrixXd finiteD2(std::vector <double> x,
     }
     else
     {
-        I = currentI;    
+        I = currentI;
     }
     for(int i = 0; i < nDesVar; i++)
     for(int j = i; j < nDesVar; j++)
@@ -449,7 +461,7 @@ MatrixXd finiteD2(std::vector <double> x,
         std::cout<<"Matrix is not Positive Semi-Definite"<<std::endl;
         std::cout<<Hessian<<std::endl;
         std::cout<<eigval<<std::endl;
-        Hessian = Hessian + fabs(eigval.real().minCoeff()) * eye 
+        Hessian = Hessian + fabs(eigval.real().minCoeff()) * eye
                           + 0.001 * eye;
         std::cout<<"New Eigenvalues:"<<Hessian.eigenvalues()<<std::endl;
         possemidef = 0;
@@ -461,7 +473,7 @@ MatrixXd finiteD2(std::vector <double> x,
 
     std::cout<<"Inverse Hessian from FD: "<<std::endl;
     std::cout<<Hessian.inverse()<<std::endl;
-    
+
 
     JacobiSVD<MatrixXd> svd(Hessian);
     double svdmax = svd.singularValues()(0);

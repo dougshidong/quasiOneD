@@ -13,7 +13,7 @@ std::vector <double> evalX(double a, double b)
 {
     std::vector <double> x(nx);
     double dxConst = (b - a)/nx;
-    
+
     for(int i = 0; i < nx; i++)
         x[i] = dxConst/2 + dxConst * i;
 
@@ -25,7 +25,7 @@ std::vector <double> evalX(double a, double b)
 std::vector <double> evalDx(std::vector <double> x)
 {
     std::vector <double> dx(nx);
-    
+
     dx[0] = x[1] - x[0];
     for(int i = 1; i < nx - 1; i++)
     {
@@ -61,7 +61,7 @@ std::vector <double> sinParam(
         xh = x[i] - dx[i] / 2.0;
         S[i] = 1 - geom[0] * pow(sin(PI * pow(xh, geom[1])), geom[2]);
     }
-    
+
     S[0] = 1;
     S[nx] = 1;
 

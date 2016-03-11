@@ -19,8 +19,8 @@
 using namespace Eigen;
 
 VectorXd adjoint(
-    std::vector <double> x, 
-    std::vector <double> dx, 
+    std::vector <double> x,
+    std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
     std::vector <double> &psi,
@@ -29,8 +29,8 @@ VectorXd adjoint(
     //Get Primitive Variables
     std::vector <double> rho(nx), u(nx), e(nx);
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-    WtoP(W, rho, u, e, p, c, T); 
-    
+    WtoP(W, rho, u, e, p, c, T);
+
     // Evalutate dt and d(dt)dW
     std::vector <double> dt(nx, 1);
 
@@ -85,7 +85,7 @@ VectorXd adjoint(
 //  std::cout<<"Adjoint Result:"<<std::endl;
 //  std::cout<<psiV<<std::endl;
 
-    // Save Adjoint 
+    // Save Adjoint
     FILE *Results;
     Results = fopen("Adjoint.dat", "w");
     fprintf(Results, "%d\n", nx);
@@ -133,7 +133,9 @@ VectorXd adjoint(
     return grad;
 }
 
-VectorXd evaldIcdW(std::vector <double> W, std::vector <double> dx)
+VectorXd evaldIcdW(
+    std::vector <double> W,
+    std::vector <double> dx)
 {
     VectorXd dIcdW(3 * nx);
 
@@ -164,7 +166,7 @@ VectorXd buildbMatrix(std::vector <double> dIcdW)
     for(int i = 0; i < nx; i++)
     for(int k = 0; k < 3; k++)
         matb(i * 3 + k) = -dIcdW[i * 3 + k];
-    
+
     return matb;
 }
 
@@ -210,7 +212,9 @@ VectorXd evalpsidRdS(
 }
 
 
-MatrixXd solveSparseAXB(SparseMatrix <double> A, MatrixXd B, int eig_solv)
+MatrixXd solveSparseAXB(
+    SparseMatrix <double> A,
+    MatrixXd B, int eig_solv)
 {
     MatrixXd X(A.rows(), B.cols());
     X.setZero();
@@ -237,10 +241,10 @@ MatrixXd solveSparseAXB(SparseMatrix <double> A, MatrixXd B, int eig_solv)
         SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
         slusolver.analyzePattern(A);
         slusolver.factorize(A);
-        
+
         if(slusolver.info() != 0)
             std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
-    
+
         // Solve for X
         X = slusolver.solve(B);
     }
@@ -301,7 +305,7 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
     VectorXd b1mod(3 * (nx - 1)), b2mod(3);
     b1mod = b1;
     b2mod = b2;
-    
+
     VectorXd fullX(3 * nx);
     fullX.setZero();
     fullX.setOnes();
@@ -332,7 +336,7 @@ VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
         fullX.head(3 * (nx - 1)) = x1;
         fullX.tail(3) = x2;
         resi3 = (A * fullX - b).norm();
-        
+
         std::cout<<"Iteration: "<<it
                  <<" resi1: "<<resi1
                  <<" resi2: "<<resi2

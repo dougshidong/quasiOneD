@@ -11,23 +11,34 @@ double isenP(double pt, double M);
 
 double isenT(double Tt, double M);
 
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx);
+std::vector <double> calcVolume(
+    std::vector <double> S,
+    std::vector <double> dx);
 
 double TotalPressureLoss(std::vector <double> W);
 
 void ioTargetPressure(int io, std::vector <double> &p);
 
-double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
-        std::vector <double> dx);
+double inverseFitness(
+    std::vector <double> pcurrent,
+    std::vector <double> ptarget,
+    std::vector <double> dx);
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0);
+void inletBC(
+    std::vector <double> &W,
+    std::vector <double> &Resi,
+    double dt0, double dx0);
+void outletBC(
+    std::vector <double> &W,
+    std::vector <double> &Resi,
+    double dt0, double dx0);
 
-double quasiOneD(std::vector <double> x, 
-        std::vector <double> dx, 
-        std::vector <double> S,
-        std::vector <double> designVar,
-        std::vector <double> &W)
+double quasiOneD(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    std::vector <double> &W)
 {
     std::vector <double> rho(nx), u(nx), e(nx);
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
@@ -80,7 +91,7 @@ double quasiOneD(std::vector <double> x,
     {
         iterations++;
 
-        if(iterations%printIt == 0) 
+        if(iterations%printIt == 0)
         {
             if(printConv == 1)
             {
@@ -100,10 +111,10 @@ double quasiOneD(std::vector <double> x,
 
         // Update Inlet BC W[0]
         inletBC(W, Resi, dt[0], dx[0]);
-       
+
         // Update Oulet BC W[nx - 1]
         outletBC(W, Resi, dt[nx - 1], dx[nx - 1]);
-        
+
         // Update flow properties
         for(int i = 0; i < nx ; i++)
         {
@@ -115,7 +126,7 @@ double quasiOneD(std::vector <double> x,
             c[i] = sqrt((gam * p[i]) / rho[i]);// Speed of sound
             Mach[i] = u[i] / c[i];      // Mach number
         }
-        
+
         // Calculating the norm of the density residual
         normR = 0;
         for(int i = 0; i < nx; i++)
@@ -133,7 +144,7 @@ double quasiOneD(std::vector <double> x,
         }
     }
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
-    
+
 
     FILE  * Results;
     Results = fopen("Results.dat", "w");
@@ -209,7 +220,9 @@ double TotalPressureLoss(std::vector <double> W)
 }
 
 // Define Volume
-std::vector <double> calcVolume(std::vector <double> S, std::vector <double> dx)
+std::vector <double> calcVolume(
+    std::vector <double> S,
+    std::vector <double> dx)
 {
     std::vector <double> V;
     int ndx = dx.size();
@@ -249,15 +262,17 @@ void ioTargetPressure(int io, std::vector <double> &p)
             err = fscanf(TargetP, "%lf", &p[iT]);
         }
         if(err != 1) std::cout<< "Err";
-    }   
+    }
 
     fclose(TargetP);
 }
 
 // Return Inverse Design Fitness
 
-double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarget,
-        std::vector <double> dx)
+double inverseFitness(
+    std::vector <double> pcurrent,
+    std::vector <double> ptarget,
+    std::vector <double> dx)
 {
     double fit = 0;
     for(int i = 0; i < nx; i++)
@@ -269,7 +284,10 @@ double inverseFitness(std::vector <double> pcurrent, std::vector <double> ptarge
 }
 
 
-void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
+void inletBC(
+    std::vector <double> &W,
+    std::vector <double> &Resi,
+    double dt0, double dx0)
 {
     double dpdu, dpdx, dudx, dtdx, du, eigenvalue, T0;
     double rho[2], u[2], e[2], p[2], c[2];
@@ -290,12 +308,12 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
 
         dtdx = dt0 / dx0;
         eigenvalue = ((u[1] + u[0] - c[1] - c[0]) / 2.0) * dtdx;
-        
+
         dpdx = p[1] - p[0];
         dudx = u[1] - u[0];
         du = -eigenvalue * (dpdx - rho[0] * c[0] * dudx)
                 / (dpdu - rho[0] * c[0]);
-        
+
         Resi[0 * 3 + 1] = ((u[0] + du) - u[0]) / dtdx;
         u[0] = u[0] + du;
 
@@ -322,7 +340,10 @@ void inletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, do
     }
 }
 
-void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, double dx0)
+void outletBC(
+    std::vector <double> &W,
+    std::vector <double> &Resi,
+    double dt0, double dx0)
 {
     double avgc, avgu, dtdx, MachOut;
     double eigenvalues[3], Ri[3];
@@ -336,7 +357,7 @@ void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, d
         e[i] = W[(i + (nx - 2)) * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
-    } 
+    }
 
     // Exit boundary condition
     avgu = (u[1] + u[0]) / 2;
@@ -345,14 +366,14 @@ void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, d
     eigenvalues[0] = avgu * dtdx;
     eigenvalues[1] = (avgu + avgc) * dtdx;
     eigenvalues[2] = (avgu - avgc) * dtdx;
-    
+
     dpdx = p[1] - p[0];
     dudx = u[1] - u[0];
-    
+
     Ri[0] = -eigenvalues[0] * ( rho[1] - rho[0] - dpdx / pow(c[1], 2) );
     Ri[1] = -eigenvalues[1] * ( dpdx + rho[1] * c[1] * dudx );
     Ri[2] = -eigenvalues[2] * ( dpdx - rho[1] * c[1] * dudx );
-    
+
     MachOut = avgu / avgc;
     if(MachOut > 1)
     {
@@ -362,10 +383,10 @@ void outletBC(std::vector <double> &W, std::vector <double> &Resi, double dt0, d
     {
         dp = 0;
     }
-    
+
     drho = Ri[0] + dp / (pow(c[1], 2));
     du = (Ri[1] - dp) / (rho[1] * c[1]);
-    
+
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;

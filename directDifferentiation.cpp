@@ -34,7 +34,7 @@ VectorXd directDifferentiation(
     //Get Primitive Variables
     std::vector <double> rho(nx), u(nx), e(nx);
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-    WtoP(W, rho, u, e, p, c, T); 
+    WtoP(W, rho, u, e, p, c, T);
 
 
     // Evaluate dIcdW
@@ -48,15 +48,15 @@ VectorXd directDifferentiation(
     // Evaluate dRdS
     MatrixXd dRdS(3 * nx, nx + 1);
     dRdS = evaldRdS_FD(Flux, S, W);
-    
+
     // Evaluate dSdDesign
     MatrixXd dSdDesign(nx + 1, designVar.size());
     dSdDesign = evaldSdDesign(x, dx, designVar);
-    
+
     //Evaluate dRdDesign
     MatrixXd dRdDesign(3 * nx, nDesVar);
     dRdDesign = dRdS * dSdDesign;
-    
+
     // Evaluate dIcdS
     VectorXd dIcdS(nx + 1);
     dIcdS.setZero();

@@ -9,7 +9,7 @@
 #include"residuald1.h"
 
 using namespace Eigen;
-  
+
 std::vector <MatrixXd> evalddFdWdW(double rho, double u, double p);
 
 void evalddFluxdWdW(
@@ -67,9 +67,9 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
 
                         WtoQ(Wd, Q, S);
                         getFlux(Flux, Wd);
-                        
+
                         Resi1 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
-                        
+
                         // R2
                         Wd[Wi] = W[Wi] + pertWi;
                         Wd[Wj] = W[Wj] - pertWj;
@@ -78,7 +78,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                         getFlux(Flux, Wd);
 
                         Resi2 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
-                        
+
                         // R3
                         Wd[Wi] = W[Wi] - pertWi;
                         Wd[Wj] = W[Wj] + pertWj;
@@ -99,10 +99,10 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
                                                      / (4 * pertWi * pertWj);
-                        
+
                         // Symmetry
 //                      ddRdWdW_FD[Rik].insert(Wj, Wi) = ddRdWdW_FD[Rik].coeffRef(Wi, Wj);
-                        // Reset Wd 
+                        // Reset Wd
                         Wd[Wi] = W[Wi];
                         Wd[Wj] = W[Wj];
                     }
@@ -110,10 +110,10 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                     {
                         for(int m = 0; m < 3 * nx; m++)
                             Wd[m] = W[m];
-                        
+
                         WtoQ(Wd, Q, S);
                         getFlux(Flux, Wd);
-                        
+
                         Resi0 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
 
                         // R1
@@ -121,9 +121,9 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
 
                         WtoQ(Wd, Q, S);
                         getFlux(Flux, Wd);
-                        
+
                         Resi1 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
-                        
+
                         // R2
                         Wd[Wi] = W[Wi] + pertWi;
 
@@ -131,7 +131,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                         getFlux(Flux, Wd);
 
                         Resi2 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
-                        
+
                         // R3
                         Wd[Wi] = W[Wi] - pertWi;
 
@@ -150,7 +150,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) = (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
                                                      / (12 * pertWi * pertWj);
-                        // Reset Wd 
+                        // Reset Wd
                         Wd[Wi] = W[Wi];
                         Wd[Wj] = W[Wj];
                     }
@@ -181,7 +181,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
                            ddFluxdWdW3(3 * (nx + 1));
     evalddFluxdWdW(ddFluxdWdW1, ddFluxdWdW2, ddFluxdWdW3, W);
 
-//  Validated with FD    
+//  Validated with FD
 //  std::vector <MatrixXd> ddFluxdWdW1_FD(3 * (nx + 1)),
 //                         ddFluxdWdW2_FD(3 * (nx + 1)),
 //                         ddFluxdWdW3_FD(3 * (nx + 1)),
@@ -231,7 +231,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
 //          }
 
             //ddR(i) / dW(i)dW(i)
-            // = ddFlux(i + 1) / dW(i)dW(i) * S(i + 1) 
+            // = ddFlux(i + 1) / dW(i)dW(i) * S(i + 1)
             //   - ddFlux(i) / dW(i)dW(i) * S(i)
             //   - ddQ(i) / dW(i)dW(i) * dS
             Wi1 = Ri;
@@ -244,7 +244,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
                             - ddFluxdWdW2[Rik].coeffRef(row, col) * S[Ri]
                             - ddQdWdW[Rik].coeffRef(row, col) * (S[Ri + 1] - S[Ri]);
             }
-            
+
             //ddR(i) / dW(i+1)dW(i+1)
             // = ddFlux(i+1) / dW(i+1)dW(i+1) * S(i+1)
             Wi1 = Ri + 1;
@@ -259,7 +259,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
             // *******************
             // Off-Diagonal Terms
             // *******************
-            
+
             // R(i) = Flux(i + 1) * S(i + 1) - Flux(i) * S(i) - Q(i)
 
             //ddR(i) / dW(i-1)dW(i)
@@ -282,7 +282,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
                     -ddFluxdWdW3[Rik].coeffRef(col, row) * S[Ri];
             }
-            
+
             //ddR(i) / dW(i)dW(i+1)
             // = ddFlux(i) / dW(i)dW(i+1) * S(i+1)
             Wi1 = Ri;
@@ -305,7 +305,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
             }
 
             //ddR(i) / dW(i-1)dW(i+1) = 0
-            //ddR(i) / dW(i+1)dW(i-1) = 0 
+            //ddR(i) / dW(i+1)dW(i-1) = 0
         }
 
     }
@@ -356,9 +356,9 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
-                    
+
                     Resi1 = Flux[Rikp] * Sd[Ri + 1] - Flux[Rik] * Sd[Ri] - Q[Rik];
-                    
+
                     // R2
                     Wd[Wi] = W[Wi];
                     Sd[Si] = S[Si];
@@ -371,7 +371,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
                     getFlux(Flux, Wd);
 
                     Resi2 = Flux[Rikp] * Sd[Ri + 1] - Flux[Rik] * Sd[Ri] - Q[Rik];
-                    
+
                     // R3
                     Wd[Wi] = W[Wi];
                     Sd[Si] = S[Si];
@@ -449,7 +449,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
         {
             Wik = Wi * 3 + Wk;
             val = -An[Wi * 9 + Rk * 3 + Wk];
-            if(Rk == 1) 
+            if(Rk == 1)
             {
                 val -= -dpdW[Wi * 3 + Wk];
             }
@@ -462,7 +462,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
         {
             Wik = Wi * 3 + Wk;
             val = Ap[Wi * 9 + Rk * 3 + Wk];
-            if(Rk == 1) 
+            if(Rk == 1)
             {
                 val -= dpdW[Wi * 3 + Wk];
             }
@@ -521,14 +521,14 @@ std::vector <MatrixXd> evalddFdWdW(double rho, double u, double p)
     ddfidWdW(1, 0) = ddfidWdW(0, 1);
     ddFdWdW[1] = ddfidWdW;
     // F3
-    ddfidWdW(0, 0) = ( 2.0 * p * u * gam 
-                    + rho * pow(u, 3.0) 
+    ddfidWdW(0, 0) = ( 2.0 * p * u * gam
+                    + rho * pow(u, 3.0)
                     * (- 2.0 * gam * gam + 5.0 * gam - 3.0) )
                     / (pow(rho, 2.0) * (gam - 1.0));
     ddfidWdW(1, 1) = 3.0 * u * (1.0 - gam) / rho;
     ddfidWdW(2, 2) = 0;
 
-    ddfidWdW(0, 1) = (- 2.0 * p * gam 
+    ddfidWdW(0, 1) = (- 2.0 * p * gam
                     + rho * pow(u, 2.0)
                     * (5.0 * gam * gam - 11.0 * gam + 6.0) )
                     / (2.0 * pow(rho, 2.0) * (gam - 1.0));
@@ -624,9 +624,9 @@ void evalddScalarFluxdWdW_FD(
                     Wd[Wj] = W[Wj] + pertWj;
 
                     getFlux(Flux, Wd);
-                    
+
                     Flux1 = Flux[Fluxik];
-                    
+
                     // R2
                     Wd[Wi] = W[Wi] + pertWi;
                     Wd[Wj] = W[Wj] - pertWj;
@@ -634,7 +634,7 @@ void evalddScalarFluxdWdW_FD(
                     getFlux(Flux, Wd);
 
                     Flux2 = Flux[Fluxik];
-                    
+
                     // R3
                     Wd[Wi] = W[Wi] - pertWi;
                     Wd[Wj] = W[Wj] + pertWj;
@@ -650,36 +650,36 @@ void evalddScalarFluxdWdW_FD(
                     getFlux(Flux, Wd);
 
                     Flux4 = Flux[Fluxik];
-                    
-                    ddFluxdWdW1[Fluxik](row, col) = 
+
+                    ddFluxdWdW1[Fluxik](row, col) =
                                 (Flux1 - Flux2 - Flux3 + Flux4) / (4.0 * pertWi * pertWj);
-                    
+
                     // Symmetry
                     //ddFluxdWdW1[Fluxik](col, row) = ddFluxdWdW1[Fluxik](row, col);
-                    // Reset Wd 
+                    // Reset Wd
                     Wd[Wi] = W[Wi];
                     Wd[Wj] = W[Wj];
-                }   
+                }
                 else
                 {
                     getFlux(Flux, W);
-                    
+
                     Flux0 = Flux[Fluxik];
 
                     // R1
                     Wd[Wi] = W[Wi] + 2.0 * pertWi;
 
                     getFlux(Flux, Wd);
-                    
+
                     Flux1 = Flux[Fluxik];
-                    
+
                     // R2
                     Wd[Wi] = W[Wi] + pertWi;
 
                     getFlux(Flux, Wd);
 
                     Flux2 = Flux[Fluxik];
-                    
+
                     // R3
                     Wd[Wi] = W[Wi] - pertWi;
 
@@ -694,17 +694,17 @@ void evalddScalarFluxdWdW_FD(
 
                     Flux4 = Flux[Fluxik];
 
-                    ddFluxdWdW1[Fluxik](row, col) = 
+                    ddFluxdWdW1[Fluxik](row, col) =
                                     (-Flux1 + 16*Flux2 - 30*Flux0 + 16*Flux3 - Flux4)
                                                  / (12 * pertWi * pertWj);
-                    // Reset Wd 
+                    // Reset Wd
                     Wd[Wi] = W[Wi];
                     Wd[Wj] = W[Wj];
                 }
             } // row col loop
         }// Fluxk
     }//Fluxi
-    
+
 }
 void evalddScalarFluxdWdW(
     std::vector <MatrixXd> &ddFluxdWdW1,
@@ -714,8 +714,8 @@ void evalddScalarFluxdWdW(
 {
     std::vector <double> rho(nx), u(nx), e(nx);
     std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
-    WtoP(W, rho, u, e, p, c, T); 
-    
+    WtoP(W, rho, u, e, p, c, T);
+
     std::vector <MatrixXd> ddFdWdW(3 * nx);
     std::vector <MatrixXd> ddFidWdW(3);
 
@@ -730,7 +730,7 @@ void evalddScalarFluxdWdW(
         {
             ddFdWdW[Wi * 3 + k] = ddFidWdW[k];
         }
-        // Evaluate dlambdadW 
+        // Evaluate dlambdadW
         dlambdadW[Wi] = Map<Vector3d>(evaldlambdadW(W, Wi).data());
 
         // Evaluate ddlambdadWdW
@@ -750,7 +750,7 @@ void evalddScalarFluxdWdW(
             for(int col = 0; col < 3; col++)
             {
                 ddFluxidWdW(row, col) = 0.5 * ddFdWdW[Fluxkim](row, col)
-                    - 0.5 * Scalareps * ddlambdadWdW[Fluxi - 1](row, col) 
+                    - 0.5 * Scalareps * ddlambdadWdW[Fluxi - 1](row, col)
                     * (W[Fluxki] - W[Fluxkim]);
 
                 if(row == Fluxk)
@@ -769,7 +769,7 @@ void evalddScalarFluxdWdW(
             for(int col = 0; col < 3; col++)
             {
                 ddFluxidWdW(row, col) = 0.5 * ddFdWdW[Fluxki](row, col)
-                    - 0.5 * Scalareps * ddlambdadWdW[Fluxi](row, col) 
+                    - 0.5 * Scalareps * ddlambdadWdW[Fluxi](row, col)
                     * (W[Fluxki] - W[Fluxkim]);
                 if(row == Fluxk)
                 {
@@ -796,7 +796,7 @@ void evalddScalarFluxdWdW(
             ddFluxdWdW3[Fluxki] = ddFluxidWdW;
         }
     }
-    
+
 }
 
 

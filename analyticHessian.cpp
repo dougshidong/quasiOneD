@@ -42,7 +42,7 @@ MatrixXd directDirectHessian(
     // DSiDSj   dSidSj   dSidW dSj   (dWdSj   dWdW dSj) dSi   dW  (dSidSj   dSidW dSj)
     //
     //
-    //  
+    //
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
     ddRdWdS = evalddRdWdS(W, S);
     std::vector <SparseMatrix <double> > ddRdWdSFD(3 * nx);
@@ -79,7 +79,7 @@ MatrixXd directDirectHessian(
 //  std::cout<<std::endl;
 //  MatrixXd matout3 = (matout1 - matout2);
 //  std::cout<<matout3<<std::endl;
-    
+
     MatrixXd Hessian(nDesVar, nDesVar);
     return Hessian;
 }

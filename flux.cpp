@@ -18,8 +18,9 @@ void getFlux(std::vector <double> &Flux,
 }
 
 // StegerWarming
-void Flux_StegerWarming(std::vector <double> &Flux,
-                         std::vector <double> W)
+void Flux_StegerWarming(
+    std::vector <double> &Flux,
+    std::vector <double> W)
 {
     double eps = 0.1;
 
@@ -30,8 +31,8 @@ void Flux_StegerWarming(std::vector <double> &Flux,
            lambdaP[3][3],
            lambdaN[3][3];
     double lambdaa[3];
-    
-    
+
+
     double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 
     std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
@@ -53,7 +54,7 @@ void Flux_StegerWarming(std::vector <double> &Flux,
             lambdaP[row][col] = 0;
             lambdaN[row][col] = 0;
         }
-        
+
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
         e = W[i * 3 + 2];
@@ -86,7 +87,7 @@ void Flux_StegerWarming(std::vector <double> &Flux,
         lambdaa[0] = u;
         lambdaa[1] = u + c;
         lambdaa[2] = u - c;
-        
+
         for(int k = 0; k < 3; k++)
             if(lambdaa[k] > 0)
                 lambdaP[k][k] = (lambdaa[k] + sqrt(pow(lambdaa[k], 2) + pow(eps, 2))) /2;
@@ -143,14 +144,16 @@ void Flux_StegerWarming(std::vector <double> &Flux,
 }
 
 std::vector <double> F(3 * nx);
-void Flux_Scalar(std::vector <double> &Flux, std::vector <double> W)
+void Flux_Scalar(
+    std::vector <double> &Flux,
+    std::vector <double> W)
 {
     int ki, kim;
     double lambda;
     double avgu, avgc;
     double rho, e;
     std::vector <double> u(nx), c(nx);
-    
+
     // Get Convective Variables
     WtoF(W, F);
 

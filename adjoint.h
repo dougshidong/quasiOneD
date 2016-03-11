@@ -8,8 +8,8 @@ using namespace Eigen;
 
 
 VectorXd adjoint(
-    std::vector <double> x, 
-    std::vector <double> dx, 
+    std::vector <double> x,
+    std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
     std::vector <double> &psi,
@@ -22,9 +22,17 @@ VectorXd evalpsidRdS(
 
 VectorXd buildbMatrix(std::vector <double> dIcdW);
 
-VectorXd evaldIcdW(std::vector <double> W, std::vector <double> S);
+VectorXd evaldIcdW(
+    std::vector <double> W,
+    std::vector <double> S);
 
-MatrixXd solveSparseAXB(SparseMatrix <double> A, MatrixXd b, int eig_solv);
-VectorXd itSolve(SparseMatrix <double> A, VectorXd b);
+MatrixXd solveSparseAXB(
+    SparseMatrix <double> A,
+    MatrixXd b,
+    int eig_solv);
+
+VectorXd itSolve(
+    SparseMatrix <double> A,
+    VectorXd b);
 
 #endif

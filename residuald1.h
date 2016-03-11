@@ -24,7 +24,9 @@ void StegerJac(
     std::vector <double> &An_list,
     std::vector <double> &Flux);
 
-std::vector <double> evaldlambdadW(std::vector <double> W, int i);
+std::vector <double> evaldlambdadW(
+    std::vector <double> W,
+    int i);
 
 void ScalarJac(
     std::vector <double> W,

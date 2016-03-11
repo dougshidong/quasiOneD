@@ -22,7 +22,7 @@ extern const double R;
 extern const double Cv;
 
 extern const double Min;
-extern const double Ttin; 
+extern const double Ttin;
 extern const double ptin;
 
 extern const double pexit;
