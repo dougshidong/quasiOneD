@@ -185,7 +185,7 @@ SparseMatrix<double> evaldRdW_FD(
     std::vector <double> Wd(3 * nx, 0), Q(3 * nx, 0);
     std::vector <double> Flux(3 * (nx + 1), 0);
     std::vector <double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-    std::vector <double> dRdW_block(9, 0), dRdWp(9, 0), dwdwp(9, 0);
+    std::vector <double> dRdW_block(9, 0), dRdWp(9, 0);
     WtoQ(W, Q, S);
     getFlux(Flux, W);
     int ki, kip;
@@ -255,21 +255,12 @@ SparseMatrix<double> evaldRdW_FD(
 
             } // END STATEI LOOP
 
-            dWdWp(dwdwp, W, Wi);
-
-            std::fill(dRdWp.begin(), dRdWp.end(), 0.0);
-            for(int row = 0; row < 3; row++)
-            for(int col = 0; col < 3; col++)
-            for(int k = 0; k < 3; k++)
-                dRdWp[row * 3 + col] += dRdW_block[row * 3 + k] * dwdwp[k * 3 + col];
-
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 rowi = Ri * 3 + row;
                 coli = Wi * 3 + col;
                 dRdW.insert(rowi, coli) = dRdW_block[row * 3 + col];
-//                dRdW.coeffRef(rowi, coli) = dRdWp[row * 3 + col];
             }
         }  // END LOOP OVER W
     } // END LOOP OVER R
