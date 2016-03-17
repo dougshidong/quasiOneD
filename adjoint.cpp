@@ -15,6 +15,7 @@
 #include"flux.h"
 #include"residuald1.h"
 #include"parametrization.h"
+#include"objectiveDerivatives.h"
 
 using namespace Eigen;
 
@@ -97,7 +98,7 @@ VectorXd adjoint(
 
     // Evaluate dIcdS
     VectorXd dIcdS(nx + 1);
-    dIcdS.setZero();
+    dIcdS = evaldIcdS();
 
     // Get Fluxes
     std::vector <double> Flux(3 * (nx + 1), 0);
@@ -131,32 +132,6 @@ VectorXd adjoint(
     std::cout<<"Gradient from Adjoint:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;
     return grad;
-}
-
-VectorXd evaldIcdW(
-    std::vector <double> W,
-    std::vector <double> dx)
-{
-    VectorXd dIcdW(3 * nx);
-
-    std::vector <double> ptarget(nx, 0);
-    double dpdw[3], rho, u, p;
-    ioTargetPressure(-1, ptarget);
-    for(int i = 0; i < nx; i++)
-    {
-        rho = W[i * 3 + 0];
-        u = W[i * 3 + 1] / rho;
-        p = (gam - 1) * ( W[i * 3 + 2] - rho * u * u / 2.0 );
-
-        dpdw[0] = (gam - 1) / 2.0 * u * u;
-        dpdw[1] = - (gam - 1) * u;
-        dpdw[2] = (gam - 1);
-
-        dIcdW[i * 3 + 0] = (p / ptin - ptarget[i]) * dpdw[0] * dx[i] / ptin;
-        dIcdW[i * 3 + 1] = (p / ptin - ptarget[i]) * dpdw[1] * dx[i] / ptin;
-        dIcdW[i * 3 + 2] = (p / ptin - ptarget[i]) * dpdw[2] * dx[i] / ptin;
-    }
-    return dIcdW;
 }
 
 VectorXd buildbMatrix(std::vector <double> dIcdW)
