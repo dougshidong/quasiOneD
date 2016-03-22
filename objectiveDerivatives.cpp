@@ -3,6 +3,7 @@
 #include<Eigen/Sparse>
 #include"globals.h"
 #include"quasiOneD.h"
+#include<iostream>
 
 using namespace Eigen;
 
@@ -68,7 +69,7 @@ SparseMatrix <double> evaldIcdWdW(
 
         for(int ki = 0; ki < 3; ki++)
         {
-            for(int kj = ki; kj < 3; kj++)
+            for(int kj = 0; kj < 3; kj++)
             {
                 ddIcdWdW.insert(Wi*3+ki, Wi*3+kj) = ddIcdWdW_temp(ki, kj);
             }
@@ -84,9 +85,16 @@ VectorXd evaldIcdS()
     return dIcdS;
 }
 
-VectorXd evalddIcdSdS()
+MatrixXd evalddIcdSdS()
 {
     MatrixXd ddIcdSdS(nx + 1, nx + 1);
     ddIcdSdS.setZero();
     return ddIcdSdS;
+}
+
+MatrixXd evalddIcdWdS()
+{
+    MatrixXd ddIcdWdS(3 * nx, nx + 1);
+    ddIcdWdS.setZero();
+    return ddIcdWdS;
 }

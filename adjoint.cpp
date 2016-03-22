@@ -121,13 +121,13 @@ VectorXd adjoint(
     psidRdSFD = psiV.transpose() * dRdS;
     std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
     std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
-    // Evaluate dSdDesign
-    MatrixXd dSdDesign(nx + 1, designVar.size());
-    dSdDesign = evaldSdDesign(x, dx, designVar);
+    // Evaluate dSdDes
+    MatrixXd dSdDes(nx + 1, designVar.size());
+    dSdDes = evaldSdDes(x, dx, designVar);
 
-    // Evaluate dIdDesign
+    // Evaluate dIdDes
     VectorXd grad(designVar.size());
-    grad = psidRdSFD.transpose() * dSdDesign;
+    grad = psidRdSFD.transpose() * dSdDes;
 
     std::cout<<"Gradient from Adjoint:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;

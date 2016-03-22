@@ -25,7 +25,7 @@ int main()
     dx = evalDx(x);
     S = evalS(geom, x, dx, 1);
 
-    if(opt == 0) fitness = quasiOneD(x, dx, S, geom, W);
+    if(opt == 0) fitness = quasiOneD(x, dx, S, W);
     if(opt == 1)
     {
         if(desParam == 0) nDesVar = nx + 1;
@@ -64,7 +64,7 @@ int main()
 //              geom[2] = t2_geom + k * dt2;
 //              S = evalS(geom, x, dx);
 //              
-//              fitness = quasiOneD(x, dx, S, geom, W);
+//              fitness = quasiOneD(x, dx, S, W);
 //              fprintf(Results, "%.15f\n", fitness);
 //          }
 //      }

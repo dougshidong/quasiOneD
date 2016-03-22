@@ -5,7 +5,7 @@
 #include<vector>
 #include<Eigen/Core>
 
-VectorXd evaldWdDesign(
+MatrixXd evaldWdDes(
     std::vector <double> x,
     std::vector <double> dx,
     std::vector <double> S,

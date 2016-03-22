@@ -69,9 +69,9 @@ void design(
 
     std::vector <double> psi(3 * nx, 0);
 
-    quasiOneD(x, dx, S, designVar, W);
+    quasiOneD(x, dx, S, W);
 
-    currentI = quasiOneD(x, dx, S, designVar, W);
+    currentI = quasiOneD(x, dx, S, W);
 
     VectorXd gradientAV(nDesVar), gradientFD(nDesVar), gradientDD(nDesVar);
     gradientAV = adjoint(x, dx, S, W, psi, designVar);
@@ -99,8 +99,6 @@ void design(
     std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
 
     int Hmethod = 0;
-    H = getAnalyticHessian(x, dx, W, S, designVar, Hmethod);
-    exit(EXIT_FAILURE);
 
     // Initialize B
     for(int r = 0; r < nDesVar; r++)
@@ -111,7 +109,17 @@ void design(
             H(r, c) = 1;
         }
     }
-    H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
+    MatrixXd H1(nDesVar, nDesVar), H2(nDesVar, nDesVar);
+    H1 = getAnalyticHessian(x, dx, W, S, designVar, Hmethod);
+    std::cout<<"DD Hessian"<<std::endl;
+    std::cout<<H1<<std::endl;
+    H2 = finiteD2(x, dx, S, designVar, h, currentI, possemidef);
+    std::cout<<"FD Hessian"<<std::endl;
+    std::cout<<H2<<std::endl;
+    std::cout<<"Norm(DD - FD)/Norm(DD): ";
+    
+    std::cout<<(H1 - H2).norm() / H1.norm()<<std::endl;
+    exit(EXIT_FAILURE);
 
     normGradList.push_back(1);
     int iDesign = 0;
@@ -132,7 +140,7 @@ void design(
 
         }
         S = evalS(designVar, x, dx, desParam);
-        currentI = quasiOneD(x, dx, S, designVar, W);
+        currentI = quasiOneD(x, dx, S, W);
 
         gradientFD = finiteD(x, dx, S, designVar, h, currentI);
         gradientAV = adjoint(x, dx, S, W, psi, designVar);
@@ -209,7 +217,7 @@ void design(
 
     S = evalS(designVar, x, dx, desParam);
 
-    std::cout<<"Fitness: "<<quasiOneD(x, dx, S, designVar, W)<<std::endl;
+    std::cout<<"Fitness: "<<quasiOneD(x, dx, S, W)<<std::endl;
 
 
     return;
@@ -268,7 +276,7 @@ VectorXd finiteD(
 
     if(currentI < 0 && gradientType != 3)
     {
-        I0 = quasiOneD(x, dx, S, designVar, W);
+        I0 = quasiOneD(x, dx, S, W);
     }
     else
     {
@@ -284,26 +292,26 @@ VectorXd finiteD(
         {
             tempD[i] += dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, tempD, W);
+            I1 = quasiOneD(x, dx, tempS, W);
             grad[i] = (I1 - I0) / dh;
         }
         else if(gradientType == 2)
         {
             tempD[i] -= dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, tempD, W);
+            I2 = quasiOneD(x, dx, tempS, W);
             grad[i] = (I0 - I2) / dh;
         }
         else if(gradientType == 3)
         {
             tempD[i] += dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, tempD, W);
+            I1 = quasiOneD(x, dx, tempS, W);
             tempD = designVar;
 
             tempD[i] -= dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, tempD, W);
+            I2 = quasiOneD(x, dx, tempS, W);
             grad[i] = (I1 - I2) / (2 * dh);
         }
     }
@@ -347,7 +355,7 @@ double stepBacktrackUncons(
     }
 
     tempS = evalS(tempD, x, dx, desParam);
-    newVal = quasiOneD(x, dx, tempS, tempD, W);
+    newVal = quasiOneD(x, dx, tempS, W);
 
 
     while(newVal > (currentI + alpha/2.0 * c_pk_grad) && alpha > 1e-20)
@@ -358,7 +366,7 @@ double stepBacktrackUncons(
         for(int i = 0; i < nDesVar; i++)
             tempD[i] = designVar[i] + alpha * pk[i];
         tempS = evalS(tempD, x, dx, desParam);
-        newVal = quasiOneD(x, dx, tempS, tempD, W);
+        newVal = quasiOneD(x, dx, tempS, W);
         std::cout<<"newVal: "<<newVal<<std::endl;
         std::cout<<"currentI + alpha/2.0 * c_pk_grad: "<<
         currentI + alpha/ 2.0 * c_pk_grad<<std::endl;
@@ -388,7 +396,7 @@ MatrixXd finiteD2(
 
     if(currentI < 0 && gradientType != 3)
     {
-        I = quasiOneD(x, dx, S, designVar, W);
+        I = quasiOneD(x, dx, S, W);
     }
     else
     {
@@ -405,23 +413,23 @@ MatrixXd finiteD2(
             tempD[i] += dhi;
             tempD[j] += dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, tempD, W);
+            I1 = quasiOneD(x, dx, tempS, W);
 
             tempD = designVar;
             tempD[i] += dhi;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, tempD, W);
+            I2 = quasiOneD(x, dx, tempS, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempS = evalS(tempD, x, dx, desParam);
-            I3 = quasiOneD(x, dx, tempS, tempD, W);
+            I3 = quasiOneD(x, dx, tempS, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] -= dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I4 = quasiOneD(x, dx, tempS, tempD, W);
+            I4 = quasiOneD(x, dx, tempS, W);
             Hessian(i, j) = (-I1 + 16*I2 - 30*I + 16*I3 - I4) / (12 * dhi * dhj);
         }
         else
@@ -430,56 +438,56 @@ MatrixXd finiteD2(
             tempD[i] += dhi;
             tempD[j] += dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, tempD, W);
+            I1 = quasiOneD(x, dx, tempS, W);
 
             tempD = designVar;
             tempD[i] += dhi;
             tempD[j] -= dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, tempD, W);
+            I2 = quasiOneD(x, dx, tempS, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] += dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I3 = quasiOneD(x, dx, tempS, tempD, W);
+            I3 = quasiOneD(x, dx, tempS, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] -= dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I4 = quasiOneD(x, dx, tempS, tempD, W);
+            I4 = quasiOneD(x, dx, tempS, W);
 
             Hessian(i, j) = (I1 - I2 - I3 + I4) / (4 * dhi * dhj);
             Hessian(j, i) = Hessian(i, j);
         }
     }
-    VectorXcd eigval = Hessian.eigenvalues();
-    if(eigval.real().minCoeff() < 0)
-    {
-        MatrixXd eye = MatrixXd(Hessian.rows(), Hessian.cols()).setIdentity();
-        std::cout<<"Matrix is not Positive Semi-Definite"<<std::endl;
-        std::cout<<Hessian<<std::endl;
-        std::cout<<eigval<<std::endl;
-        Hessian = Hessian + fabs(eigval.real().minCoeff()) * eye
-                          + 0.001 * eye;
-        std::cout<<"New Eigenvalues:"<<Hessian.eigenvalues()<<std::endl;
-        possemidef = 0;
-    }
-    else
-    {
-        possemidef = 1;
-    }
+//  VectorXcd eigval = Hessian.eigenvalues();
+//  if(eigval.real().minCoeff() < 0)
+//  {
+//      MatrixXd eye = MatrixXd(Hessian.rows(), Hessian.cols()).setIdentity();
+//      std::cout<<"Matrix is not Positive Semi-Definite"<<std::endl;
+//      std::cout<<Hessian<<std::endl;
+//      std::cout<<eigval<<std::endl;
+//      Hessian = Hessian + fabs(eigval.real().minCoeff()) * eye
+//                        + 0.001 * eye;
+//      std::cout<<"New Eigenvalues:"<<Hessian.eigenvalues()<<std::endl;
+//      possemidef = 0;
+//  }
+//  else
+//  {
+//      possemidef = 1;
+//  }
 
-    std::cout<<"Inverse Hessian from FD: "<<std::endl;
-    std::cout<<Hessian.inverse()<<std::endl;
+//  std::cout<<"Inverse Hessian from FD: "<<std::endl;
+//  std::cout<<Hessian.inverse()<<std::endl;
 
 
-    JacobiSVD<MatrixXd> svd(Hessian);
-    double svdmax = svd.singularValues()(0);
-    double svdmin = svd.singularValues()(svd.singularValues().size()-1);
-    double cond = svdmax / svdmin;
-    std::cout<<"Condition Number Hessian"<<std::endl;
-    std::cout<<cond<<std::endl;
+//  JacobiSVD<MatrixXd> svd(Hessian);
+//  double svdmax = svd.singularValues()(0);
+//  double svdmin = svd.singularValues()(svd.singularValues().size()-1);
+//  double cond = svdmax / svdmin;
+//  std::cout<<"Condition Number Hessian"<<std::endl;
+//  std::cout<<cond<<std::endl;
     return Hessian;
 }

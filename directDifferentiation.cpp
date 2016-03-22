@@ -12,7 +12,7 @@
 
 
 using namespace Eigen;
-MatrixXd evaldWdDesign(
+MatrixXd evaldWdDes(
     std::vector <double> x,
     std::vector <double> dx,
     std::vector <double> S,
@@ -36,13 +36,13 @@ MatrixXd evaldWdDesign(
     MatrixXd dRdS(3 * nx, nx + 1);
     dRdS = evaldRdS(Flux, S, W);
 
-    // Evaluate dSdDesign
-    MatrixXd dSdDesign(nx + 1, designVar.size());
-    dSdDesign = evaldSdDesign(x, dx, designVar);
+    // Evaluate dSdDes
+    MatrixXd dSdDes(nx + 1, designVar.size());
+    dSdDes = evaldSdDes(x, dx, designVar);
 
-    //Evaluate dRdDesign
-    MatrixXd dRdDesign(3 * nx, nDesVar);
-    dRdDesign = dRdS * dSdDesign;
+    //Evaluate dRdDes
+    MatrixXd dRdDes(3 * nx, nDesVar);
+    dRdDes = dRdS * dSdDes;
 
     // Evaluate dRdW
     std::vector <double> dt(nx, 1);
@@ -50,15 +50,15 @@ MatrixXd evaldWdDesign(
     dRdW = evaldRdW(W, dx, dt, S, u[0]/c[0]);
 
     // Solve DWDS
-    MatrixXd dWdDesign(3 * nx, nDesVar);
+    MatrixXd dWdDes(3 * nx, nDesVar);
     // Solver type eig_solv
     // 0 = Sparse LU
     // 1 = Dense LU Full Piv
     // 2 = Sparse Iterative BiCGSTAB
     int eig_solv = 0;
-    dWdDesign = solveSparseAXB(-dRdW, dRdDesign, eig_solv);
+    dWdDes = solveSparseAXB(-dRdW, dRdDes, eig_solv);
 
-    return dWdDesign;
+    return dWdDes;
 }
 
 VectorXd directDifferentiation(
@@ -79,24 +79,25 @@ VectorXd directDifferentiation(
     // Evaluate dIcdW
     VectorXd dIcdW(3 * nx);
     dIcdW = evaldIcdW(W, dx);
-    // Evaluate dSdDesign
-    MatrixXd dSdDesign(nx + 1, designVar.size());
-    dSdDesign = evaldSdDesign(x, dx, designVar);
+    // Evaluate dSdDes
+    MatrixXd dSdDes(nx + 1, designVar.size());
+    dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate dIcdS
     VectorXd dIcdS(nx + 1);
     dIcdS.setZero();
-    VectorXd dIcdDesign(nDesVar);
-    dIcdDesign = dIcdS.transpose() * dSdDesign;
+    VectorXd dIcdDes(nDesVar);
+    dIcdDes = dIcdS.transpose() * dSdDes;
 
-    MatrixXd dWdDesign(3 * nx, nDesVar);
-    dWdDesign = evaldWdDesign(x, dx, S, W, designVar);
-    // Evaluate DIDS
-    VectorXd dIdDesign(nDesVar);
-    dIdDesign = (dIcdDesign.transpose() + dIcdW.transpose() * dWdDesign);
+    // Evaluate dWdDes
+    MatrixXd dWdDes(3 * nx, nDesVar);
+    dWdDes = evaldWdDes(x, dx, S, W, designVar);
+    // Evaluate dIcdDes
+    VectorXd dIdDes(nDesVar);
+    dIdDes = (dIcdDes.transpose() + dIcdW.transpose() * dWdDes);
 
 
     VectorXd grad(designVar.size());
-    grad = dIdDesign;
+    grad = dIdDes;
     std::cout<<"Gradient from Direct Differentiation:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;
     return grad;

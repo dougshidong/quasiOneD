@@ -38,15 +38,15 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
         ddRdWdW_FD[Ri] = ddRidWdW_FD;
 
     double Resi0, Resi1, Resi2, Resi3, Resi4;
+    std::vector <double> Resitemp(3 * nx, 0);
     std::vector <double> Flux(3 * (nx + 1), 0);
     std::vector <double> Wd(3 * nx, 0);
     std::vector <double> Q(3 * nx, 0);
-    double h = 1e-4;
+    double h = 1e-3;
     double pertWi, pertWj;
     int Rik, Rikp;
     for(int Ri = 1; Ri < nx - 1; Ri++)
     {
-//      std::cout<<"Ri is "<<Ri<<std::endl;
         for(int k = 0; k < 3; k++)
         {
             Rik = Ri * 3 + k;
@@ -159,6 +159,209 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
             }// Wi Loop
         }// k Loop
     }// Ri Loop
+    //Inlet
+    for(int Ri = 0; Ri < 1; Ri++)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            Rik = Ri * 3 + k;
+            Rikp = (Ri + 1) * 3 + k;
+
+            for(int Wi = Ri * 3; Wi <= (Ri + 1) * 3 + 2; Wi++)
+            {
+                pertWi = W[Wi] * h;
+                for(int Wj = Ri * 3; Wj <= (Ri + 1) * 3 + 2; Wj++)
+                {
+                    pertWj = W[Wj] * h;
+                    if(Wi != Wj)
+                    {
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        // R1
+                        Wd[Wi] = W[Wi] + pertWi;
+                        Wd[Wj] = W[Wj] + pertWj;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi1 = Resitemp[Rik];
+
+                        // R2
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] + pertWi;
+                        Wd[Wj] = W[Wj] - pertWj;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi2 = Resitemp[Rik];
+
+                        // R3
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] - pertWi;
+                        Wd[Wj] = W[Wj] + pertWj;
+                        
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi3 = Resitemp[Rik];
+
+                        // R4
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] - pertWi;
+                        Wd[Wj] = W[Wj] - pertWj;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi4 = Resitemp[Rik];
+
+                        ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
+                                                     / (4 * pertWi * pertWj);
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                    }
+                    else
+                    {
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi0 = Resitemp[Rik];
+
+                        // R1
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] + 2.0 * pertWi;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi1 = Resitemp[Rik];
+
+                        // R2
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] + pertWi;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi2 = Resitemp[Rik];
+
+                        // R3
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] - pertWi;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi3 = Resitemp[Rik];
+
+                        // R4
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                        Wd[Wi] = W[Wi] - 2.0 * pertWi;
+
+                        inletBC(Wd, Resitemp, 1, 1);
+                        Resi4 = Resitemp[Rik];
+
+                        ddRdWdW_FD[Rik].insert(Wi, Wj) =
+                            (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
+                            / (12 * pertWi * pertWj);
+                        // Reset Wd
+                        for(int m = 0; m < 3 * nx; m++)
+                            Wd[m] = W[m];
+                    }
+                }// Wj Loop
+            }// Wi Loop
+        }// k Loop
+    }// Ri Loop
+    //Outlet
+    int Ri = nx-1;
+    for(int Rk = 0; Rk < 3; Rk++)
+    {
+        Rik = Ri * 3 + Rk;
+        Rikp = (Ri + 1) * 3 + Rk;
+
+        for(int Wi = (Ri - 1) * 3; Wi <= Ri * 3 + 2; Wi++)
+        {
+            pertWi = W[Wi] * h;
+            for(int Wj = (Ri - 1) * 3; Wj <= Ri * 3 + 2; Wj++)
+            {
+                pertWj = W[Wj] * h;
+                if(Wi != Wj)
+                {
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    // R1
+                    Wd[Wi] = W[Wi] + pertWi;
+                    Wd[Wj] = W[Wj] + pertWj;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi1 = Resitemp[Rik];
+
+                    // R2
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] + pertWi;
+                    Wd[Wj] = W[Wj] - pertWj;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi2 = Resitemp[Rik];
+
+                    // R3
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] - pertWi;
+                    Wd[Wj] = W[Wj] + pertWj;
+                    
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi3 = Resitemp[Rik];
+
+                    // R4
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] - pertWi;
+                    Wd[Wj] = W[Wj] - pertWj;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi4 = Resitemp[Rik];
+
+                    ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
+                                                 / (4 * pertWi * pertWj);
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                }
+                else
+                {
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi0 = Resitemp[Rik];
+
+                    // R1
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] + 2.0 * pertWi;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi1 = Resitemp[Rik];
+
+                    // R2
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] + pertWi;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi2 = Resitemp[Rik];
+
+                    // R3
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] - pertWi;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi3 = Resitemp[Rik];
+
+                    // R4
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    Wd[Wi] = W[Wi] - 2.0 * pertWi;
+
+                    outletBC(Wd, Resitemp, 1, 1);
+                    Resi4 = Resitemp[Rik];
+
+                    ddRdWdW_FD[Rik].insert(Wi, Wj) = 
+                        (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
+                        / (12 * pertWi * pertWj);
+                    // Reset Wd
+                    for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                } // If not diagonal
+            }// Wj Loop
+        }// Wi Loop
+    }// Rk Loop
     return ddRdWdW_FD;
 }
 
@@ -211,7 +414,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
           // Outlet
           int rowi = (nx - 2) * 3 + row;
           int coli = (nx - 2) * 3 + col;
-          ddRdWdW[(nx - 1) * 3 + Rk].insert(rowi, coli) = ddRindWdW[Rk](row, col);
+          ddRdWdW[(nx - 1) * 3 + Rk].insert(rowi, coli) = ddRoutdWdW[Rk](row, col);
         }
       }
     }
