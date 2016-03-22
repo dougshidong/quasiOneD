@@ -99,7 +99,7 @@ void design(
     std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
 
     int Hmethod = 0;
-    H = getAnalyticHessian(W, S, Hmethod);
+    H = getAnalyticHessian(x, dx, W, S, designVar, Hmethod);
     exit(EXIT_FAILURE);
 
     // Initialize B
