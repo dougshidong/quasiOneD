@@ -11,6 +11,11 @@ void HessianBC_FD(
     std::vector <MatrixXd> &ddRindWdW,
     std::vector <MatrixXd> &ddRoutdWdW);
 
+void HessianBC(
+    std::vector <double> W,
+    std::vector <MatrixXd> &ddRindWdW,
+    std::vector <MatrixXd> &ddRoutdWdW);
+
 void BCJac(
     std::vector <double> W,
     std::vector <double> dt,

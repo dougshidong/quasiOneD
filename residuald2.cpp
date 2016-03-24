@@ -395,14 +395,17 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
         ddRoutdWdW[Rk] = dummyMat;
     }
     HessianBC_FD(W, ddRindWdW, ddRoutdWdW);
-//  std::cout<<"ddRdWdW_in"<<std::endl;
-//  std::cout<<ddRindWdW[0]<<std::endl;
-//  std::cout<<ddRindWdW[1]<<std::endl;
-//  std::cout<<ddRindWdW[2]<<std::endl;
-//  std::cout<<"ddRdWdW_out"<<std::endl;
-//  std::cout<<ddRoutdWdW[0]<<std::endl;
-//  std::cout<<ddRoutdWdW[1]<<std::endl;
-//  std::cout<<ddRoutdWdW[2]<<std::endl;
+    std::cout<<"FD ddRdWdW_in"<<std::endl;
+    std::cout<<ddRindWdW[0]<<std::endl;
+    std::cout<<"AN ddRdWdW_in"<<std::endl;
+    std::cout<<ddRindWdW[0]<<std::endl;
+
+    std::cout<<std::endl;
+    std::cout<<"FD ddRdWdW_out"<<std::endl;
+    std::cout<<ddRoutdWdW[2]<<std::endl;
+    HessianBC(W, ddRindWdW, ddRoutdWdW);
+    std::cout<<"AN ddRdWdW_out"<<std::endl;
+    std::cout<<ddRoutdWdW[2]<<std::endl;
     for(int Rk = 0; Rk < 3; Rk++)
     {
       for(int row = 0; row < 6; row++)
