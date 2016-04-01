@@ -386,9 +386,11 @@ void outletBC(
     drho = Ri[0] + dp / (pow(c[1], 2));
     du = (Ri[1] - dp) / (rho[1] * c[1]);
 
+//  Resi[(nx - 1) * 3 + 1] = (-du) / dtdx;
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;
+//  Resi[(nx - 1) * 3 + 2] = (-dp) / dtdx;
     T = p[1] / (rho[1] * R);
     e[1] = rho[1] * (Cv * T + 0.5 * pow(u[1], 2));
 

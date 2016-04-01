@@ -47,7 +47,7 @@ MatrixXd evaldWdDes(
     // Evaluate dRdW
     std::vector <double> dt(nx, 1);
     SparseMatrix <double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S, u[0]/c[0]);
+    dRdW = evaldRdW(W, dx, dt, S);
 
     // Solve DWDS
     MatrixXd dWdDes(3 * nx, nDesVar);

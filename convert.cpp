@@ -47,6 +47,20 @@ void WtoP2(
     }
 }
 
+// Given rho, u p, get W
+void PtoW(
+    std::vector <double> &W,
+    std::vector <double> Wp)
+{
+    for(int i = 0; i < nx; i++)
+    {
+        W[i * 3 + 0] = Wp[i * 3 + 0];
+        W[i * 3 + 1] = Wp[i * 3 + 0] * Wp[i * 3 + 1];
+        W[i * 3 + 2] = Wp[i * 3 + 2] / (gam - 1.0) + 
+                       (pow(Wp[i * 3 + 1], 2.0) * Wp[i * 3 + 0]) / 2.0;
+    }
+}
+
 // Get more primitive variables
 void WtoP(
     std::vector <double> W,

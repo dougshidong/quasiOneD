@@ -11,7 +11,7 @@ MatrixXd evaldSdDes(
     std::vector <double> dx,
     std::vector <double> designVar)
 {
-    MatrixXd dSdDes(nx + 1, designVar.size());
+    MatrixXd dSdDes(nx + 1, nDesVar);
     if(desParam == 0) dSdDes.setIdentity();
     if(desParam == 1)
     {
@@ -140,7 +140,7 @@ std::vector <MatrixXd> evalddSdDesdDes(
     MatrixXd ddSidDesdDes(nD, nD);
     if(desParam == 0)
     {
-        ddSidDesdDes.setIdentity();
+        ddSidDesdDes.setZero();
         for(int Si = 0; Si < nx + 1; Si++)
         {
             ddSdDesdDes[Si] = ddSidDesdDes;

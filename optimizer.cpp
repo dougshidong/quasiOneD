@@ -78,25 +78,13 @@ void design(
     gradientDD = directDifferentiation(x, dx, S, W, designVar);
     gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
-    std::cout<<"Gradient Relative Error:"<<std::endl;
-    std::cout<<"Norm(AV - DD)/Norm(AV): ";
-    std::cout<<(gradientAV - gradientDD).norm() / gradientAV.norm()<<std::endl;
-//  std::cout<<"(GRAD - GRADDD) / GRAD"<<std::endl;
-//  for(int i = 0; i < nDesVar; i++)
-//  {
-//      double gradientDiff = fabs((gradientAV[i] - gradientDD[i]) / gradientAV[i]);
-//      std::cout<<gradientDiff<<std::endl;
-//  }
-    std::cout<<"Norm(AV - FD)/Norm(AV): ";
-    std::cout<<(gradientAV - gradientFD).norm() / gradientAV.norm()<<std::endl;
-//  std::cout<<"(GRADFD - GRADFD) / GRAD"<<std::endl;
-//  for(int i = 0; i < nDesVar; i++)
-//  {
-//      double gradientDiff = fabs((gradientAV[i] - gradientFD[i]) / gradientAV[i]);
-//      std::cout<<gradientDiff<<std::endl;
-//  }
-    std::cout<<"Norm(DD - FD)/Norm(DD): ";
-    std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
+//  std::cout<<"Gradient Relative Error:"<<std::endl;
+//  std::cout<<"Norm(AV - DD)/Norm(AV): ";
+//  std::cout<<(gradientAV - gradientDD).norm() / gradientAV.norm()<<std::endl;
+//  std::cout<<"Norm(AV - FD)/Norm(AV): ";
+//  std::cout<<(gradientAV - gradientFD).norm() / gradientAV.norm()<<std::endl;
+//  std::cout<<"Norm(DD - FD)/Norm(DD): ";
+//  std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
 
     int Hmethod = 0;
 
@@ -109,16 +97,40 @@ void design(
             H(r, c) = 1;
         }
     }
-    MatrixXd H1(nDesVar, nDesVar), H2(nDesVar, nDesVar);
-    H1 = getAnalyticHessian(x, dx, W, S, designVar, Hmethod);
-    std::cout<<"DD Hessian"<<std::endl;
-    std::cout<<H1<<std::endl;
-    H2 = finiteD2(x, dx, S, designVar, h, currentI, possemidef);
-    std::cout<<"FD Hessian"<<std::endl;
-    std::cout<<H2<<std::endl;
-    std::cout<<"Norm(DD - FD)/Norm(DD): ";
+    MatrixXd HDD(nDesVar, nDesVar), 
+             HAD(nDesVar, nDesVar),
+             HAA(nDesVar, nDesVar),
+             HDA(nDesVar, nDesVar),
+             HFD(nDesVar, nDesVar);
     
-    std::cout<<(H1 - H2).norm() / H1.norm()<<std::endl;
+    HDD = getAnalyticHessian(x, dx, W, S, designVar, 0);
+    std::cout<<"DD Hessian"<<std::endl;
+    std::cout<<HDD<<std::endl;
+    
+    HAD = getAnalyticHessian(x, dx, W, S, designVar, 1);
+    std::cout<<"AD Hessian"<<std::endl;
+    std::cout<<HAD<<std::endl;
+    
+    HAA = getAnalyticHessian(x, dx, W, S, designVar, 2);
+    std::cout<<"AA Hessian"<<std::endl;
+    std::cout<<HAA<<std::endl;
+
+    HDA = getAnalyticHessian(x, dx, W, S, designVar, 3);
+    std::cout<<"DA Hessian"<<std::endl;
+    std::cout<<HDA<<std::endl;
+
+    HFD = finiteD2(x, dx, S, designVar, h, currentI, possemidef);
+    std::cout<<"FD Hessian"<<std::endl;
+    std::cout<<HFD<<std::endl;
+
+    std::cout<<"Norm(DD - AD)/Norm(DD): ";
+    std::cout<<(HDD - HAD).norm() / HDD.norm()<<std::endl;
+    std::cout<<"Norm(DD - AA)/Norm(DD): ";
+    std::cout<<(HDD - HAA).norm() / HDD.norm()<<std::endl;
+    std::cout<<"Norm(DD - DA)/Norm(DD): ";
+    std::cout<<(HDD - HDA).norm() / HDD.norm()<<std::endl;
+    std::cout<<"Norm(DD - FD)/Norm(DD): ";
+    std::cout<<(HDD - HFD).norm() / HDD.norm()<<std::endl;
     exit(EXIT_FAILURE);
 
     normGradList.push_back(1);
@@ -392,7 +404,7 @@ MatrixXd finiteD2(
 
     std::vector <double> tempD(nDesVar);
 
-    h = 1e-3;
+    h = 1e-4;
 
     if(currentI < 0 && gradientType != 3)
     {
@@ -405,6 +417,7 @@ MatrixXd finiteD2(
     for(int i = 0; i < nDesVar; i++)
     for(int j = i; j < nDesVar; j++)
     {
+        std::cout<<"i = "<<i<<", j = "<<j<<"  ";
         dhi = designVar[i] * h;
         dhj = designVar[j] * h;
         if(i == j)

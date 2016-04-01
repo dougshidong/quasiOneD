@@ -29,6 +29,10 @@ void WtoP(
     std::vector <double> &c,
     std::vector <double> &T);
 
+void PtoW(
+    std::vector <double> &W,
+    std::vector <double> Wp);
+
 void dWpdW(
     std::vector <double> &M,
     std::vector <double> W,

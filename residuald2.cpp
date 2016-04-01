@@ -386,26 +386,43 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
     // Inlet and Outlet Residual Hessian
     // ddRindWdW contains 3 matrices: dr1/dWdW, dr2/dWdW, dr3/dWdW
     // 6 state variables affect the inlet/outlet residuals
-    std::vector <MatrixXd> ddRindWdW(3);
-    std::vector <MatrixXd> ddRoutdWdW(3);
+    std::vector <MatrixXd> ddRindWdW(3), ddRindWdW_FD(3);
+    std::vector <MatrixXd> ddRoutdWdW(3), ddRoutdWdW_FD(3);
     MatrixXd dummyMat(6, 6);
     for(int Rk = 0; Rk < 3; Rk++)
     {
         ddRindWdW[Rk] = dummyMat;
         ddRoutdWdW[Rk] = dummyMat;
+        ddRindWdW_FD[Rk] = dummyMat;
+        ddRoutdWdW_FD[Rk] = dummyMat;
     }
-    HessianBC_FD(W, ddRindWdW, ddRoutdWdW);
-    std::cout<<"FD ddRdWdW_in"<<std::endl;
-    std::cout<<ddRindWdW[0]<<std::endl;
-    std::cout<<"AN ddRdWdW_in"<<std::endl;
-    std::cout<<ddRindWdW[0]<<std::endl;
-
+    HessianBC_FD(W, ddRindWdW_FD, ddRoutdWdW_FD);
+//  HessianBCprim_FD(W, ddRindWdW_FD, ddRoutdWdW_FD);
+//  HessianBC(W, ddRindWdW, ddRoutdWdW);
+    
     std::cout<<std::endl;
-    std::cout<<"FD ddRdWdW_out"<<std::endl;
+    std::cout<<"FD ddRdWdW_out 0"<<std::endl;
+    std::cout<<ddRoutdWdW_FD[0]<<std::endl;
+    std::cout<<"AN ddRdWdW_out 0"<<std::endl;
+    std::cout<<ddRoutdWdW[0]<<std::endl;
+    std::cout<<"difference in norm"<<std::endl;
+    std::cout<<(ddRoutdWdW_FD[0].norm()-ddRoutdWdW[0].norm())/ddRoutdWdW[0].norm()<<std::endl;
+    
+    std::cout<<std::endl;
+    std::cout<<"FD ddRdWdW_out 1"<<std::endl;
+    std::cout<<ddRoutdWdW_FD[1]<<std::endl;
+    std::cout<<"AN ddRdWdW_out 1"<<std::endl;
+    std::cout<<ddRoutdWdW[1]<<std::endl;
+    std::cout<<"difference in norm"<<std::endl;
+    std::cout<<(ddRoutdWdW_FD[1].norm()-ddRoutdWdW[1].norm())/ddRoutdWdW[1].norm()<<std::endl;
+    
+    std::cout<<std::endl;
+    std::cout<<"FD ddRdWdW_out 2"<<std::endl;
+    std::cout<<ddRoutdWdW_FD[2]<<std::endl;
+    std::cout<<"AN ddRdWdW_out 2"<<std::endl;
     std::cout<<ddRoutdWdW[2]<<std::endl;
-    HessianBC(W, ddRindWdW, ddRoutdWdW);
-    std::cout<<"AN ddRdWdW_out"<<std::endl;
-    std::cout<<ddRoutdWdW[2]<<std::endl;
+    std::cout<<"difference in norm"<<std::endl;
+    std::cout<<(ddRoutdWdW_FD[2].norm()-ddRoutdWdW[2].norm())/ddRoutdWdW[2].norm()<<std::endl;
     for(int Rk = 0; Rk < 3; Rk++)
     {
       for(int row = 0; row < 6; row++)

@@ -38,8 +38,8 @@ VectorXd adjoint(
     // Build A matrix
     SparseMatrix <double> dRdWt, dRdW;
     SparseMatrix <double> matAFD, matAFD2;
-    dRdW = evaldRdW(W, dx, dt, S, u[0]/c[0]);
-    matAFD2 = evaldRdW_FD(W, S, u[0]/c[0]);
+    dRdW = evaldRdW(W, dx, dt, S);
+//  matAFD2 = evaldRdW_FD(W, S, u[0]/c[0]);
     dRdWt = dRdW.transpose();
 //  dRdWt = matAFD2.transpose();
     std::cout.precision(17);

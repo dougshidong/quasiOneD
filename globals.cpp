@@ -4,7 +4,7 @@
 const double PI = atan(1.0) * 4.0;
 
 // Number of Cells in Grid
-const int nx = 50;
+const int nx = 25;
 
 // Optimization Flag
 const int opt = 1;
@@ -16,8 +16,8 @@ const int desParam = 1;
 int nDesVar;
 // Input Geometry
 const double a_geom = 0, b_geom = 1;
-const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 6.00;
-//const double h_geom = 0.05, t1_geom = 1.00, t2_geom = 3.00;
+//const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 6.00;
+const double h_geom = 0.05, t1_geom = 1.00, t2_geom = 3.00;
 
 // Fitness Function
 // 0  -  Total Pressure Loss
@@ -49,11 +49,11 @@ const double R = 1716.0 / 1716.0;
 const double Cv = R / (gam - 1.0);
 
 // Inlet
-const double Min = 0.75;
+const double Min = 1.75;
 const double Ttin = 531.2 / 531.2;
 const double ptin = 2117.0 / 2117.0;
 // Outlet
-const double pexit = 0.12 * ptin;
+const double pexit = 0.92 * ptin;
 // Constant
 const double a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0)/(gam + 1.0)); // used in isentropic nozzle
 

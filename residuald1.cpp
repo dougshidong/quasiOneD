@@ -39,10 +39,15 @@ SparseMatrix<double> evaldRdW(
     std::vector <double> W,
     std::vector <double> dx,
     std::vector <double> dt,
-    std::vector <double> S,
-    double Min)
+    std::vector <double> S)
 {
     SparseMatrix<double> dRdW(3 * nx, 3 * nx);
+    double rhoin = W[0];
+    double uin = W[1] / rhoin;
+    double ein = W[2];
+    double pin = (gam - 1) * ( ein - rhoin * uin * uin / 2.0 );
+    double cin = sqrt( gam * pin / rhoin );
+    double Min = uin/cin;
     int Ri, Wi;
     int k, rowi, coli;
     double val;
@@ -176,10 +181,15 @@ SparseMatrix<double> evaldRdW(
 
 SparseMatrix<double> evaldRdW_FD(
     std::vector <double> W,
-    std::vector <double> S,
-    double Min)
+    std::vector <double> S)
 {
     SparseMatrix<double> dRdW(3 * nx, 3 * nx);
+    double rhoin = W[0];
+    double uin = W[1] / rhoin;
+    double ein = W[2];
+    double pin = (gam - 1) * ( ein - rhoin * uin * uin / 2.0 );
+    double cin = sqrt( gam * pin / rhoin );
+    double Min = uin/cin;
     int Ri, Wi;
     int rowi, coli;
     std::vector <double> Wd(3 * nx, 0), Q(3 * nx, 0);
@@ -568,7 +578,7 @@ std::vector <double> evaldpdW(
     std::vector <double> S)
 {
     std::vector <double> dpdW(3 * nx);
-    double rho, u, dS;
+    double rho, u;
     for(int i = 0; i < nx; i++)
     {
         rho = W[i * 3 + 0];
