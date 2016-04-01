@@ -59,8 +59,8 @@ void HessianBC(
     dc2dp2 = gam / (2.0 * c2 * r2);
 
     // Second Derivative
-    double ddc1dr1dr1, ddc1dp1dp1, ddc1dr1dp1, 
-           ddc2dr2dr2, ddc2dp2dp2, ddc2dr2dp2; 
+    double ddc1dr1dr1, ddc1dp1dp1, ddc1dr1dp1,
+           ddc2dr2dr2, ddc2dp2dp2, ddc2dr2dp2;
     ddc1dr1dr1 = 3.0 * c1 / (4.0 * r1 * r1);
     ddc1dp1dp1 = -c1 / (4.0 * p1 * p1);
     ddc1dr1dp1 = -gam / (4.0 * r1 * r1 * c1);
@@ -143,7 +143,7 @@ void HessianBC(
     dR1dp2 = -eig1 / (c1 * c1);
 
     dR2dr1 = -((p1 - p2) + r1 * c1 * (u1 - u2)) * deig2dr1
-             - (u1 - u2) * eig2 * (c1 + r1 * dc1dr1); 
+             - (u1 - u2) * eig2 * (c1 + r1 * dc1dr1);
     dR2du1 = -((p1 - p2) + r1 * c1 * (u1 - u2)) * deig2du1
              - r1 * c1 * eig2;
     dR2dp1 = -((p1 - p2) + r1 * c1 * (u1 - u2)) * deig2dp1
@@ -182,14 +182,14 @@ void HessianBC(
            ddR3dr1dp2, ddR3du1dp2, ddR3dp1dp2, ddR3dr2dp2, ddR3du2dp2, ddR3dp2dp2;
 
     // R1
-    ddR1dr1dr1 = (-2.0 * eig1 * (p1 - p2) 
-                 * (-3 * pow(dc1dr1, 2) 
+    ddR1dr1dr1 = (-2.0 * eig1 * (p1 - p2)
+                 * (-3 * pow(dc1dr1, 2)
                  + c1 * ddc1dr1dr1)) / pow(c1, 4);
-    ddR1du1dr1 = -((1.0 + (2.0 * (p1 - p2) * dc1dr1) 
+    ddR1du1dr1 = -((1.0 + (2.0 * (p1 - p2) * dc1dr1)
                  / pow(c1, 3)) * deig1du1);
-    ddR1dp1dr1 = (-2.0 * eig1 * 
-                 ((c1 + 3 * (-p1 + p2) * dc1dp1) 
-                 * dc1dr1 + c1 * (p1 - p2) 
+    ddR1dp1dr1 = (-2.0 * eig1 *
+                 ((c1 + 3 * (-p1 + p2) * dc1dp1)
+                 * dc1dr1 + c1 * (p1 - p2)
                  * ddc1dr1dp1)) / pow(c1, 4);
     ddR1dr2dr1 = 0.0;
     ddR1du2dr1 = -((1.0 + (2.0 * (p1 - p2) * dc1dr1)
@@ -205,13 +205,13 @@ void HessianBC(
 
     ddR1dr1dp1 = ddR1dp1dr1;
     ddR1du1dp1 = ddR1dp1du1;
-    ddR1dp1dp1 = (2.0 * eig1 * 
-                 (-2.0 * c1 * dc1dp1 
-                 + 3 * (p1 - p2) * pow(dc1dp1, 2) 
+    ddR1dp1dp1 = (2.0 * eig1 *
+                 (-2.0 * c1 * dc1dp1
+                 + 3 * (p1 - p2) * pow(dc1dp1, 2)
                  + c1 * (-p1 + p2) * ddc1dp1dp1))
                  / pow(c1, 4);
     ddR1dr2dp1 = 0.0;
-    ddR1du2dp1 = ((c1 + 2.0 * (-p1 + p2) * dc1dp1) 
+    ddR1du2dp1 = ((c1 + 2.0 * (-p1 + p2) * dc1dp1)
                  * deig1du2) / pow(c1, 3);
     ddR1dp2dp1 = (2.0 * eig1 * dc1dp1) / pow(c1, 3);
 
@@ -222,10 +222,10 @@ void HessianBC(
     ddR1du2dr2 = deig1du2;
     ddR1dp2dr2 = 0.0;
 
-    ddR1dr1du2 = -((pow(c1, 3) + 2.0 * (p1 - p2) * dc1dr1) * deig1du2) 
+    ddR1dr1du2 = -((pow(c1, 3) + 2.0 * (p1 - p2) * dc1dr1) * deig1du2)
                  / pow(c1, 3);
     ddR1du1du2 = (p1 - p2) / pow(c1, 2);
-    ddR1dp1du2 = ((c1 + 2.0 * (-p1 + p2) * dc1dp1) 
+    ddR1dp1du2 = ((c1 + 2.0 * (-p1 + p2) * dc1dp1)
                  * deig1du2) / pow(c1, 3);
     ddR1dr2du2 = ddR1du2dr2;
     ddR1du2du2 = 0.0;
@@ -239,41 +239,41 @@ void HessianBC(
     ddR1dp2dp2 = 0.0;
 
     // R2
-    ddR2dr1dr1 = (-p1 + p2) * ddeig2dr1dr1 
-                 - (u1 - u2) * (eig2 * r1 * ddc1dr1dr1 
-                 + 2.0 * c1 * deig2dr1 
-                 + 2.0 * dc1dr1 * (eig2 + r1 * deig2dr1) 
+    ddR2dr1dr1 = (-p1 + p2) * ddeig2dr1dr1
+                 - (u1 - u2) * (eig2 * r1 * ddc1dr1dr1
+                 + 2.0 * c1 * deig2dr1
+                 + 2.0 * dc1dr1 * (eig2 + r1 * deig2dr1)
                  + c1 * r1 * ddeig2dr1dr1);
-    ddR2du1dr1 = -(r1 * dc1dr1 * (eig2 + (u1 - u2) * deig2du1)) 
+    ddR2du1dr1 = -(r1 * dc1dr1 * (eig2 + (u1 - u2) * deig2du1))
                  - c1 * (eig2 + r1 * deig2dr1 + (u1 - u2) * deig2du1);
-    ddR2dp1dr1 = -deig2dr1 + (-p1 + p2) * ddeig2dr1dp1 
-                 - (u1 - u2) * ((c1 + r1 * dc1dr1) * deig2dp1 
-                 + dc1dp1 * (eig2 + r1 * deig2dr1) 
+    ddR2dp1dr1 = -deig2dr1 + (-p1 + p2) * ddeig2dr1dp1
+                 - (u1 - u2) * ((c1 + r1 * dc1dr1) * deig2dp1
+                 + dc1dp1 * (eig2 + r1 * deig2dr1)
                  + r1 * (eig2 * ddc1dr1dp1 + c1 * ddeig2dr1dp1));
     ddR2dr2dr1 = -(u1 - u2) * (c1 + r1 * dc1dr1) * deig2dr2;
-    ddR2du2dr1 = c1 * eig2 + eig2 * r1 * dc1dr1 
-                 + c1 * r1 * deig2dr1 
+    ddR2du2dr1 = c1 * eig2 + eig2 * r1 * dc1dr1
+                 + c1 * r1 * deig2dr1
                  - (u1 - u2) * (c1 + r1 * dc1dr1) * deig2du2;
     ddR2dp2dr1 = -((u1 - u2) * (c1 + r1 * dc1dr1) * deig2dp2) + deig2dr1;
 
     ddR2dr1du1 = ddR2du1dr1;
     ddR2du1du1 = -2.0 * c1 * r1 * deig2du1;
-    ddR2dp1du1 = -deig2du1 - r1 * (c1 * deig2dp1 
+    ddR2dp1du1 = -deig2du1 - r1 * (c1 * deig2dp1
                  + dc1dp1 * (eig2 + (u1 - u2) * deig2du1));
     ddR2dr2du1 = -(c1 * r1 * deig2dr2);
-    ddR2du2du1 = c1 * r1 * deig2du1 
+    ddR2du2du1 = c1 * r1 * deig2du1
                  - c1 * r1 * deig2du2;
     ddR2dp2du1 = -(c1 * r1 * deig2dp2) + deig2du1;
 
     ddR2dr1dp1 = ddR2dp1dr1;
     ddR2du1dp1 = ddR2dp1du1;
-    ddR2dp1dp1 = -2.0 * deig2dp1 + (-p1 + p2) * ddeig2dp1dp1 
-                 -r1 * (u1 - u2) * (eig2 * ddc1dp1dp1 
+    ddR2dp1dp1 = -2.0 * deig2dp1 + (-p1 + p2) * ddeig2dp1dp1
+                 -r1 * (u1 - u2) * (eig2 * ddc1dp1dp1
                  + 2.0 * dc1dp1 * deig2dp1 + c1 * ddeig2dp1dp1);
     ddR2dr2dp1 = (-1 + r1 * (-u1 + u2) * dc1dp1) * deig2dr2;
-    ddR2du2dp1 = c1 * r1 * deig2dp1 - deig2du2 
+    ddR2du2dp1 = c1 * r1 * deig2dp1 - deig2du2
                  + r1 * dc1dp1 * (eig2 + (-u1 + u2) * deig2du2);
-    ddR2dp2dp1 = deig2dp1 
+    ddR2dp2dp1 = deig2dp1
                  + (-1 + r1 * (-u1 + u2) * dc1dp1) * deig2dp2;
 
     ddR2dr1dr2 = - (u1 - u2) * (c1 + r1 * dc1dr1) * deig2dr2;
@@ -281,7 +281,7 @@ void HessianBC(
     ddR2dp1dr2 = ddR2dr2dp1;
     ddR2dr2dr2 = (-p1 + p2 + c1 * r1 * (-u1 + u2)) * ddeig2dr2dr2;
     ddR2du2dr2 = c1 * r1 * deig2dr2;
-    ddR2dp2dr2 = deig2dr2 
+    ddR2dp2dr2 = deig2dr2
                  + (-p1 + p2 + c1 * r1 * (-u1 + u2)) * ddeig2dr2dp2;
 
     ddR2dr1du2 = ddR2du2dr1;
@@ -296,31 +296,31 @@ void HessianBC(
     ddR2dp1dp2 = ddR2dp2dp1;
     ddR2dr2dp2 = ddR2dp2dr2;
     ddR2du2dp2 = ddR2dp2du2;
-    ddR2dp2dp2 = 2.0 * deig2dp2 
+    ddR2dp2dp2 = 2.0 * deig2dp2
                  + (-p1 + p2 + c1 * r1 * (-u1 + u2)) * ddeig2dp2dp2;
 
     // R3
-    ddR3dr1dr1 = (-p1 + p2) * ddeig3dr1dr1 
-                 + (u1 - u2) * (eig3 * r1 * ddc1dr1dr1 
-                 + 2.0 * c1 * deig3dr1 
-                 + 2.0 * dc1dr1 * (eig3 + r1 * deig3dr1) 
+    ddR3dr1dr1 = (-p1 + p2) * ddeig3dr1dr1
+                 + (u1 - u2) * (eig3 * r1 * ddc1dr1dr1
+                 + 2.0 * c1 * deig3dr1
+                 + 2.0 * dc1dr1 * (eig3 + r1 * deig3dr1)
                  + c1 * r1 * ddeig3dr1dr1);
-    ddR3du1dr1 = c1 * eig3 + eig3 * r1 * dc1dr1 
-                 + c1 * r1 * deig3dr1 
-                 + (u1 - u2) * (c1 + r1 * dc1dr1) * deig3du1; 
-    ddR3dp1dr1 = -deig3dr1 + (-p1 + p2) * ddeig3dr1dp1 
-                 + (u1 - u2) * ((c1 + r1 * dc1dr1) * deig3dp1 
-                 + dc1dp1 * (eig3 + r1 * deig3dr1) 
+    ddR3du1dr1 = c1 * eig3 + eig3 * r1 * dc1dr1
+                 + c1 * r1 * deig3dr1
+                 + (u1 - u2) * (c1 + r1 * dc1dr1) * deig3du1;
+    ddR3dp1dr1 = -deig3dr1 + (-p1 + p2) * ddeig3dr1dp1
+                 + (u1 - u2) * ((c1 + r1 * dc1dr1) * deig3dp1
+                 + dc1dp1 * (eig3 + r1 * deig3dr1)
                  + r1 * (eig3 * ddc1dr1dp1 + c1 * ddeig3dr1dp1));
     ddR3dr2dr1 = (u1 - u2) * (c1 + r1 * dc1dr1) * deig3dr2;
     ddR3du2dr1 = -(c1 * eig3) - eig3 * r1 * dc1dr1
-                 - c1 * r1 * deig3dr1 
+                 - c1 * r1 * deig3dr1
                  + (u1 - u2) * (c1 + r1 * dc1dr1) * deig3du2;
     ddR3dp2dr1 = (u1 - u2) * (c1 + r1 * dc1dr1) * deig3dp2 + deig3dr1;
 
     ddR3dr1du1 = ddR3du1dr1;
     ddR3du1du1 = 2.0 * c1 * r1 * deig3du1;
-    ddR3dp1du1 = c1 * r1 * deig3dp1 - deig3du1 
+    ddR3dp1du1 = c1 * r1 * deig3dp1 - deig3du1
                  + r1 * dc1dp1 * (eig3 + (u1 - u2) * deig3du1);
     ddR3dr2du1 = c1 * r1 * deig3dr2;
     ddR3du2du1 = -(c1 * r1 * deig3du1) + c1 * r1 * deig3du2;
@@ -328,11 +328,11 @@ void HessianBC(
 
     ddR3dr1dp1 = ddR3dp1dr1;
     ddR3du1dp1 = ddR3dp1du1;
-    ddR3dp1dp1 = -2.0 * deig3dp1 + (-p1 + p2) * ddeig3dp1dp1 
-                 + r1 * (u1 - u2) * (eig3 * ddc1dp1dp1 
+    ddR3dp1dp1 = -2.0 * deig3dp1 + (-p1 + p2) * ddeig3dp1dp1
+                 + r1 * (u1 - u2) * (eig3 * ddc1dp1dp1
                  + 2.0 * dc1dp1 * deig3dp1 + c1 * ddeig3dp1dp1);
     ddR3dr2dp1 = (-1 + r1 * (u1 - u2) * dc1dp1) * deig3dr2;
-    ddR3du2dp1 = -(c1 * r1 * deig3dp1) 
+    ddR3du2dp1 = -(c1 * r1 * deig3dp1)
                  - deig3du2 - r1 * dc1dp1 * (eig3 + (-u1 + u2) * deig3du2);
     ddR3dp2dp1 = deig3dp1 + (-1 + r1 * (u1 - u2) * dc1dp1) * deig3dp2;
 
@@ -341,7 +341,7 @@ void HessianBC(
     ddR3dp1dr2 = ddR3dr2dp1;
     ddR3dr2dr2 = (-p1 + p2 + c1 * r1 * (u1 - u2)) * ddeig3dr2dr2;
     ddR3du2dr2 = -(c1 * r1 * deig3dr2);
-    ddR3dp2dr2 = deig3dr2 
+    ddR3dp2dr2 = deig3dr2
                  + (-p1 + p2 + c1 * r1 * (u1 - u2)) * ddeig3dr2dp2;
 
     ddR3dr1du2 = ddR3du2dr1;
@@ -356,7 +356,7 @@ void HessianBC(
     ddR3dp1dp2 = ddR3dp2dp1;
     ddR3dr2dp2 = ddR3dp2dr2;
     ddR3du2dp2 = ddR3dp2du2;
-    ddR3dp2dp2 = 2.0 * deig3dp2 
+    ddR3dp2dp2 = 2.0 * deig3dp2
                  + (-p1 + p2 + c1 * r1 * (u1 - u2)) * ddeig3dp2dp2;
 
     // ***********************************************************************
@@ -501,34 +501,34 @@ void HessianBC(
     ddr1dtdr1du2, ddr1dtdu1du2, ddr1dtdp1du2, ddr1dtdr2du2, ddr1dtdu2du2, ddr1dtdp2du2,
     ddr1dtdr1dp2, ddr1dtdu1dp2, ddr1dtdp1dp2, ddr1dtdr2dp2, ddr1dtdu2dp2, ddr1dtdp2dp2;
 
-    ddr1dtdr1dr1 = (6.0 * dp1dt * pow(dc1dr1, 2) 
-                   - 2.0 * c1 * dp1dt * ddc1dr1dr1 
-                   - 4.0 * c1 * dc1dr1 * dp1dtdr1 
-                   + pow(c1, 2) * ddp1dtdr1dr1) / pow(c1, 4) 
+    ddr1dtdr1dr1 = (6.0 * dp1dt * pow(dc1dr1, 2)
+                   - 2.0 * c1 * dp1dt * ddc1dr1dr1
+                   - 4.0 * c1 * dc1dr1 * dp1dtdr1
+                   + pow(c1, 2) * ddp1dtdr1dr1) / pow(c1, 4)
                    + ddR1dr1dr1;
-    ddr1dtdu1dr1 = (-2.0 * dc1dr1 * dp1dtdu1 
-                   + c1 * ddp1dtdr1du1) / pow(c1, 3) 
+    ddr1dtdu1dr1 = (-2.0 * dc1dr1 * dp1dtdu1
+                   + c1 * ddp1dtdr1du1) / pow(c1, 3)
                    + ddR1dr1du1;
-    ddr1dtdp1dr1 = (dc1dp1 * (6 * dp1dt * dc1dr1 
-                   - 2.0 * c1 * dp1dtdr1) 
-                   + c1 * (-2.0 * dc1dr1 * dp1dtdp1 
-                   - 2.0 * dp1dt * ddc1dr1dp1 
-                   + c1 * ddp1dtdp1dr1)) 
+    ddr1dtdp1dr1 = (dc1dp1 * (6 * dp1dt * dc1dr1
+                   - 2.0 * c1 * dp1dtdr1)
+                   + c1 * (-2.0 * dc1dr1 * dp1dtdp1
+                   - 2.0 * dp1dt * ddc1dr1dp1
+                   + c1 * ddp1dtdp1dr1))
                    / pow(c1, 4) + ddR1dp1dr1;
-    ddr1dtdr2dr1 = (-2.0 * dc1dr1 * dp1dtdr2 
-                   + c1 * ddp1dtdr1dr2) / pow(c1, 3) 
+    ddr1dtdr2dr1 = (-2.0 * dc1dr1 * dp1dtdr2
+                   + c1 * ddp1dtdr1dr2) / pow(c1, 3)
                    + ddR1dr1dr2;
-    ddr1dtdu2dr1 = (-2.0 * dc1dr1 * dp1dtdu2 
-                   + c1 * ddp1dtdr1du2) / pow(c1, 3) 
+    ddr1dtdu2dr1 = (-2.0 * dc1dr1 * dp1dtdu2
+                   + c1 * ddp1dtdr1du2) / pow(c1, 3)
                    + ddR1dr1du2;
-    ddr1dtdp2dr1 = (-2.0 * dc1dr1 * dp1dtdp2 
-                   + c1 * ddp1dtdp2dr1) / pow(c1, 3) 
+    ddr1dtdp2dr1 = (-2.0 * dc1dr1 * dp1dtdp2
+                   + c1 * ddp1dtdp2dr1) / pow(c1, 3)
                    + ddR1dp2dr1;
 
     ddr1dtdr1du1 = ddr1dtdu1dr1;
     ddr1dtdu1du1 = ddp1dtdu1du1 / pow(c1, 2) + ddR1du1du1;
-    ddr1dtdp1du1 = (-2.0 * dc1dp1 * dp1dtdu1 
-                   + c1 * ddp1dtdp1du1) / pow(c1, 3) 
+    ddr1dtdp1du1 = (-2.0 * dc1dp1 * dp1dtdu1
+                   + c1 * ddp1dtdp1du1) / pow(c1, 3)
                    + ddR1dp1du1;
     ddr1dtdr2du1 = ddp1dtdr2du1 / pow(c1, 2) + ddR1dr2du1;
     ddr1dtdu2du1 = ddp1dtdu1du2 / pow(c1, 2) + ddR1du1du2;
@@ -536,24 +536,24 @@ void HessianBC(
 
     ddr1dtdr1dp1 = ddr1dtdp1dr1;
     ddr1dtdu1dp1 = ddr1dtdp1du1;
-    ddr1dtdp1dp1 = (6 * dp1dt * pow(dc1dp1, 2) 
-                   - 2.0 * c1 * dp1dt * ddc1dp1dp1 
-                   - 4 * c1 * dc1dp1 * dp1dtdp1 
-                   + pow(c1, 2) * ddp1dtdp1dp1) 
+    ddr1dtdp1dp1 = (6 * dp1dt * pow(dc1dp1, 2)
+                   - 2.0 * c1 * dp1dt * ddc1dp1dp1
+                   - 4 * c1 * dc1dp1 * dp1dtdp1
+                   + pow(c1, 2) * ddp1dtdp1dp1)
                    / pow(c1, 4) + ddR1dp1dp1;
-    ddr1dtdr2dp1 = (-2.0 * dc1dp1 * dp1dtdr2 
-                   + c1 * ddp1dtdp1dr2) / pow(c1, 3) 
+    ddr1dtdr2dp1 = (-2.0 * dc1dp1 * dp1dtdr2
+                   + c1 * ddp1dtdp1dr2) / pow(c1, 3)
                    + ddR1dp1dr2;
-    ddr1dtdu2dp1 = (-2.0 * dc1dp1 * dp1dtdu2 
-                   + c1 * ddp1dtdp1du2) / pow(c1, 3) 
+    ddr1dtdu2dp1 = (-2.0 * dc1dp1 * dp1dtdu2
+                   + c1 * ddp1dtdp1du2) / pow(c1, 3)
                    + ddR1dp1du2;
-    ddr1dtdp2dp1 = (-2.0 * dc1dp1 * dp1dtdp2 
-                   + c1 * ddp1dtdp1dp2) / pow(c1, 3) 
+    ddr1dtdp2dp1 = (-2.0 * dc1dp1 * dp1dtdp2
+                   + c1 * ddp1dtdp1dp2) / pow(c1, 3)
                    + ddR1dp1dp2;
-                   
+
     ddr1dtdr1dr2 = ddr1dtdr2dr1;
     ddr1dtdu1dr2 = ddr1dtdr2du1;
-    ddr1dtdp1dr2 = ddr1dtdr2dp1; 
+    ddr1dtdp1dr2 = ddr1dtdr2dp1;
     ddr1dtdr2dr2 = ddp1dtdr2dr2 / pow(c1, 2) + ddR1dr2dr2;
     ddr1dtdu2dr2 = ddp1dtdr2du2 / pow(c1, 2) + ddR1dr2du2;
     ddr1dtdp2dr2 = ddp1dtdp2dr2 / pow(c1, 2) + ddR1dp2dr2;
@@ -599,38 +599,38 @@ void HessianBC(
     ddu1dtdr1du2, ddu1dtdu1du2, ddu1dtdp1du2, ddu1dtdr2du2, ddu1dtdu2du2, ddu1dtdp2du2,
     ddu1dtdr1dp2, ddu1dtdu1dp2, ddu1dtdp1dp2, ddu1dtdr2dp2, ddu1dtdu2dp2, ddu1dtdp2dp2;
 
-    ddu1dtdr1dr1 = (2.0 * c1 * c1 * (-dp1dt + R2) 
-                   + r1 * (2.0 * r1 * (-dp1dt + R2) * dc1dr1 * dc1dr1 
-                   + 2.0 * c1 * dc1dr1 * (-dp1dt 
-                   + R2 + r1 * dp1dtdr1 - r1 * dR2dr1) 
-                   + c1 * (r1 * (dp1dt - R2) * ddc1dr1dr1 
-                   + c1 * (2.0 * dp1dtdr1 - r1 * ddp1dtdr1dr1 
+    ddu1dtdr1dr1 = (2.0 * c1 * c1 * (-dp1dt + R2)
+                   + r1 * (2.0 * r1 * (-dp1dt + R2) * dc1dr1 * dc1dr1
+                   + 2.0 * c1 * dc1dr1 * (-dp1dt
+                   + R2 + r1 * dp1dtdr1 - r1 * dR2dr1)
+                   + c1 * (r1 * (dp1dt - R2) * ddc1dr1dr1
+                   + c1 * (2.0 * dp1dtdr1 - r1 * ddp1dtdr1dr1
                    - 2.0 * dR2dr1 + r1 * ddR2dr1dr1))))
                    / pow(c1 * r1, 3);
 
-    ddu1dtdu1dr1 = ((c1 + r1 * dc1dr1) * dp1dtdu1 
+    ddu1dtdu1dr1 = ((c1 + r1 * dc1dr1) * dp1dtdu1
                    - (c1 + r1 * dc1dr1) * dR2du1
                    + c1 * r1 * (-ddp1dtdr1du1 + ddR2dr1du1))
                    / pow(c1 * r1, 2.0);
 
-    ddu1dtdp1dr1 = (dc1dp1 * (2.0 * r1 * (-dp1dt + R2) * dc1dr1 
+    ddu1dtdp1dr1 = (dc1dp1 * (2.0 * r1 * (-dp1dt + R2) * dc1dr1
                    + c1 * (-dp1dt + R2 + r1 * dp1dtdr1
                    - r1 * dR2dr1)) + c1 * ((c1 + r1 * dc1dr1) * dp1dtdp1
-                   - (c1 + r1 * dc1dr1) * dR2dp1 
-                   + r1 * ((dp1dt - R2) * ddc1dr1dp1 
+                   - (c1 + r1 * dc1dr1) * dR2dp1
+                   + r1 * ((dp1dt - R2) * ddc1dr1dp1
                    + c1 * (-ddp1dtdp1dr1 + ddR2dp1dr1))))
                    / (pow(c1, 3) * pow(r1, 2));
 
-    ddu1dtdr2dr1 = ((c1 + r1 * dc1dr1) * dp1dtdr2 
-                   - (c1 + r1 * dc1dr1) * dR2dr2 
-                   + c1 * r1 * (-ddp1dtdr1dr2 + ddR2dr1dr2)) 
+    ddu1dtdr2dr1 = ((c1 + r1 * dc1dr1) * dp1dtdr2
+                   - (c1 + r1 * dc1dr1) * dR2dr2
+                   + c1 * r1 * (-ddp1dtdr1dr2 + ddR2dr1dr2))
                    / pow(c1 * r1, 2);
-//                 ((c1 + r1 * dc1dr1) * dp1dtdr2 
-//                 - (c1 + r1 * dc1dr1) * dR2dr2 
+//                 ((c1 + r1 * dc1dr1) * dp1dtdr2
+//                 - (c1 + r1 * dc1dr1) * dR2dr2
 //                 + c1 * r1 * (-ddp1dtdr1dr2 + ddR2dr1dr2))
 //                 /(c1^2*r1^2)
 
-    ddu1dtdu2dr1 = ((c1 + r1 * dc1dr1) * dp1dtdu2 
+    ddu1dtdu2dr1 = ((c1 + r1 * dc1dr1) * dp1dtdu2
                    - (c1 + r1 * dc1dr1) * dR2du2
                    + c1 * r1 * (-ddp1dtdr1du2 + ddR2dr1du2))
                    / pow(c1 * r1, 2);
@@ -642,7 +642,7 @@ void HessianBC(
 
     ddu1dtdr1du1 = ddu1dtdu1dr1;
     ddu1dtdu1du1 = (-ddp1dtdu1du1 + ddR2du1du1) / (c1 * r1);
-    ddu1dtdp1du1 = (dc1dp1 * (dp1dtdu1 - dR2du1) 
+    ddu1dtdp1du1 = (dc1dp1 * (dp1dtdu1 - dR2du1)
                    + c1 * (-ddp1dtdp1du1 + ddR2dp1du1))
                    / (c1 * c1 * r1);
     ddu1dtdr2du1 = (-ddp1dtdr2du1 + ddR2dr2du1) / (c1 * r1);
@@ -651,15 +651,15 @@ void HessianBC(
 
     ddu1dtdr1dp1 = ddu1dtdp1dr1;
     ddu1dtdu1dp1 = ddu1dtdp1du1;
-    ddu1dtdp1dp1 = (2.0 * (-dp1dt + R2) * dc1dp1 * dc1dp1 
+    ddu1dtdp1dp1 = (2.0 * (-dp1dt + R2) * dc1dp1 * dc1dp1
                    + 2.0 * c1 * dc1dp1 * (dp1dtdp1 - dR2dp1)
-                   + c1 * ((dp1dt - R2) * ddc1dp1dp1 
+                   + c1 * ((dp1dt - R2) * ddc1dp1dp1
                    + c1 * (-ddp1dtdp1dp1 + ddR2dp1dp1)))
                    / (pow(c1, 3) * r1);
-    ddu1dtdr2dp1 = (dc1dp1 * (dp1dtdr2 - dR2dr2) 
+    ddu1dtdr2dp1 = (dc1dp1 * (dp1dtdr2 - dR2dr2)
                    + c1 * (-ddp1dtdp1dr2 + ddR2dp1dr2))
                    / (c1 * c1 * r1);
-    ddu1dtdu2dp1 = (dc1dp1 * (dp1dtdu2 - dR2du2) 
+    ddu1dtdu2dp1 = (dc1dp1 * (dp1dtdu2 - dR2du2)
                    + c1 * (-ddp1dtdp1du2 + ddR2dp1du2))
                    / (c1 * c1 * r1);
     ddu1dtdp2dp1 = (dc1dp1 * (dp1dtdp2 - dR2dp2)
@@ -668,7 +668,7 @@ void HessianBC(
 
     ddu1dtdr1dr2 = ddu1dtdr2dr1;
     ddu1dtdu1dr2 = ddu1dtdr2du1;
-    ddu1dtdp1dr2 = ddu1dtdr2dp1; 
+    ddu1dtdp1dr2 = ddu1dtdr2dp1;
     ddu1dtdr2dr2 = (-ddp1dtdr2dr2 + ddR2dr2dr2) / (c1 * r1);
     ddu1dtdu2dr2 = (-ddp1dtdr2du2 + ddR2dr2du2) / (c1 * r1);
     ddu1dtdp2dr2 = (-ddp1dtdp2dr2 + ddR2dp2dr2) / (c1 * r1);
@@ -734,7 +734,7 @@ void HessianBC(
 
     ddru1dtdr1dp1 = u1 * ddr1dtdp1dr1 + du1dtdp1 + r1 * ddu1dtdp1dr1;
     ddru1dtdp1dr1 = ddru1dtdr1dp1;
-    
+
     ddru1dtdu1dp1 = u1 * ddr1dtdp1du1 + dr1dtdp1 + r1 * ddu1dtdp1du1;
     ddru1dtdp1du1 = ddru1dtdu1dp1;
 
@@ -767,7 +767,7 @@ void HessianBC(
 
 //  ddru1dtdr1dp2 = ddru1dtdp2dr1;
 //  ddru1dtdu1dp2 = ddru1dtdp2du1;
-//  ddru1dtdp1dr2 = ddru1dtdr2dp1; 
+//  ddru1dtdp1dr2 = ddru1dtdr2dp1;
 
     // ***********************************************************************
     // de1/dt
@@ -794,94 +794,94 @@ void HessianBC(
     dde1dtdr1du2, dde1dtdu1du2, dde1dtdp1du2, dde1dtdr2du2, dde1dtdu2du2, dde1dtdp2du2,
     dde1dtdr1dp2, dde1dtdu1dp2, dde1dtdp1dp2, dde1dtdr2dp2, dde1dtdu2dp2, dde1dtdp2dp2;
 
-    dde1dtdr1dr1 = (Cv * ddp1dtdr1dr1) / R 
-                   + (u1 * (u1 * ddr1dtdr1dr1 + 4.0 * du1dtdr1 
+    dde1dtdr1dr1 = (Cv * ddp1dtdr1dr1) / R
+                   + (u1 * (u1 * ddr1dtdr1dr1 + 4.0 * du1dtdr1
                    + 2.0 * r1 * ddu1dtdr1dr1)) / 2.0;
-    dde1dtdu1dr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1 
-                   + u1 * du1dtdu1 + (Cv * ddp1dtdr1du1) / R 
-                   + (u1 * u1 * ddr1dtdr1du1) / 2.0 
+    dde1dtdu1dr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1
+                   + u1 * du1dtdu1 + (Cv * ddp1dtdr1du1) / R
+                   + (u1 * u1 * ddr1dtdr1du1) / 2.0
                    + r1 * u1 * ddu1dtdr1du1;
-    dde1dtdp1dr1 = u1 * du1dtdp1 
-                   + (Cv * ddp1dtdp1dr1) / R 
-                   + (u1 * u1 * ddr1dtdp1dr1) / 2.0 
+    dde1dtdp1dr1 = u1 * du1dtdp1
+                   + (Cv * ddp1dtdp1dr1) / R
+                   + (u1 * u1 * ddr1dtdp1dr1) / 2.0
                    + r1 * u1 * ddu1dtdp1dr1;
-    dde1dtdr2dr1 = u1 * du1dtdr2 
-                   + (Cv * ddp1dtdr1dr2) / R 
-                   + (u1 * u1 * ddr1dtdr1dr2) / 2.0 
+    dde1dtdr2dr1 = u1 * du1dtdr2
+                   + (Cv * ddp1dtdr1dr2) / R
+                   + (u1 * u1 * ddr1dtdr1dr2) / 2.0
                    + r1 * u1 * ddu1dtdr1dr2;
-    dde1dtdu2dr1 = u1 * du1dtdu2 
-                   + (Cv * ddp1dtdr1du2) / R 
-                   + (u1 * u1 * ddr1dtdr1du2) / 2.0 
+    dde1dtdu2dr1 = u1 * du1dtdu2
+                   + (Cv * ddp1dtdr1du2) / R
+                   + (u1 * u1 * ddr1dtdr1du2) / 2.0
                    + r1 * u1 * ddu1dtdr1du2;
-    dde1dtdp2dr1 = u1 * du1dtdp2 
-                   + (Cv * ddp1dtdp2dr1) / R 
-                   + (u1 * u1 * ddr1dtdp2dr1) / 2.0 
+    dde1dtdp2dr1 = u1 * du1dtdp2
+                   + (Cv * ddp1dtdp2dr1) / R
+                   + (u1 * u1 * ddr1dtdp2dr1) / 2.0
                    + r1 * u1 * ddu1dtdp2dr1;
 
     dde1dtdr1du1 = dde1dtdu1dr1;
-    dde1dtdu1du1 = dr1dt + (Cv * ddp1dtdu1du1) / R 
-                   + 2.0 * u1 * dr1dtdu1 
-                   + (u1 * u1 * ddr1dtdu1du1) / 2.0 
-                   + 2.0 * r1 * du1dtdu1 
+    dde1dtdu1du1 = dr1dt + (Cv * ddp1dtdu1du1) / R
+                   + 2.0 * u1 * dr1dtdu1
+                   + (u1 * u1 * ddr1dtdu1du1) / 2.0
+                   + 2.0 * r1 * du1dtdu1
                    + r1 * u1 * ddu1dtdu1du1;
-    dde1dtdp1du1 = u1 * dr1dtdp1 
-                   + r1 * du1dtdp1 
-                   + (Cv * ddp1dtdp1du1) / R 
-                   + (u1 * u1 * ddr1dtdp1du1) / 2.0 
+    dde1dtdp1du1 = u1 * dr1dtdp1
+                   + r1 * du1dtdp1
+                   + (Cv * ddp1dtdp1du1) / R
+                   + (u1 * u1 * ddr1dtdp1du1) / 2.0
                    + r1 * u1 * ddu1dtdp1du1;
-    dde1dtdr2du1 = u1 * dr1dtdr2 
-                   + r1 * du1dtdr2 
-                   + (Cv * ddp1dtdr2du1) / R 
-                   + (u1 * u1 * ddr1dtdr2du1) / 2.0 
+    dde1dtdr2du1 = u1 * dr1dtdr2
+                   + r1 * du1dtdr2
+                   + (Cv * ddp1dtdr2du1) / R
+                   + (u1 * u1 * ddr1dtdr2du1) / 2.0
                    + r1 * u1 * ddu1dtdr2du1;
-    dde1dtdu2du1 = u1 * dr1dtdu2 
-                   + r1 * du1dtdu2 
-                   + (Cv * ddp1dtdu1du2) / R 
-                   + (u1 * u1 * ddr1dtdu1du2) / 2.0 
+    dde1dtdu2du1 = u1 * dr1dtdu2
+                   + r1 * du1dtdu2
+                   + (Cv * ddp1dtdu1du2) / R
+                   + (u1 * u1 * ddr1dtdu1du2) / 2.0
                    + r1 * u1 * ddu1dtdu1du2;
-     dde1dtdp2du1 = u1 * dr1dtdp2 
-                   + r1 * du1dtdp2 
-                   + (Cv * ddp1dtdp2du1) / R 
-                   + (u1 * u1 * ddr1dtdp2du1) / 2.0 
+     dde1dtdp2du1 = u1 * dr1dtdp2
+                   + r1 * du1dtdp2
+                   + (Cv * ddp1dtdp2du1) / R
+                   + (u1 * u1 * ddr1dtdp2du1) / 2.0
                    + r1 * u1 * ddu1dtdp2du1;
 
     dde1dtdr1dp1 = dde1dtdp1dr1;
     dde1dtdu1dp1 = dde1dtdp1du1;
-    dde1dtdp1dp1 = (Cv * ddp1dtdp1dp1) / R 
-                   + (u1 * u1 * ddr1dtdp1dp1) / 2.0 
+    dde1dtdp1dp1 = (Cv * ddp1dtdp1dp1) / R
+                   + (u1 * u1 * ddr1dtdp1dp1) / 2.0
                    + r1 * u1 * ddu1dtdp1dp1;
-    dde1dtdr2dp1 = (Cv * ddp1dtdp1dr2) / R 
-                   + (u1 * u1 * ddr1dtdp1dr2) / 2.0 
+    dde1dtdr2dp1 = (Cv * ddp1dtdp1dr2) / R
+                   + (u1 * u1 * ddr1dtdp1dr2) / 2.0
                    + r1 * u1 * ddu1dtdp1dr2;
-    dde1dtdu2dp1 = (Cv * ddp1dtdp1du2) / R 
-                   + (u1 * u1 * ddr1dtdp1du2) / 2.0 
+    dde1dtdu2dp1 = (Cv * ddp1dtdp1du2) / R
+                   + (u1 * u1 * ddr1dtdp1du2) / 2.0
                    + r1 * u1 * ddu1dtdp1du2;
-    dde1dtdp2dp1 = (Cv * ddp1dtdp1dp2) / R 
-                   + (u1 * u1 * ddr1dtdp1dp2) / 2.0 
+    dde1dtdp2dp1 = (Cv * ddp1dtdp1dp2) / R
+                   + (u1 * u1 * ddr1dtdp1dp2) / 2.0
                    + r1 * u1 * ddu1dtdp1dp2;
 
     dde1dtdr1dr2 = dde1dtdr2dr1;
     dde1dtdu1dr2 = dde1dtdr2du1;
-    dde1dtdp1dr2 = dde1dtdr2dp1; 
+    dde1dtdp1dr2 = dde1dtdr2dp1;
     dde1dtdr2dr2 = (Cv * ddp1dtdr2dr2) / R
-                   + (u1 * u1 * ddr1dtdr2dr2) / 2.0 
+                   + (u1 * u1 * ddr1dtdr2dr2) / 2.0
                    + r1 * u1 * ddu1dtdr2dr2;
     dde1dtdu2dr2 = (Cv * ddp1dtdr2du2) / R
-                   + (u1 * u1 * ddr1dtdr2du2) / 2.0 
+                   + (u1 * u1 * ddr1dtdr2du2) / 2.0
                    + r1 * u1 * ddu1dtdr2du2;
     dde1dtdp2dr2 = (Cv * ddp1dtdp2dr2) / R
-                   + (u1 * u1 * ddr1dtdp2dr2) / 2.0 
+                   + (u1 * u1 * ddr1dtdp2dr2) / 2.0
                    + r1 * u1 * ddu1dtdp2dr2;
 
     dde1dtdr1du2 = dde1dtdu2dr1;
     dde1dtdu1du2 = dde1dtdu2du1;
     dde1dtdp1du2 = dde1dtdu2dp1;
     dde1dtdr2du2 = dde1dtdu2dr2;
-    dde1dtdu2du2 = (Cv * ddp1dtdu2du2) / R 
-                   + (u1 * u1 * ddr1dtdu2du2) / 2.0 
+    dde1dtdu2du2 = (Cv * ddp1dtdu2du2) / R
+                   + (u1 * u1 * ddr1dtdu2du2) / 2.0
                    + r1 * u1 * ddu1dtdu2du2;
-    dde1dtdp2du2 = (Cv * ddp1dtdp2du2) / R 
-                   + (u1 * u1 * ddr1dtdp2du2) / 2.0 
+    dde1dtdp2du2 = (Cv * ddp1dtdp2du2) / R
+                   + (u1 * u1 * ddr1dtdp2du2) / 2.0
                    + r1 * u1 * ddu1dtdp2du2;
 
     dde1dtdr1dp2 = dde1dtdp2dr1;
@@ -889,8 +889,8 @@ void HessianBC(
     dde1dtdp1dp2 = dde1dtdp2dp1;
     dde1dtdr2dp2 = dde1dtdp2dr2;
     dde1dtdu2dp2 = dde1dtdp2du2;
-    dde1dtdp2dp2 = (Cv * ddp1dtdp2dp2) / R 
-                   + (u1 * u1 * ddr1dtdp2dp2) / 2.0 
+    dde1dtdp2dp2 = (Cv * ddp1dtdp2dp2) / R
+                   + (u1 * u1 * ddr1dtdp2dp2) / 2.0
                    + r1 * u1 * ddu1dtdp2dp2;
 
 // ***********************************************************************
@@ -935,7 +935,7 @@ void HessianBC(
 
     ddRoutdWdW[0](3, 4) = ddr1dtdr1du1;
     ddRoutdWdW[0](4, 3) = ddr1dtdu1dr1;
-    
+
     ddRoutdWdW[0](3, 5) = ddr1dtdr1dp1;
     ddRoutdWdW[0](5, 3) = ddr1dtdp1dr1;
 
@@ -1087,12 +1087,12 @@ void HessianBC(
 
 //  for(int Ri = 0; Ri < 3; Ri++)
 //  {
-//      ddRoutdWdW[Ri].topRightCorner(3, 3) = 
+//      ddRoutdWdW[Ri].topRightCorner(3, 3) =
 //          dwpdw.transpose() * ddRoutdWdW[Ri].topRightCorner(3, 3) * dwpdw2;
 //  }
 //  for(int Ri = 0; Ri < 3; Ri++)
 //  {
-//      ddRoutdWdW[Ri].bottomLeftCorner(3, 3) = 
+//      ddRoutdWdW[Ri].bottomLeftCorner(3, 3) =
 //          dwpdw2.transpose() * ddRoutdWdW[Ri].bottomLeftCorner(3, 3) * dwpdw;
 //  }
 
@@ -1142,36 +1142,36 @@ void HessianBC(
         // Riemann Invariants
         R3 = - eig3 * (dp - cr * du);
 
-        dR3dr1 = -eig3 * (-c1 * du - du * r1 * dc1dr1) 
+        dR3dr1 = -eig3 * (-c1 * du - du * r1 * dc1dr1)
                  - (dp - cr * du) * deig3dr1;
         dR3du1 = -cr * eig3 - (dp - cr * du) * deig3du1;
-        dR3dp1 = eig3 * (1.0 + du * r1 * dc1dp1) 
+        dR3dp1 = eig3 * (1.0 + du * r1 * dc1dp1)
                  - (dp - cr * du) * deig3dp1;
         dR3dr2 = -(dp - cr * du) * deig3dr2;
         dR3du2 = cr * eig3 - (dp - cr * du) * deig3du2;
         dR3dp2 = -eig3 - (dp - cr * du) * deig3dp2;
 
-        ddR3dr1dr1 = (p1 - p2) * ddeig3dr1dr1 
-                     + (u1 - u2) * (eig3 * r1 * ddc1dr1dr1 
-                     + 2.0 * c1 * deig3dr1 
-                     + 2.0 * dc1dr1 * (eig3 + r1 * deig3dr1) 
+        ddR3dr1dr1 = (p1 - p2) * ddeig3dr1dr1
+                     + (u1 - u2) * (eig3 * r1 * ddc1dr1dr1
+                     + 2.0 * c1 * deig3dr1
+                     + 2.0 * dc1dr1 * (eig3 + r1 * deig3dr1)
                      + c1 * r1 * ddeig3dr1dr1);
-        ddR3du1dr1 = c1 * eig3 + eig3 * r1 * dc1dr1 
-                     + c1 * r1 * deig3dr1 
+        ddR3du1dr1 = c1 * eig3 + eig3 * r1 * dc1dr1
+                     + c1 * r1 * deig3dr1
                      + (u1 - u2) * (c1 + r1 * dc1dr1) * deig3du1;
-        ddR3dp1dr1 = deig3dr1 + (p1 - p2) * ddeig3dr1dp1 
-                     + (u1 - u2) * ((c1 + r1 * dc1dr1) * deig3dp1 
-                     + dc1dp1 * (eig3 + r1 * deig3dr1) 
+        ddR3dp1dr1 = deig3dr1 + (p1 - p2) * ddeig3dr1dp1
+                     + (u1 - u2) * ((c1 + r1 * dc1dr1) * deig3dp1
+                     + dc1dp1 * (eig3 + r1 * deig3dr1)
                      + r1 * (eig3 * ddc1dr1dp1 + c1 * ddeig3dr1dp1));
         ddR3dr2dr1 = (u1 - u2) * (c1 + r1 * dc1dr1) * deig3dr2;
-        ddR3du2dr1 = -(c1 * eig3) - eig3 * r1 * dc1dr1 
-                     - c1 * r1 * deig3dr1 
+        ddR3du2dr1 = -(c1 * eig3) - eig3 * r1 * dc1dr1
+                     - c1 * r1 * deig3dr1
                      + (u1 - u2) * (c1 + r1 * dc1dr1) * deig3du2;
         ddR3dp2dr1 = (u1 - u2) * (c1 + r1 * dc1dr1) * deig3dp2 - deig3dr1;
 
         ddR3dr1du1 = ddR3du1dr1;
         ddR3du1du1 = 2.0 * c1 * r1 * deig3du1;
-        ddR3dp1du1 = c1 * r1 * deig3dp1 + deig3du1 
+        ddR3dp1du1 = c1 * r1 * deig3dp1 + deig3du1
                      + r1 * dc1dp1 * (eig3 + (u1 - u2) * deig3du1);
         ddR3dr2du1 = c1 * r1 * deig3dr2;
         ddR3du2du1 = -(c1 * r1 * deig3du1) + c1 * r1 * deig3du2;
@@ -1179,11 +1179,11 @@ void HessianBC(
 
         ddR3dr1dp1 = ddR3dp1dr1;
         ddR3du1dp1 = ddR3dp1du1;
-        ddR3dp1dp1 = 2.0 * deig3dp1 + (p1 - p2) * ddeig3dp1dp1 
-                     + r1 * (u1 - u2) * (eig3 * ddc1dp1dp1 
+        ddR3dp1dp1 = 2.0 * deig3dp1 + (p1 - p2) * ddeig3dp1dp1
+                     + r1 * (u1 - u2) * (eig3 * ddc1dp1dp1
                      + 2.0 * dc1dp1 * deig3dp1 + c1 * ddeig3dp1dp1);
         ddR3dr2dp1 = (1.0 + r1 * (u1 - u2) * dc1dp1) * deig3dr2;
-        ddR3du2dp1 = -(c1 * r1 * deig3dp1) + deig3du2 
+        ddR3du2dp1 = -(c1 * r1 * deig3dp1) + deig3du2
                      - r1 * dc1dp1 * (eig3 + (-u1 + u2) * deig3du2);
         ddR3dp2dp1 = -deig3dp1 + (1.0 + r1 * (u1 - u2) * dc1dp1) * deig3dp2;
 
@@ -1206,30 +1206,30 @@ void HessianBC(
         ddR3dp1dp2 = ddR3dp1dp1;
         ddR3dr2dp2 = ddR3dp1dr2;
         ddR3du2dp2 = ddR3dp1du1;
-        ddR3dp2dp2 = -2.0 * deig3dp2 
+        ddR3dp2dp2 = -2.0 * deig3dp2
                      + (p1 - p2 + c1 * r1 * (u1 - u2)) * ddeig3dp2dp2;
 
 
         // dp1
         double dp1du1, ddp1du1du1, dddp1du1du1du1;
         // Same Values
-        dp1du1 = (ptin * u1 * pow(1.0 - (gamr * u1 * u1) / a2, gam/(-1.0 + gam)) 
+        dp1du1 = (ptin * u1 * pow(1.0 - (gamr * u1 * u1) / a2, gam/(-1.0 + gam))
                  * gam * (2.0 * gamr)) / ((-a2 + gamr * u1 * u1) * (-1.0 + gam));
 
-        ddp1du1du1 = (2.0 * gamr * ptin * 
+        ddp1du1du1 = (2.0 * gamr * ptin *
                       pow(1.0 - (gamr * pow(u1, 2)) / a2
-                      , gam/(-1 + gam)) * gam * 
+                      , gam/(-1 + gam)) * gam *
                       (a2 - a2 * gam + gamr * pow(u1, 2) * (1 + gam)))
                       /(pow(a2 - gamr * pow(u1,2), 2) * pow(-1 + gam, 2));
-                     
-        dddp1du1du1du1 = (4.0 * pow(gamr, 2) * ptin * u1 * 
+
+        dddp1du1du1du1 = (4.0 * pow(gamr, 2) * ptin * u1 *
                          pow(1 - (gamr * pow(u1, 2)) / a2
                          , gam / (-1 + gam)) * gam *
-                         (-3.0 * a2 * (-1.0 + gam) 
+                         (-3.0 * a2 * (-1.0 + gam)
                          + gamr * pow(u1, 2) * (1.0 + gam)))
-                         /(pow(-a2 + gamr * pow(u1, 2), 3) * 
+                         /(pow(-a2 + gamr * pow(u1, 2), 3) *
                          pow(-1.0 + gam, 3));
-                         
+
         // du1
         du1dt = R3 / (dp1du1 - cr);
         du1dtdr1 = dR3dr1 / (dp1du1 - cr)
@@ -1242,78 +1242,78 @@ void HessianBC(
         du1dtdu2 = dR3du2 / (dp1du1 - cr);
         du1dtdp2 = dR3dp2 / (dp1du1 - cr);
 
-        ddu1dtdr1dr1 = (2.0 * R3 * pow(c1 + r1 * dc1dr1, 2) 
-                       + (dp1du1 - c1 * r1) * R3 * 
-                       (2.0 * dc1dr1 + r1 * ddc1dr1dr1) 
-                       + 2.0 * (dp1du1 - c1 * r1) * 
-                       (c1 + r1 * dc1dr1) * dR3dr1 
-                       + pow(dp1du1 - c1 * r1, 2) * ddR3dr1dr1) 
+        ddu1dtdr1dr1 = (2.0 * R3 * pow(c1 + r1 * dc1dr1, 2)
+                       + (dp1du1 - c1 * r1) * R3 *
+                       (2.0 * dc1dr1 + r1 * ddc1dr1dr1)
+                       + 2.0 * (dp1du1 - c1 * r1) *
+                       (c1 + r1 * dc1dr1) * dR3dr1
+                       + pow(dp1du1 - c1 * r1, 2) * ddR3dr1dr1)
                        / pow(dp1du1 - c1 * r1, 3);
-        ddu1dtdu1dr1 = (ddp1du1du1 * (-2.0 * R3 * (c1 + r1 * dc1dr1) 
-                       + (-dp1du1 + c1 * r1) * dR3dr1) 
-                       + (dp1du1 - c1 * r1) * 
-                       ((c1 + r1 * dc1dr1) * dR3du1 
+        ddu1dtdu1dr1 = (ddp1du1du1 * (-2.0 * R3 * (c1 + r1 * dc1dr1)
+                       + (-dp1du1 + c1 * r1) * dR3dr1)
+                       + (dp1du1 - c1 * r1) *
+                       ((c1 + r1 * dc1dr1) * dR3du1
                        + (dp1du1 - c1 * r1) * ddR3dr1du1))
                        / pow(dp1du1 - c1 * r1, 3);
-        ddu1dtdp1dr1 = (dc1dp1 * (R3 * 
-                       (dp1du1 + c1 * r1 + 2.0 * pow(r1, 2) * dc1dr1) 
-                       + r1 * (dp1du1 - c1 * r1) * dR3dr1) 
-                       + (dp1du1 - c1 * r1) * 
-                       ((c1 + r1 * dc1dr1) * dR3dp1 
-                       + r1 * R3 * ddc1dr1dp1 
-                       + (dp1du1 - c1 * r1) * ddR3dp1dr1)) 
+        ddu1dtdp1dr1 = (dc1dp1 * (R3 *
+                       (dp1du1 + c1 * r1 + 2.0 * pow(r1, 2) * dc1dr1)
+                       + r1 * (dp1du1 - c1 * r1) * dR3dr1)
+                       + (dp1du1 - c1 * r1) *
+                       ((c1 + r1 * dc1dr1) * dR3dp1
+                       + r1 * R3 * ddc1dr1dp1
+                       + (dp1du1 - c1 * r1) * ddR3dp1dr1))
                        / pow(dp1du1 - c1 * r1, 3);
-        ddu1dtdr2dr1 = ((c1 + r1 * dc1dr1) * dR3dr2 
-                       + (dp1du1 - c1 * r1) * ddR3dr1dr2) 
+        ddu1dtdr2dr1 = ((c1 + r1 * dc1dr1) * dR3dr2
+                       + (dp1du1 - c1 * r1) * ddR3dr1dr2)
                        / pow(dp1du1 - c1 * r1, 2);
-        ddu1dtdu2dr1 = ((c1 + r1 * dc1dr1) * dR3du2 
-                       + (dp1du1 - c1 * r1) * ddR3dr1du2) 
+        ddu1dtdu2dr1 = ((c1 + r1 * dc1dr1) * dR3du2
+                       + (dp1du1 - c1 * r1) * ddR3dr1du2)
                        / pow(dp1du1 - c1 * r1, 2);
-        ddu1dtdp2dr1 = ((c1 + r1 * dc1dr1) * dR3dp2 
-                       + (dp1du1 - c1 * r1) * ddR3dp2dr1) 
+        ddu1dtdp2dr1 = ((c1 + r1 * dc1dr1) * dR3dp2
+                       + (dp1du1 - c1 * r1) * ddR3dp2dr1)
                        / pow(dp1du1 - c1 * r1, 2);
 
         ddu1dtdr1du1 = ddu1dtdu1dr1;
-        ddu1dtdu1du1 = (2.0 * R3 * pow(ddp1du1du1, 2) 
-                       - 2.0 * (dp1du1 - c1 * r1) * ddp1du1du1 * dR3du1 
-                       + (dp1du1 - c1 * r1) * (-(R3 * dddp1du1du1du1) 
+        ddu1dtdu1du1 = (2.0 * R3 * pow(ddp1du1du1, 2)
+                       - 2.0 * (dp1du1 - c1 * r1) * ddp1du1du1 * dR3du1
+                       + (dp1du1 - c1 * r1) * (-(R3 * dddp1du1du1du1)
                        + (dp1du1 - c1 * r1) * ddR3du1du1))
                        / pow(dp1du1 - c1 * r1, 3);
-        ddu1dtdp1du1 = (r1 * dc1dp1 * (-2.0 * R3 * ddp1du1du1 
-                       + (dp1du1 - c1 * r1) * dR3du1) 
-                       + (dp1du1 - c1 * r1) * (-(ddp1du1du1 * dR3dp1) 
-                       + (dp1du1 - c1 * r1) * ddR3dp1du1)) 
+        ddu1dtdp1du1 = (r1 * dc1dp1 * (-2.0 * R3 * ddp1du1du1
+                       + (dp1du1 - c1 * r1) * dR3du1)
+                       + (dp1du1 - c1 * r1) * (-(ddp1du1du1 * dR3dp1)
+                       + (dp1du1 - c1 * r1) * ddR3dp1du1))
                        / pow(dp1du1 - c1 * r1, 3);
-        ddu1dtdr2du1 = (-(ddp1du1du1 * dR3dr2) 
-                       + (dp1du1 - c1 * r1) * ddR3dr2du1) 
+        ddu1dtdr2du1 = (-(ddp1du1du1 * dR3dr2)
+                       + (dp1du1 - c1 * r1) * ddR3dr2du1)
                        / pow(dp1du1 - c1 * r1, 2);
-        ddu1dtdu2du1 = (-(ddp1du1du1 * dR3du2) 
-                       + (dp1du1 - c1 * r1) * ddR3du1du2) 
+        ddu1dtdu2du1 = (-(ddp1du1du1 * dR3du2)
+                       + (dp1du1 - c1 * r1) * ddR3du1du2)
                        / pow(dp1du1 - c1 * r1, 2);
-        ddu1dtdp2du1 = (-(ddp1du1du1 * dR3dp2) 
-                       + (dp1du1 - c1 * r1) * ddR3dp2du1) 
+        ddu1dtdp2du1 = (-(ddp1du1du1 * dR3dp2)
+                       + (dp1du1 - c1 * r1) * ddR3dp2du1)
                        / pow(dp1du1 - c1 * r1, 2);
 
         ddu1dtdr1dp1 = ddu1dtdp1dr1;
         ddu1dtdu1dp1 = ddu1dtdp1du1;
-        ddu1dtdp1dp1 = (r1 * R3 * (2.0 * r1 * pow(dc1dp1, 2) 
-                       + (dp1du1 - c1 * r1) * ddc1dp1dp1) 
+        ddu1dtdp1dp1 = (r1 * R3 * (2.0 * r1 * pow(dc1dp1, 2)
+                       + (dp1du1 - c1 * r1) * ddc1dp1dp1)
                        + 2.0 * r1 * (dp1du1 - c1 * r1) * dc1dp1 * dR3dp1
                        + pow(dp1du1 - c1 * r1, 2) * ddR3dp1dp1)
                        / pow(dp1du1 - c1 * r1, 3);
-        ddu1dtdr2dp1 = (r1 * dc1dp1 * dR3dr2 
+        ddu1dtdr2dp1 = (r1 * dc1dp1 * dR3dr2
                        + (dp1du1 - c1 * r1) * ddR3dp1dr2)
                        / pow(dp1du1 - c1 * r1, 2);
-        ddu1dtdu2dp1 = (r1 * dc1dp1 * dR3du2 
-                       + (dp1du1 - c1 * r1) * ddR3dp1du2) 
+        ddu1dtdu2dp1 = (r1 * dc1dp1 * dR3du2
+                       + (dp1du1 - c1 * r1) * ddR3dp1du2)
                        / pow(dp1du1 - c1 * r1, 2);
-        ddu1dtdp2dp1 = (r1 * dc1dp1 * dR3dp2 
-                       + (dp1du1 - c1 * r1) * ddR3dp1dp2) 
+        ddu1dtdp2dp1 = (r1 * dc1dp1 * dR3dp2
+                       + (dp1du1 - c1 * r1) * ddR3dp1dp2)
                        / pow(dp1du1 - c1 * r1, 2);
 
         ddu1dtdr1dr2 = ddu1dtdr2dr1;
         ddu1dtdu1dr2 = ddu1dtdr2du1;
-        ddu1dtdp1dr2 = ddu1dtdr2dp1; 
+        ddu1dtdp1dr2 = ddu1dtdr2dp1;
         ddu1dtdr2dr2 = ddR3dr2dr2 / (dp1du1 - c1 * r1);
         ddu1dtdu2dr2 = ddR3dr2du2 / (dp1du1 - c1 * r1);
         ddu1dtdp2dr2 = ddR3dp2dr2 / (dp1du1 - c1 * r1);
@@ -1490,7 +1490,7 @@ void HessianBC(
 
         ddru1dtdr1dr2 = ddru1dtdr2dr1;
         ddru1dtdu1dr2 = ddru1dtdr2du1;
-        ddru1dtdp1dr2 = ddru1dtdr2dp1; 
+        ddru1dtdp1dr2 = ddru1dtdr2dp1;
         ddru1dtdr2dr2 = u1 * ddr1dtdr2dr2 + r1 * ddu1dtdr2dr2;
         ddru1dtdu2dr2 = u1 * ddr1dtdu2dr2 + r1 * ddu1dtdu2dr2;
         ddru1dtdp2dr2 = u1 * ddr1dtdp2dr2 + r1 * ddu1dtdp2dr2;
@@ -1520,94 +1520,94 @@ void HessianBC(
         de1dtdu2 = dp1dtdu2 / (gam - 1.0) + uu * dr1dtdu2 / 2.0 + r1 * u1 * du1dtdu2;
         de1dtdp2 = dp1dtdp2 / (gam - 1.0) + uu * dr1dtdp2 / 2.0 + r1 * u1 * du1dtdp2;
 
-        dde1dtdr1dr1 = (Cv * ddp1dtdr1dr1) / R 
-                       + (u1 * (u1 * ddr1dtdr1dr1 + 4.0 * du1dtdr1 
+        dde1dtdr1dr1 = (Cv * ddp1dtdr1dr1) / R
+                       + (u1 * (u1 * ddr1dtdr1dr1 + 4.0 * du1dtdr1
                        + 2.0 * r1 * ddu1dtdr1dr1)) / 2.0;
-        dde1dtdu1dr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1 
-                       + u1 * du1dtdu1 + (Cv * ddp1dtdr1du1) / R 
-                       + (u1 * u1 * ddr1dtdr1du1) / 2.0 
+        dde1dtdu1dr1 = du1dt + u1 * dr1dtdr1 + r1 * du1dtdr1
+                       + u1 * du1dtdu1 + (Cv * ddp1dtdr1du1) / R
+                       + (u1 * u1 * ddr1dtdr1du1) / 2.0
                        + r1 * u1 * ddu1dtdr1du1;
-        dde1dtdp1dr1 = u1 * du1dtdp1 
-                       + (Cv * ddp1dtdp1dr1) / R 
-                       + (u1 * u1 * ddr1dtdp1dr1) / 2.0 
+        dde1dtdp1dr1 = u1 * du1dtdp1
+                       + (Cv * ddp1dtdp1dr1) / R
+                       + (u1 * u1 * ddr1dtdp1dr1) / 2.0
                        + r1 * u1 * ddu1dtdp1dr1;
-        dde1dtdr2dr1 = u1 * du1dtdr2 
-                       + (Cv * ddp1dtdr1dr2) / R 
-                       + (u1 * u1 * ddr1dtdr1dr2) / 2.0 
+        dde1dtdr2dr1 = u1 * du1dtdr2
+                       + (Cv * ddp1dtdr1dr2) / R
+                       + (u1 * u1 * ddr1dtdr1dr2) / 2.0
                        + r1 * u1 * ddu1dtdr1dr2;
-        dde1dtdu2dr1 = u1 * du1dtdu2 
-                       + (Cv * ddp1dtdr1du2) / R 
-                       + (u1 * u1 * ddr1dtdr1du2) / 2.0 
+        dde1dtdu2dr1 = u1 * du1dtdu2
+                       + (Cv * ddp1dtdr1du2) / R
+                       + (u1 * u1 * ddr1dtdr1du2) / 2.0
                        + r1 * u1 * ddu1dtdr1du2;
-        dde1dtdp2dr1 = u1 * du1dtdp2 
-                       + (Cv * ddp1dtdp2dr1) / R 
-                       + (u1 * u1 * ddr1dtdp2dr1) / 2.0 
+        dde1dtdp2dr1 = u1 * du1dtdp2
+                       + (Cv * ddp1dtdp2dr1) / R
+                       + (u1 * u1 * ddr1dtdp2dr1) / 2.0
                        + r1 * u1 * ddu1dtdp2dr1;
 
         dde1dtdr1du1 = dde1dtdu1dr1;
-        dde1dtdu1du1 = dr1dt + (Cv * ddp1dtdu1du1) / R 
-                       + 2.0 * u1 * dr1dtdu1 
-                       + (u1 * u1 * ddr1dtdu1du1) / 2.0 
-                       + 2.0 * r1 * du1dtdu1 
+        dde1dtdu1du1 = dr1dt + (Cv * ddp1dtdu1du1) / R
+                       + 2.0 * u1 * dr1dtdu1
+                       + (u1 * u1 * ddr1dtdu1du1) / 2.0
+                       + 2.0 * r1 * du1dtdu1
                        + r1 * u1 * ddu1dtdu1du1;
-        dde1dtdp1du1 = u1 * dr1dtdp1 
-                       + r1 * du1dtdp1 
-                       + (Cv * ddp1dtdp1du1) / R 
-                       + (u1 * u1 * ddr1dtdp1du1) / 2.0 
+        dde1dtdp1du1 = u1 * dr1dtdp1
+                       + r1 * du1dtdp1
+                       + (Cv * ddp1dtdp1du1) / R
+                       + (u1 * u1 * ddr1dtdp1du1) / 2.0
                        + r1 * u1 * ddu1dtdp1du1;
-        dde1dtdr2du1 = u1 * dr1dtdr2 
-                       + r1 * du1dtdr2 
-                       + (Cv * ddp1dtdr2du1) / R 
-                       + (u1 * u1 * ddr1dtdr2du1) / 2.0 
+        dde1dtdr2du1 = u1 * dr1dtdr2
+                       + r1 * du1dtdr2
+                       + (Cv * ddp1dtdr2du1) / R
+                       + (u1 * u1 * ddr1dtdr2du1) / 2.0
                        + r1 * u1 * ddu1dtdr2du1;
-        dde1dtdu2du1 = u1 * dr1dtdu2 
-                       + r1 * du1dtdu2 
-                       + (Cv * ddp1dtdu1du2) / R 
-                       + (u1 * u1 * ddr1dtdu1du2) / 2.0 
+        dde1dtdu2du1 = u1 * dr1dtdu2
+                       + r1 * du1dtdu2
+                       + (Cv * ddp1dtdu1du2) / R
+                       + (u1 * u1 * ddr1dtdu1du2) / 2.0
                        + r1 * u1 * ddu1dtdu1du2;
-         dde1dtdp2du1 = u1 * dr1dtdp2 
-                       + r1 * du1dtdp2 
-                       + (Cv * ddp1dtdp2du1) / R 
-                       + (u1 * u1 * ddr1dtdp2du1) / 2.0 
+         dde1dtdp2du1 = u1 * dr1dtdp2
+                       + r1 * du1dtdp2
+                       + (Cv * ddp1dtdp2du1) / R
+                       + (u1 * u1 * ddr1dtdp2du1) / 2.0
                        + r1 * u1 * ddu1dtdp2du1;
 
         dde1dtdr1dp1 = dde1dtdp1dr1;
         dde1dtdu1dp1 = dde1dtdp1du1;
-        dde1dtdp1dp1 = (Cv * ddp1dtdp1dp1) / R 
-                       + (u1 * u1 * ddr1dtdp1dp1) / 2.0 
+        dde1dtdp1dp1 = (Cv * ddp1dtdp1dp1) / R
+                       + (u1 * u1 * ddr1dtdp1dp1) / 2.0
                        + r1 * u1 * ddu1dtdp1dp1;
-        dde1dtdr2dp1 = (Cv * ddp1dtdp1dr2) / R 
-                       + (u1 * u1 * ddr1dtdp1dr2) / 2.0 
+        dde1dtdr2dp1 = (Cv * ddp1dtdp1dr2) / R
+                       + (u1 * u1 * ddr1dtdp1dr2) / 2.0
                        + r1 * u1 * ddu1dtdp1dr2;
-        dde1dtdu2dp1 = (Cv * ddp1dtdp1du2) / R 
-                       + (u1 * u1 * ddr1dtdp1du2) / 2.0 
+        dde1dtdu2dp1 = (Cv * ddp1dtdp1du2) / R
+                       + (u1 * u1 * ddr1dtdp1du2) / 2.0
                        + r1 * u1 * ddu1dtdp1du2;
-        dde1dtdp2dp1 = (Cv * ddp1dtdp1dp2) / R 
-                       + (u1 * u1 * ddr1dtdp1dp2) / 2.0 
+        dde1dtdp2dp1 = (Cv * ddp1dtdp1dp2) / R
+                       + (u1 * u1 * ddr1dtdp1dp2) / 2.0
                        + r1 * u1 * ddu1dtdp1dp2;
 
         dde1dtdr1dr2 = dde1dtdr2dr1;
         dde1dtdu1dr2 = dde1dtdr2du1;
-        dde1dtdp1dr2 = dde1dtdr2dp1; 
+        dde1dtdp1dr2 = dde1dtdr2dp1;
         dde1dtdr2dr2 = (Cv * ddp1dtdr2dr2) / R
-                       + (u1 * u1 * ddr1dtdr2dr2) / 2.0 
+                       + (u1 * u1 * ddr1dtdr2dr2) / 2.0
                        + r1 * u1 * ddu1dtdr2dr2;
         dde1dtdu2dr2 = (Cv * ddp1dtdr2du2) / R
-                       + (u1 * u1 * ddr1dtdr2du2) / 2.0 
+                       + (u1 * u1 * ddr1dtdr2du2) / 2.0
                        + r1 * u1 * ddu1dtdr2du2;
         dde1dtdp2dr2 = (Cv * ddp1dtdp2dr2) / R
-                       + (u1 * u1 * ddr1dtdp2dr2) / 2.0 
+                       + (u1 * u1 * ddr1dtdp2dr2) / 2.0
                        + r1 * u1 * ddu1dtdp2dr2;
 
         dde1dtdr1du2 = dde1dtdu2dr1;
         dde1dtdu1du2 = dde1dtdu2du1;
         dde1dtdp1du2 = dde1dtdu2dp1;
         dde1dtdr2du2 = dde1dtdu2dr2;
-        dde1dtdu2du2 = (Cv * ddp1dtdu2du2) / R 
-                       + (u1 * u1 * ddr1dtdu2du2) / 2.0 
+        dde1dtdu2du2 = (Cv * ddp1dtdu2du2) / R
+                       + (u1 * u1 * ddr1dtdu2du2) / 2.0
                        + r1 * u1 * ddu1dtdu2du2;
-        dde1dtdp2du2 = (Cv * ddp1dtdp2du2) / R 
-                       + (u1 * u1 * ddr1dtdp2du2) / 2.0 
+        dde1dtdp2du2 = (Cv * ddp1dtdp2du2) / R
+                       + (u1 * u1 * ddr1dtdp2du2) / 2.0
                        + r1 * u1 * ddu1dtdp2du2;
 
         dde1dtdr1dp2 = dde1dtdp2dr1;
@@ -1615,8 +1615,8 @@ void HessianBC(
         dde1dtdp1dp2 = dde1dtdp2dp1;
         dde1dtdr2dp2 = dde1dtdp2dr2;
         dde1dtdu2dp2 = dde1dtdp2du2;
-        dde1dtdp2dp2 = (Cv * ddp1dtdp2dp2) / R 
-                       + (u1 * u1 * ddr1dtdp2dp2) / 2.0 
+        dde1dtdp2dp2 = (Cv * ddp1dtdp2dp2) / R
+                       + (u1 * u1 * ddr1dtdp2dp2) / 2.0
                        + r1 * u1 * ddu1dtdp2dp2;
 // ***********************************************************************
         dRidWi(0,0) = dr1dtdr1;
@@ -2405,7 +2405,7 @@ std::vector <Matrix3d> ddWpdWdWp(
     double rho, u;
     rho = W[i * 3 + 0];
     u = W[i * 3 + 1] / rho;
-    
+
     std::vector <Matrix3d> M(3);
     M[0].setZero();
     M[1].setZero();
@@ -2439,7 +2439,7 @@ void HessianBCprim_FD(
     {
         Wp[i * 3 + 0] = W[i * 3 + 0];
         Wp[i * 3 + 1] = W[i * 3 + 1] / W[i * 3 + 0];
-        Wp[i * 3 + 2] = (gam - 1.0) * ( W[i * 3 + 2] 
+        Wp[i * 3 + 2] = (gam - 1.0) * ( W[i * 3 + 2]
                         - (pow(W[i * 3 + 1], 2.0) / W[i * 3 + 0]) / 2.0 );
     }
 
@@ -2463,7 +2463,7 @@ void HessianBCprim_FD(
                     // R1
                     Wpd[Wi] = Wp[Wi] + pertWi;
                     Wpd[Wj] = Wp[Wj] + pertWj;
-                    
+
                     PtoW(Wd, Wpd);
 
                     inletBC(Wd, Resi, 1, 1);
