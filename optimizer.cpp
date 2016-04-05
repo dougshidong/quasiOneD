@@ -64,6 +64,8 @@ void design(
     double alpha = 1;
 
     double h = 1e-8;
+    
+    int Hmethod = 3;
 
     VectorXd pk(nDesVar), searchD(nDesVar), dgradient(nDesVar);
 
@@ -78,15 +80,6 @@ void design(
     gradientDD = directDifferentiation(x, dx, S, W, designVar);
     gradientFD = finiteD(x, dx, S, designVar, h, currentI);
 
-//  std::cout<<"Gradient Relative Error:"<<std::endl;
-//  std::cout<<"Norm(AV - DD)/Norm(AV): ";
-//  std::cout<<(gradientAV - gradientDD).norm() / gradientAV.norm()<<std::endl;
-//  std::cout<<"Norm(AV - FD)/Norm(AV): ";
-//  std::cout<<(gradientAV - gradientFD).norm() / gradientAV.norm()<<std::endl;
-//  std::cout<<"Norm(DD - FD)/Norm(DD): ";
-//  std::cout<<(gradientDD - gradientFD).norm() / gradientDD.norm()<<std::endl;
-
-    int Hmethod = 0;
 
     // Initialize B
     for(int r = 0; r < nDesVar; r++)
@@ -103,35 +96,8 @@ void design(
              HDA(nDesVar, nDesVar),
              HFD(nDesVar, nDesVar);
     
-    HDD = getAnalyticHessian(x, dx, W, S, designVar, 0);
-    std::cout<<"DD Hessian"<<std::endl;
-    std::cout<<HDD<<std::endl;
-    
-    HAD = getAnalyticHessian(x, dx, W, S, designVar, 1);
-    std::cout<<"AD Hessian"<<std::endl;
-    std::cout<<HAD<<std::endl;
-    
-    HAA = getAnalyticHessian(x, dx, W, S, designVar, 2);
-    std::cout<<"AA Hessian"<<std::endl;
-    std::cout<<HAA<<std::endl;
-
-    HDA = getAnalyticHessian(x, dx, W, S, designVar, 3);
-    std::cout<<"DA Hessian"<<std::endl;
-    std::cout<<HDA<<std::endl;
-
-    HFD = finiteD2(x, dx, S, designVar, h, currentI, possemidef);
-    std::cout<<"FD Hessian"<<std::endl;
-    std::cout<<HFD<<std::endl;
-
-    std::cout<<"Norm(DD - AD)/Norm(DD): ";
-    std::cout<<(HDD - HAD).norm() / HDD.norm()<<std::endl;
-    std::cout<<"Norm(DD - AA)/Norm(DD): ";
-    std::cout<<(HDD - HAA).norm() / HDD.norm()<<std::endl;
-    std::cout<<"Norm(DD - DA)/Norm(DD): ";
-    std::cout<<(HDD - HDA).norm() / HDD.norm()<<std::endl;
-    std::cout<<"Norm(DD - FD)/Norm(DD): ";
-    std::cout<<(HDD - HFD).norm() / HDD.norm()<<std::endl;
-    exit(EXIT_FAILURE);
+    H = getAnalyticHessian(x, dx, W, S, designVar, Hmethod).inverse();
+//  H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
 
     normGradList.push_back(1);
     int iDesign = 0;
@@ -157,6 +123,8 @@ void design(
         gradientFD = finiteD(x, dx, S, designVar, h, currentI);
         gradientAV = adjoint(x, dx, S, W, psi, designVar);
 
+        
+
         for(int i = 0; i < nDesVar; i++)
         {
             gradList.push_back(gradientAV[i]);
@@ -175,11 +143,12 @@ void design(
             if(iDesign > 1)
             {
                 H_BFGS = BFGS(H, gradList, searchD);
-                H_FD = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
                 H = H_BFGS;
-//              if(possemidef == 1) H = H_FD;
-//              H = H_FD;
             }
+
+            std::cout<<"Current Inverse Hessian:"<<std::endl;
+            std::cout<<H<<std::endl;
+            std::cout<<"\n\n";
 
             for(int r = 0; r < nDesVar; r++)
             {
@@ -258,9 +227,6 @@ MatrixXd BFGS(
     dH = a - b;
 
     newH = oldH + dH;
-    std::cout<<"Current Inverse Hessian:"<<std::endl;
-    std::cout<<newH<<std::endl;
-    std::cout<<"\n\n";
 
     return newH;
 }
@@ -370,7 +336,7 @@ double stepBacktrackUncons(
     newVal = quasiOneD(x, dx, tempS, W);
 
 
-    while(newVal > (currentI + alpha/2.0 * c_pk_grad) && alpha > 1e-20)
+    while(newVal > (currentI + alpha/2.0 * c_pk_grad) && alpha > 1e-16)
     {
         alpha = alpha * 0.5;
         std::cout<<"Alpha Reduction: "<<alpha<<std::endl;
@@ -383,6 +349,7 @@ double stepBacktrackUncons(
         std::cout<<"currentI + alpha/2.0 * c_pk_grad: "<<
         currentI + alpha/ 2.0 * c_pk_grad<<std::endl;
     }
+    if(alpha < 1e-16) std::cout<<"Error. Can't find step size"<<std::endl;
 
     return alpha;
 }
@@ -417,7 +384,6 @@ MatrixXd finiteD2(
     for(int i = 0; i < nDesVar; i++)
     for(int j = i; j < nDesVar; j++)
     {
-        std::cout<<"i = "<<i<<", j = "<<j<<"  ";
         dhi = designVar[i] * h;
         dhj = designVar[j] * h;
         if(i == j)

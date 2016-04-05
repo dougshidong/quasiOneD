@@ -142,7 +142,7 @@ double quasiOneD(
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+//  std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
 
 
     FILE  * Results;
@@ -313,13 +313,12 @@ void inletBC(
         du = -eigenvalue * (dpdx - rho[0] * c[0] * dudx)
                 / (dpdu - rho[0] * c[0]);
 
-        Resi[0 * 3 + 1] = ((u[0] + du) - u[0]) / dtdx;
+//      Resi[0 * 3 + 1] = -((u[0] + du) - u[0]) / dtdx;
         u[0] = u[0] + du;
 
         T0 = Ttin * (1.0 - ((gam - 1.0) / (gam + 1.0)) * u[0] * u[0] / a2);
-        Resi[0 * 3 + 2] = (ptin * pow(T0 / Ttin, gam / (gam - 1.0)) - p[0]) / dtdx;
+//      Resi[0 * 3 + 2] = -(ptin * pow(T0 / Ttin, gam / (gam - 1.0)) - p[0]) / dtdx;
         p[0] = ptin * pow(T0 / Ttin, gam / (gam - 1.0));
-        Resi[0 * 3 + 0] = (p[0] / (R * T0) - rho[0]) / dtdx;
         rho[0] = p[0] / (R * T0);
         e[0] = rho[0] * (Cv * T0 + 0.5 * u[0] * u[0]);
 
@@ -386,11 +385,9 @@ void outletBC(
     drho = Ri[0] + dp / (pow(c[1], 2));
     du = (Ri[1] - dp) / (rho[1] * c[1]);
 
-//  Resi[(nx - 1) * 3 + 1] = (-du) / dtdx;
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;
-//  Resi[(nx - 1) * 3 + 2] = (-dp) / dtdx;
     T = p[1] / (rho[1] * R);
     e[1] = rho[1] * (Cv * T + 0.5 * pow(u[1], 2));
 

@@ -113,14 +113,11 @@ VectorXd adjoint(
     MatrixXd dRdSFD(3 * nx, nx + 1);
     dRdS = evaldRdS(Flux, S, W);
     dRdSFD = evaldRdS_FD(Flux, S, W);
-    std::cout<<"(dRdSFD - dRdS).norm() / dRdS.norm()"<<std::endl;
-    std::cout<<(dRdSFD - dRdS).norm() / dRdS.norm()<<std::endl;
 
     VectorXd psidRdSFD(nx + 1);
     psidRdSFD.setZero();
     psidRdSFD = psiV.transpose() * dRdS;
-    std::cout<<"(psidRdSFD - psidRdS).norm() / psidRdS.norm()"<<std::endl;
-    std::cout<<(psidRdSFD - psidRdS).norm() / psidRdS.norm()<<std::endl;
+
     // Evaluate dSdDes
     MatrixXd dSdDes(nx + 1, designVar.size());
     dSdDes = evaldSdDes(x, dx, designVar);

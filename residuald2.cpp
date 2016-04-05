@@ -198,7 +198,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] - pertWi;
                         Wd[Wj] = W[Wj] + pertWj;
-                        
+
                         inletBC(Wd, Resitemp, 1, 1);
                         Resi3 = Resitemp[Rik];
 
@@ -302,7 +302,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                     for(int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] - pertWi;
                     Wd[Wj] = W[Wj] + pertWj;
-                    
+
                     outletBC(Wd, Resitemp, 1, 1);
                     Resi3 = Resitemp[Rik];
 
@@ -353,7 +353,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                     outletBC(Wd, Resitemp, 1, 1);
                     Resi4 = Resitemp[Rik];
 
-                    ddRdWdW_FD[Rik].insert(Wi, Wj) = 
+                    ddRdWdW_FD[Rik].insert(Wi, Wj) =
                         (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
                         / (12 * pertWi * pertWj);
                     // Reset Wd
@@ -396,33 +396,45 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
         ddRindWdW_FD[Rk] = dummyMat;
         ddRoutdWdW_FD[Rk] = dummyMat;
     }
-    HessianBC_FD(W, ddRindWdW_FD, ddRoutdWdW_FD);
+    HessianBC(W, ddRindWdW, ddRoutdWdW);
 //  HessianBCprim_FD(W, ddRindWdW_FD, ddRoutdWdW_FD);
-//  HessianBC(W, ddRindWdW, ddRoutdWdW);
-    
-    std::cout<<std::endl;
-    std::cout<<"FD ddRdWdW_out 0"<<std::endl;
-    std::cout<<ddRoutdWdW_FD[0]<<std::endl;
-    std::cout<<"AN ddRdWdW_out 0"<<std::endl;
-    std::cout<<ddRoutdWdW[0]<<std::endl;
-    std::cout<<"difference in norm"<<std::endl;
-    std::cout<<(ddRoutdWdW_FD[0].norm()-ddRoutdWdW[0].norm())/ddRoutdWdW[0].norm()<<std::endl;
-    
-    std::cout<<std::endl;
-    std::cout<<"FD ddRdWdW_out 1"<<std::endl;
-    std::cout<<ddRoutdWdW_FD[1]<<std::endl;
-    std::cout<<"AN ddRdWdW_out 1"<<std::endl;
-    std::cout<<ddRoutdWdW[1]<<std::endl;
-    std::cout<<"difference in norm"<<std::endl;
-    std::cout<<(ddRoutdWdW_FD[1].norm()-ddRoutdWdW[1].norm())/ddRoutdWdW[1].norm()<<std::endl;
-    
-    std::cout<<std::endl;
-    std::cout<<"FD ddRdWdW_out 2"<<std::endl;
-    std::cout<<ddRoutdWdW_FD[2]<<std::endl;
-    std::cout<<"AN ddRdWdW_out 2"<<std::endl;
-    std::cout<<ddRoutdWdW[2]<<std::endl;
-    std::cout<<"difference in norm"<<std::endl;
-    std::cout<<(ddRoutdWdW_FD[2].norm()-ddRoutdWdW[2].norm())/ddRoutdWdW[2].norm()<<std::endl;
+//  HessianBC_FD(W, ddRindWdW, ddRoutdWdW);
+
+//  std::cout<<std::endl;
+//  std::cout<<"FD ddRdWdW_in 0"<<std::endl;
+//  std::cout<<ddRindWdW_FD[0]<<std::endl;
+//  std::cout<<"AN ddRdWdW_in 0"<<std::endl;
+//  std::cout<<ddRindWdW[0]<<std::endl;
+//  std::cout<<"FD - AN ddRdWdW_in 0"<<std::endl;
+//  std::cout<<ddRindWdW_FD[0]+ddRindWdW[0]<<std::endl;
+//  std::cout<<std::endl;
+//  std::cout<<"difference in norm"<<std::endl;
+//  std::cout<<(ddRindWdW_FD[0].norm()-ddRindWdW[0].norm())/ddRindWdW[0].norm()<<std::endl;
+
+//  std::cout<<std::endl;
+//  std::cout<<"FD ddRdWdW_in 1"<<std::endl;
+//  std::cout<<ddRindWdW_FD[1]<<std::endl;
+//  std::cout<<std::endl;
+//  std::cout<<"AN ddRdWdW_in 1"<<std::endl;
+//  std::cout<<ddRindWdW[1]<<std::endl;
+//  std::cout<<std::endl;
+//  std::cout<<"FD - AN ddRdWdW_in 1"<<std::endl;
+//  std::cout<<ddRindWdW_FD[1]+ddRindWdW[1]<<std::endl;
+//  std::cout<<std::endl;
+//  std::cout<<"difference in norm"<<std::endl;
+//  std::cout<<(ddRindWdW_FD[1].norm()-ddRindWdW[1].norm())/ddRindWdW[1].norm()<<std::endl;
+
+//  std::cout<<std::endl;
+//  std::cout<<"FD ddRdWdW_in 2"<<std::endl;
+//  std::cout<<ddRindWdW_FD[2]<<std::endl;
+//  std::cout<<"AN ddRdWdW_in 2"<<std::endl;
+//  std::cout<<ddRindWdW[2]<<std::endl;
+//  std::cout<<"FD - AN ddRdWdW_in 2"<<std::endl;
+//  std::cout<<ddRindWdW_FD[2]+ddRindWdW[2]<<std::endl;
+//  std::cout<<std::endl;
+//  std::cout<<"difference in norm"<<std::endl;
+//  std::cout<<(ddRindWdW_FD[2].norm()-ddRindWdW[2].norm())/ddRindWdW[2].norm()<<std::endl;
+
     for(int Rk = 0; Rk < 3; Rk++)
     {
       for(int row = 0; row < 6; row++)
@@ -430,11 +442,11 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
         for(int col = 0; col < 6; col++)
         {
           // Inlet
-          ddRdWdW[Rk].insert(row, col) = ddRindWdW[Rk](row, col);
+          ddRdWdW[Rk].insert(row, col) = -ddRindWdW[Rk](row, col);
           // Outlet
           int rowi = (nx - 2) * 3 + row;
           int coli = (nx - 2) * 3 + col;
-          ddRdWdW[(nx - 1) * 3 + Rk].insert(rowi, coli) = ddRoutdWdW[Rk](row, col);
+          ddRdWdW[(nx - 1) * 3 + Rk].insert(rowi, coli) = -ddRoutdWdW[Rk](row, col);
         }
       }
     }
@@ -1068,4 +1080,27 @@ void evalddFluxdWdW(
     {
         evalddScalarFluxdWdW(ddFluxdWdW1, ddFluxdWdW2, ddFluxdWdW3, W);
     }
+}
+
+std::vector <Matrix3d> ddWpdWdWp(
+    std::vector <double> W,
+    int i)
+{
+    double rho, u;
+    rho = W[i * 3 + 0];
+    u = W[i * 3 + 1] / rho;
+
+    std::vector <Matrix3d> M(3);
+    M[0].setZero();
+    M[1].setZero();
+    M[2].setZero();
+
+    M[1](0,0) = u / (rho * rho);
+    M[1](0,1) = -1.0 / rho;
+    M[1](1,0) = -1.0 / (rho * rho);
+
+    M[2](0,1) = u * (gam - 1.0);
+    M[2](1,1) = 1.0 - gam;
+
+    return M;
 }

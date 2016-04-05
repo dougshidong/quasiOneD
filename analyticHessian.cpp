@@ -522,14 +522,58 @@ MatrixXd directDirectHessian(
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
     MatrixXd dWdDes(3 * nx, nDesVar);
-    dWdDes = evaldWdDes(x, dx, S, W, designVar);
+    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
+    slusolver.compute(-dRdW);
+    if(slusolver.info() != 0)
+        std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
+    dWdDes = slusolver.solve(dRdDes);
     // *************************************
     // Evaluate ddWdDesdDes (nDesVar * (nDesVar+1) / 2 Flow Eval)
     // *************************************
     std::vector <MatrixXd> ddWdDesdDes(3 * nx);
-    ddWdDesdDes = evalddWdDesdDes(x, dx, W, S, designVar);
-//    ddWdDesdDes = evalddWdDesdDes_FD(x, dx, S, designVar);
+    MatrixXd dummy(nDesVar, nDesVar);
+    for(int Wi = 0; Wi < 3 * nx; Wi++)
+    {
+        ddWdDesdDes[Wi] = dummy;
+    }
 
+    VectorXd ddWdDesidDesj(3 * nx);
+    VectorXd RHS(3 * nx);
+    for(int di = 0; di < nDesVar; di++)
+    {
+        for(int dj = di; dj < nDesVar; dj++)
+        {
+            // Evaluate RHS
+            RHS.setZero();
+            for(int Ri = 0; Ri < 3 * nx; Ri++)
+            {
+                RHS[Ri] += dWdDes.col(dj).transpose() * ddRdWdS[Ri] * dSdDes.col(di);
+                RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdS[Ri] * dSdDes.col(dj);
+                RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdW[Ri] * dWdDes.col(dj);
+            }
+
+            for(int Si = 0; Si < nx + 1; Si++)
+            {
+                RHS += dRdS.col(Si) * ddSdDesdDes[Si](di, dj);
+            }
+
+            // Solve
+            ddWdDesidDesj = slusolver.solve(RHS);
+
+            for(int Wi = 0; Wi < 3 * nx; Wi++)
+            {
+                ddWdDesdDes[Wi](di, dj) = ddWdDesidDesj[Wi];
+                if(di != dj)
+                {
+                    ddWdDesdDes[Wi](dj, di) = ddWdDesdDes[Wi](di, dj);
+                }
+            }
+        }
+    }
+
+    // *************************************
+    // Evaluate total derivative DDIcDDesDDes
+    // *************************************
     MatrixXd DDIcDDesDDes(nDesVar, nDesVar);
     DDIcDDesDDes = ddIcdDesdDes
                    + dWdDes.transpose() * ddIcdWdDes
