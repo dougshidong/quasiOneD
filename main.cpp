@@ -7,13 +7,9 @@
 #include <vector>
 #include "globals.h"
 #include <fenv.h>
-#include"petsc.h"
-#include"petscsys.h"
 
-static char help[] = "QuasiOneD\n\n";
-int main(int argc,char **argv)
+int main()
 {
-    PetscInitialize(&argc, &argv, (char*)0,help);
     std::vector <double> x(nx), S(nx + 1);
     std::vector <double> dx(nx);
     std::vector <double> W(3 * nx, 0);
@@ -40,10 +36,10 @@ int main(int argc,char **argv)
         design(x, dx, S, desVar);
     }
 
-//  int nI = 25;
-//  double hs = 0.04, he = 0.11, dh = (he - hs) / (nI - 1);
-//  double t1s = 0.7, t1e = 1.1, dt1 = (t1e - t1s) / (nI - 1);
-//  double t2s = 1.0, t2e = 9.0, dt2 = (t2e - t2s) / (nI - 1);
+    int nI = 25;
+    double hs = 0.04, he = 0.11, dh = (he - hs) / (nI - 1);
+    double t1s = 0.7, t1e = 1.1, dt1 = (t1e - t1s) / (nI - 1);
+    double t2s = 1.0, t2e = 9.0, dt2 = (t2e - t2s) / (nI - 1);
 
 //  FILE  * Results;
 //  Results = fopen("CostPlot.dat", "w");
@@ -75,6 +71,5 @@ int main(int argc,char **argv)
 //  }
 
 //  fclose(Results);
-    PetscFinalize();
     return 0;
 }
