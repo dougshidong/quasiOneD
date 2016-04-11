@@ -1,4 +1,4 @@
-#!/home/ddong/anaconda2/bin/python
+#!/usr/bin/python
 '''Ploting results'''
 import sys
 import matplotlib
