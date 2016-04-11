@@ -15,6 +15,13 @@ void Flux_Scalar(
     std::vector <double> &Flux,
     std::vector <double> W);
 
+void Flux_MSW(
+    std::vector <double> &Flux,
+    std::vector <double> W);
+
+void Flux_CMSW(
+    std::vector <double> &Flux,
+    std::vector <double> W);
 void Flux_SW(
     std::vector <double> &Flux,
     std::vector <double> W);

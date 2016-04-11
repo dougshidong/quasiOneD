@@ -15,7 +15,11 @@ void getFlux(std::vector <double> &Flux,
         Flux_StegerWarming(Flux, W);
     else if(FluxScheme == 1) // Scalar
         Flux_Scalar(Flux, W);
-    else if(FluxScheme == 2) // SWNew
+    else if(FluxScheme == 2) // MWS
+        Flux_MSW(Flux, W);
+    else if(FluxScheme == 3) // CMWS
+        Flux_CMSW(Flux, W);
+    else if(FluxScheme == -1) // SW New?
         Flux_SW(Flux, W);
 }
 // Flux Jacobian for SW/MSW/CMSW
@@ -126,6 +130,7 @@ void Flux_Jacobian(
 
     }
 }
+
 // StegerWarming
 void Flux_StegerWarming(
     std::vector <double> &Flux,
@@ -145,8 +150,81 @@ void Flux_StegerWarming(
         {
             int Ap_pos = ((i - 1) * 3 * 3) + (row * 3) + col;
             int An_pos = (i * 3 * 3) + (row * 3) + col;
-            Flux[i * 3 + row] = Flux[i * 3 + row] + Ap_list[Ap_pos] * W[(i - 1) * 3 + col]
-                 + An_list[An_pos] * W[i * 3 + col];
+            Flux[i * 3 + row] += Ap_list[Ap_pos] * W[(i - 1) * 3 + col]
+                               + An_list[An_pos] * W[i * 3 + col];
+        }
+    }
+}
+
+// Modified StegerWarming
+void Flux_MSW(
+    std::vector <double> &Flux,
+    std::vector <double> W)
+{
+    std::vector <double> Ap_list(nx * 3 * 3, 0), An_list(nx * 3 * 3, 0);
+
+    std::vector <double> Wavg(3 * nx);
+
+    for(int i = 0; i < nx - 1; i++)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            Wavg[i * 3 + k] = (W[i * 3 + k] + W[(i+1) * 3 + k]) / 2.0;
+        }
+    }
+    Wavg[(nx-1)*3 + 0] = 1;
+    Wavg[(nx-1)*3 + 1] = 1;
+    Wavg[(nx-1)*3 + 2] = 1;
+
+
+    Flux_Jacobian(Ap_list, An_list, Wavg);
+
+    for(int i = 1; i < nx; i++)
+    {
+        Flux[i * 3 + 0] = 0;
+        Flux[i * 3 + 1] = 0;
+        Flux[i * 3 + 2] = 0;
+        for(int row = 0; row < 3; row++)
+        for(int col = 0; col < 3; col++)
+        {
+            int Ahalf_pos = ((i-1) * 3 * 3) + (row * 3) + col;
+            Flux[i * 3 + row] += Ap_list[Ahalf_pos] * W[(i - 1) * 3 + col]
+                               + An_list[Ahalf_pos] * W[i * 3 + col];
+        }
+    }
+}
+
+void Flux_CMSW(
+    std::vector <double> &Flux,
+    std::vector <double> W)
+{
+    std::vector <double> FluxSW(3 * (nx + 1)), FluxMSW(3 * (nx + 1));
+    std::vector <double> Whalf(3 * nx);
+    std::vector <double> p(nx);
+
+    Flux_StegerWarming(FluxSW, W);
+    Flux_MSW(FluxMSW, W);
+
+    for(int i = 0; i < nx; i++)
+    {
+        p[i] = (gam - 1.0) * ( W[i * 3 + 2] - (pow(W[i * 3 + 1], 2.0) / W[i * 3 + 0]) / 2.0 );
+    }
+
+    for(int i = 0; i < nx - 1; i++)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            Whalf[i * 3 + k]= 1.0 / (1.0 + pow( (p[i+1] - p[i]) / std::min(p[i+1], p[i]), 2 ));
+        }
+    }
+
+    for(int i = 1; i < nx; i++)
+    {
+        for(int k = 0; k < 3; k++)
+        {
+            Flux[i * 3 + k] = 0;
+            Flux[i * 3 + k] = Whalf[(i - 1) * 3 + k] * FluxMSW[i * 3 + k]
+                     + (1.0 - Whalf[(i - 1) * 3 + k]) * FluxSW[i * 3 + k];
         }
     }
 }
@@ -234,18 +312,12 @@ void Flux_SW(
     double rho, u, e, c;
     double eig[3], eigp[3], eign[3];
 
-    double *partialJp, *partialJn;
-    double beta = gam - 1.0;
-    double uu, cc;
     for(int i = 0; i < nx; i++)
     {
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
         e = W[i * 3 + 2];
         c = sqrt( gam / rho * (gam - 1) * ( e - rho * u * u / 2 ) );
-
-        uu = u * u;
-        cc = c * c;
 
         double eps = 0.1;
         eig[0] = u;
