@@ -14,4 +14,8 @@ void Flux_StegerWarming(
 void Flux_Scalar(
     std::vector <double> &Flux,
     std::vector <double> W);
+
+void Flux_SW(
+    std::vector <double> &Flux,
+    std::vector <double> W);
 #endif

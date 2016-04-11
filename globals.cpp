@@ -7,7 +7,7 @@ const double PI = atan(1.0) * 4.0;
 const int nx = 50;
 
 // Optimization Flag
-const int opt = 1;
+const int opt = 0;
 
 // Design Variables for Optimization
 // 0  -  Individual Areas
@@ -16,13 +16,13 @@ const int desParam = 1;
 int nDesVar;
 // Input Geometry
 const double a_geom = 0, b_geom = 1;
-const double h_geom = 0.10, t1_geom = 0.80, t2_geom = 6.00;
+const double h_geom = 0.15, t1_geom = 0.80, t2_geom = 3.00;
 //const double h_geom = 0.05, t1_geom = 1.00, t2_geom = 3.00;
 
 // Fitness Function
 // 0  -  Total Pressure Loss
 // 1  -  Pressure Target
-const int fitnessFun = 1;
+const int fitnessFun = 0;
 
 // Descent Type for Optimization
 // 1  -  Steepest Descent
@@ -45,15 +45,15 @@ const int createTarget = 0;
 // FLOW RELATED VARIABLES
 // Gas Constants
 const double gam = 1.4;
-const double R = 1716.0 / 1716.0;
+const double R = 1716.0;
 const double Cv = R / (gam - 1.0);
 
 // Inlet
 const double Min = 1.75;
-const double Ttin = 531.2 / 531.2;
-const double ptin = 2117.0 / 2117.0;
+const double Ttin = 531.2;
+const double ptin = 2117.0;
 // Outlet
-const double pexit = 0.92 * ptin;
+const double pexit = 0.80 * ptin;
 // Constant
 const double a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0)/(gam + 1.0)); // used in isentropic nozzle
 
@@ -69,10 +69,10 @@ const int printW = 0;
 // 0   -   Euler Explicit
 // 1   -   Runge - Kutta 4th order
 // 2   -   Jameson's Runge-Kutta 4th order
-const int StepScheme = 2;
+const int StepScheme = 0;
 
 // Flux Scheme
 // 0   -   Steger Warming (SW)
 // 1   -   Scalar Dissipation
-const int FluxScheme = 1;
+const int FluxScheme = 2;
 double Scalareps = 0.5;

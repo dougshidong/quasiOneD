@@ -142,7 +142,7 @@ double quasiOneD(
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-//  std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
 
 
     FILE  * Results;
@@ -177,13 +177,18 @@ double quasiOneD(
 
     // Compute Fitness
     if(fitnessFun == 0)
-        return TotalPressureLoss(W);
+    {
+        double tpl = TotalPressureLoss(W);
+        std::cout<<"Total Pressure Loss: "<<tpl<<std::endl;
+        return tpl;
+    }
     else if(fitnessFun == 1)
     {
         std::vector <double> ptarget(nx, 0);
         ioTargetPressure(-1, ptarget);
         return inverseFitness(p, ptarget, dx);
     }
+
 
 
     return  - 9999.99;
