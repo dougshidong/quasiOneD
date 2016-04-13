@@ -6,6 +6,7 @@
 #include "flux.h"
 #include "timestep.h"
 #include "globals.h"
+#include "output.h"
 
 double isenP(double pt, double M);
 
@@ -53,7 +54,6 @@ double quasiOneD(
     double normR = 1.0;
     int iterations = 0;
 
-
     V = calcVolume(S, dx);
 
 
@@ -86,7 +86,7 @@ double quasiOneD(
         W[i * 3 + 2] = e[i];
     }
 
-    while(normR > conv && iterations < maxIt)
+    while(normR > flowConv && iterations < maxIt)
     {
         iterations++;
 
@@ -142,38 +142,17 @@ double quasiOneD(
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-//  std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
 
 
-    FILE  * Results;
-    Results = fopen("Results.dat", "w");
-    fprintf(Results, "%d\n", nx);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", x[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", p[i] / ptin);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", rho[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", Mach[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", x[i] - dx[i] / 2);
-    fprintf(Results, "%f\n", x.back() + dx.back() / 2);
-    for(int i = 0; i < nx + 1; i++)
-        fprintf(Results, "%.15f\n", S[i]);
-
-    iterlength = itV.size();
-    for(int i = 0; i < iterlength; i++)
-        fprintf(Results, "%.15d\n", itV[i]);
-    for(int i = 0; i < iterlength; i++)
-        fprintf(Results, "%.15f\n", normV[i]);
-
-
-
-    fclose(Results);
-
-    // Create Target Pressure
-    if(createTarget == 1) ioTargetPressure(1, p);
+    outVec("Geom.dat", "w", x);
+    outVec("Geom.dat", "a", S);
+    std::vector <double> pn(nx);
+    for(int i = 0; i < nx; i++) pn[i] = p[i]/ptin;
+    outVec("Flow.dat", "w", pn);
+    outVec("Flow.dat", "a", rho);
+    outVec("Flow.dat", "a", Mach);
+    outVec("FlowConv.dat", "w", normV);
 
     // Compute Fitness
     if(fitnessFun == 0)
@@ -184,7 +163,6 @@ double quasiOneD(
         ioTargetPressure(-1, ptarget);
         return inverseFitness(p, ptarget, dx);
     }
-
 
     return  - 9999.99;
 
@@ -234,7 +212,6 @@ std::vector <double> calcVolume(
 // Input/Output Target Pressure Distribution
 void ioTargetPressure(int io, std::vector <double> &p)
 {
-
     FILE  * TargetP;
     int err;
     // Output

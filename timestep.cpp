@@ -8,15 +8,11 @@
 #include "globals.h"
 
 int ki, kip;
-std::vector <double> Q(3 * nx);
-std::vector <double> Flux(3 * (nx + 1), 0);
-std::vector <double> V(nx);
-std::vector <double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-std::vector <double> W1(3 * nx, 0), W2(3 * nx, 0), W3(3 * nx, 0), Wtemp(3 * nx, 0);
 
 void EulerExplicitStep(
     std::vector <double> S,
     std::vector <double> dx,
+    std::vector <double> V,
     std::vector <double> dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
@@ -24,6 +20,7 @@ void EulerExplicitStep(
 void rk4(
     std::vector <double> S,
     std::vector <double> dx,
+    std::vector <double> V,
     std::vector <double> dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
@@ -31,6 +28,7 @@ void rk4(
 void jamesonrk(
     std::vector <double> S,
     std::vector <double> dx,
+    std::vector <double> V,
     std::vector <double> dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
@@ -42,19 +40,22 @@ void stepInTime(
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
+    std::vector <double> V(nx);
     for(int i = 0; i < nx; i++)
-        V[i] = (S[i] + S[i + 1]) / 2 * dx[i];
+    {
+        V[i] = (S[i] + S[i + 1]) / 2.0 * dx[i];
+    }
     if(StepScheme == 0)
     {
-        EulerExplicitStep(S, dx, dt, Resi, W);
+        EulerExplicitStep(S, dx, V, dt, Resi, W);
     }
     else if(StepScheme == 1)
     {
-        rk4(S, dx, dt, Resi, W);
+        rk4(S, dx, V, dt, Resi, W);
     }
     else if(StepScheme == 2)
     {
-        jamesonrk(S, dx, dt, Resi, W);
+        jamesonrk(S, dx, V, dt, Resi, W);
     }
 }
 
@@ -65,6 +66,7 @@ void getDomainResi(
     std::vector <double> S,
     std::vector <double> &Resi)
 {
+    std::vector <double> Q(3 * nx);
     WtoQ(W, Q, S);
     for(int k = 0; k < 3; k++)
     {
@@ -81,10 +83,12 @@ void getDomainResi(
 void EulerExplicitStep(
     std::vector <double> S,
     std::vector <double> dx,
+    std::vector <double> V,
     std::vector <double> dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
+    std::vector <double> Flux(3 * (nx + 1));
     getFlux(Flux, W);
     getDomainResi(W, Flux, S, Resi);
 
@@ -102,10 +106,14 @@ void EulerExplicitStep(
 void rk4(
     std::vector <double> S,
     std::vector <double> dx,
+    std::vector <double> V,
     std::vector <double> dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
-{
+{ 
+    std::vector <double> W1(3 * nx), W2(3 * nx), W3(3 * nx), Wtemp(3 * nx);
+    std::vector <double> Resi0(3 * nx), Resi1(3 * nx), Resi2(3 * nx);
+    std::vector <double> Flux(3 * (nx + 1));
     // Residual 0
     getFlux(Flux, W);
     getDomainResi(W, Flux, S, Resi0);
@@ -169,10 +177,14 @@ void rk4(
 void jamesonrk(
     std::vector <double> S,
     std::vector <double> dx,
+    std::vector <double> V,
     std::vector <double> dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
+    std::vector <double> Wtemp(3 * nx);
+    std::vector <double> Flux(3 * (nx + 1));
+    std::vector <double> Resi1(3 * nx);
     // Initialize First Stage
     for(int k = 0; k < 3; k++)
     {

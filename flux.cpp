@@ -143,7 +143,6 @@ void Flux_StegerWarming(
 
 }
 
-std::vector <double> F(3 * nx);
 void Flux_Scalar(
     std::vector <double> &Flux,
     std::vector <double> W)
@@ -154,6 +153,7 @@ void Flux_Scalar(
     double rho, e;
     std::vector <double> u(nx), c(nx);
 
+    std::vector <double> F(3 * nx);
     // Get Convective Variables
     WtoF(W, F);
 

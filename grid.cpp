@@ -43,7 +43,15 @@ std::vector <double> evalS(
     int param)
 {
     std::vector <double> S(nx + 1);
-    if(param == 0) S = geom;
+    if(param == 0)
+    {
+        S[0] = 1.0;
+        S[nx] = 1.0;
+        for(int Si = 1; Si < nx; Si++)
+        {
+            S[Si] = geom[Si - 1];
+        }
+    }
     else if(param == 1) S = sinParam(geom, x, dx);
     return S;
 }

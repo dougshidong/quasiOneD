@@ -12,7 +12,14 @@ MatrixXd evaldSdDes(
     std::vector <double> designVar)
 {
     MatrixXd dSdDes(nx + 1, nDesVar);
-    if(desParam == 0) dSdDes.setIdentity();
+    if(desParam == 0) 
+    {
+        dSdDes.setZero();
+        for(int Si = 1; Si < nx; Si++)
+        {
+            dSdDes(Si, Si - 1) = 1;
+        }
+    }
     if(desParam == 1)
     {
         double d1 = designVar[0];

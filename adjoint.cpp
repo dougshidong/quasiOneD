@@ -16,6 +16,7 @@
 #include"residuald1.h"
 #include"parametrization.h"
 #include"objectiveDerivatives.h"
+#include"output.h"
 
 using namespace Eigen;
 
@@ -24,7 +25,6 @@ VectorXd adjoint(
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
-    std::vector <double> &psi,
     std::vector <double> designVar)
 {
     //Get Primitive Variables
@@ -87,14 +87,16 @@ VectorXd adjoint(
 //  std::cout<<psiV<<std::endl;
 
     // Save Adjoint
-    FILE *Results;
-    Results = fopen("Adjoint.dat", "w");
-    fprintf(Results, "%d\n", nx);
-    for(int k = 0; k < 3; k++)
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", psiV(i * 3 + k));
+    outVec("adjoint.dat", "w", psiV);
+//  FILE *Results;
+//  std::string fn = fname() + "Adjoint.dat";
+//  Results = fopen(fn.c_str(), "w");
+//  fprintf(Results, "%d\n", nx);
+//  for(int k = 0; k < 3; k++)
+//  for(int i = 0; i < nx; i++)
+//      fprintf(Results, "%.15f\n", psiV(i * 3 + k));
 
-    fclose(Results);
+//  fclose(Results);
 
     // Evaluate dIcdS
     VectorXd dIcdS(nx + 1);

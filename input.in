@@ -1,0 +1,33 @@
+*******************************************
+INITIAL GEOMETRY
+NX
+50
+AG          BG
+0.0         1.0
+HG          T1G         T2G
+0.10        0.80        6.00
+*******************************************
+FLOW SOLVER PARAMETERS
+TIMESC      FLUXSC      SCEPS
+2           1           0.5
+CFL         CONV        MAXIT
+0.2         -14         50000
+PRINTIT     PRINTCONV   PRINTW
+10          0           0
+*******************************************
+FLOW INPUTS
+GAM         R
+1.4         1.0
+MACHIN      TTIN        PPTIN       PEXIT
+1.75        1           1           0.92
+*******************************************
+DESIGN OPTIMIZATION PARAMETERS
+OPT         DESPARAM    FITFUN
+1           1           1
+OPTALG      GRADALG     HESSALG     EXACHES
+2           1           3           0
+CONV        MAXDES
+-10         300
+TARGET GEOMETRY
+HG          T1G         T2G
+0.05        1.00        3.00
