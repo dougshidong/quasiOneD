@@ -1,8 +1,5 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
-#include <string>
-
-std::string fname();
 
 extern const double PI;
 
@@ -30,5 +27,7 @@ extern double gradConv;
 extern int maxDesign;
 
 extern double h_tar, t1_tar, t2_tar;
+
+extern int nctl, spline_degree;
 
 #endif

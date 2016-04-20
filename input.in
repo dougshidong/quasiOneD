@@ -1,7 +1,7 @@
 *******************************************
 INITIAL GEOMETRY
 NX
-50
+300
 AG          BG
 0.0         1.0
 HG          T1G         T2G
@@ -23,11 +23,15 @@ MACHIN      TTIN        PPTIN       PEXIT
 *******************************************
 DESIGN OPTIMIZATION PARAMETERS
 OPT         DESPARAM    FITFUN
-1           1           1
+1           2           1
 OPTALG      GRADALG     HESSALG     EXACHES
-2           1           3           0
+2           1           3           1
 CONV        MAXDES
 -10         300
 TARGET GEOMETRY
 HG          T1G         T2G
 0.05        1.00        3.00
+*******************************************
+SPLINE PARAMETERS
+NCTL        DEGREE
+50          4

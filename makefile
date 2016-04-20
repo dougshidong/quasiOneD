@@ -1,8 +1,8 @@
 CXX	= g++
 INCLEI  = ./eigen/
 INCLPE  = -L ./petsc-3.6.3/include/ ${PETSC_CC_INCLUDES}
-DEBUG	= -g -Wall
-#DEBUG	= -O3
+#DEBUG	= -g -Wall
+DEBUG	= -O3
 OBJDIR  = ./obj
 CPP_FILES	=	$(wildcard *.cpp)
 OBJ_FILES	=	$(addprefix	$(OBJDIR)/,	$(notdir	$(CPP_FILES:.cpp=.o)))

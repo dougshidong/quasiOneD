@@ -9,7 +9,6 @@ using namespace Eigen;
 
 MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
 {
-    PetscErrorCode ierr;
     Vec         x, b;
     Mat         A;
     KSP         ksp;
@@ -48,18 +47,18 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     PCSetType(pc,PCILU);
 
     KSPSetType(ksp, KSPGMRES);
-    KSPSetTolerances(ksp,1.e-4,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+    KSPSetTolerances(ksp,1.e-6,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     MatrixXd X(Bin.rows(), Bin.cols());
-    ierr = PetscMalloc(Bin.cols() * sizeof(PetscScalar), &values);
-    ierr = PetscMalloc(Bin.cols() * sizeof(PetscInt), &indices);
+    PetscMalloc1(Bin.rows() * sizeof(PetscScalar), &values);
+    PetscMalloc1(Bin.rows() * sizeof(PetscInt), &indices);
+    VecCreate(PETSC_COMM_WORLD, &b);
+    VecSetSizes(b,PETSC_DECIDE, Bin.rows());
+    VecSetFromOptions(b);
+    VecDuplicate(b, &x);
     for(int bcol = 0; bcol < Bin.cols(); bcol++)
     {
-        VecCreate(PETSC_COMM_WORLD, &b);
-        VecSetSizes(b,PETSC_DECIDE, Bin.rows());
-        VecSetFromOptions(b);
-        VecDuplicate(b, &x);
 
         for(int brow = 0; brow < Bin.rows(); brow++)
         {
@@ -75,9 +74,7 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
             values[brow] = -1.0;
             indices[brow] = brow;
         }
-        ierr = VecGetValues(x, Bin.rows(), indices, values);
-        VecDestroy(&x);
-        VecDestroy(&b);
+        VecGetValues(x, Bin.rows(), indices, values);
 
         for(int brow = 0; brow < Bin.rows(); brow++)
         {
@@ -85,7 +82,13 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
         }
 
     }
+    PetscFree(values);
+    PetscFree(indices);
+    VecDestroy(&x);
+    VecDestroy(&b);
     MatDestroy(&A);
+
+    KSPDestroy(&ksp);
 
 
     return X;

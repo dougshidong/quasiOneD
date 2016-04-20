@@ -1,5 +1,6 @@
 #include "globals.h"
 #include "quasiOneD.h"
+#include "fitness.h"
 #include "grid.h"
 #include "adjoint.h"
 #include "directDifferentiation.h"
@@ -60,7 +61,8 @@ VectorXd finiteD(
 
     if(currentI < 0 && gType != -3)
     {
-        I0 = quasiOneD(x, dx, S, W);
+        quasiOneD(x, dx, S, W);
+        I0 = evalFitness(dx, W);
     }
     else
     {
@@ -76,26 +78,30 @@ VectorXd finiteD(
         {
             tempD[i] += dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I1 = evalFitness(dx, W);
             grad[i] = (I1 - I0) / dh;
         }
         else if(gType == -2) // BFD
         {
             tempD[i] -= dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I2 = evalFitness(dx, W);
             grad[i] = (I0 - I2) / dh;
         }
         else if(gType == -3) // CFD
         {
             tempD[i] += dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I1 = evalFitness(dx, W);
             tempD = designVar;
 
             tempD[i] -= dh;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I2 = evalFitness(dx, W);
             grad[i] = (I1 - I2) / (2 * dh);
         }
     }

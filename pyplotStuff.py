@@ -16,10 +16,13 @@ line   = line.strip()
 columns = line.split()
 nx = int(columns[0])
 
-fn = 'run'
+fn = 'IdenBFGS'
 gfname = './Results/'+fn+'Geom.dat'
+tgfname = './Results/'+fn+'TargetGeom.dat'
 flfname = './Results/'+fn+'Flow.dat'
 fcfname = './Results/'+fn+'FlowConv.dat'
+optcfname = './Results/'+fn+'OptConv.dat'
+opttfname = './Results/'+fn+'OptTime.dat'
 ptname = 'targetP.dat'
 
 # Read shape results
@@ -29,6 +32,15 @@ x = data[lbound:lbound+nx]
 xhalf = np.append(x-(1.0/nx)/2.0, 1.0)
 lbound += nx
 S = data[lbound:lbound+nx+1]
+lbound += nx+1
+
+# Read shape results
+data = np.loadtxt(tgfname)
+lbound = 0
+xtar = data[lbound:lbound+nx]
+xhalftar = np.append(x-(1.0/nx)/2.0, 1.0)
+lbound += nx
+Star = data[lbound:lbound+nx+1]
 lbound += nx+1
 
 # Read shape results
@@ -52,6 +64,15 @@ nx = data[0]
 
 targetp=data[1:nx+1]
 
+# Read Optimization Convergence Residual
+data = np.loadtxt(optcfname)
+lbound = 0
+optconv = data[lbound:len(data)]
+# Read Optimization Time
+data = np.loadtxt(opttfname)
+lbound = 0
+opttime = data[lbound:len(data)]
+
 #adname = './Results/'+fn+'Adjoint.dat'
 ## Read Adjoint Results
 #data = np.loadtxt(adname)
@@ -65,7 +86,8 @@ pp=PdfPages('Figures.pdf')
 # Plot Channel
 plt.figure()
 plt.title('Channel Shape')
-PressureCurve = plt.plot(xhalf,S,'-ob',markerfacecolor='None', markeredgecolor='b')
+cshape1 = plt.plot(xhalf,S,'-ob',markerfacecolor='None', markeredgecolor='b')
+cshape2 = plt.plot(xhalftar,Star,'xr',markerfacecolor='None', markeredgecolor='r')
 plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
 pp.savefig()
 
@@ -73,7 +95,7 @@ pp.savefig()
 plt.figure()
 plt.title('Pressure Distribution')
 PressureCurve = plt.plot(x,pres,'-ob',markerfacecolor='None', markeredgecolor='b', label='Current')
-TargetPCurve  = plt.plot(x,targetp,'-xr',markerfacecolor='None', markeredgecolor='r', label='Target')
+TargetPCurve  = plt.plot(x,targetp,'xr',markerfacecolor='None', markeredgecolor='r', label='Target')
 plt.grid(b=True, which='major', color='black', linestyle='-',alpha=0.5)
 plt.legend(loc='upper right')
 pp.savefig()
@@ -88,11 +110,26 @@ pp.savefig()
 
 # Plot Convergence
 plt.figure()
-plt.title('Convergence')
+plt.title('Flow Convergence')
 nIt=len(conv)
 convCurve = plt.loglog(range(nIt),conv, '-x')
 plt.grid(b=True, which='both', color='black', linestyle='-',alpha=0.5)
 pp.savefig()
+
+# Plot Opt Convergence
+plt.figure()
+plt.title('Optimization Convergence')
+nIt=len(optconv)
+convCurve = plt.semilogy(range(nIt),optconv, '-x')
+plt.grid(b=True, which='both', color='black', linestyle='-',alpha=0.5)
+pp.savefig()
+
+plt.figure()
+plt.title('Optimization Convergence')
+convCurve = plt.semilogy(opttime,optconv, '-x')
+plt.grid(b=True, which='both', color='black', linestyle='-',alpha=0.5)
+pp.savefig()
+
 
 ## Plot Adjoint Distribution
 #plt.figure()

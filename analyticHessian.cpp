@@ -153,31 +153,27 @@ MatrixXd directAdjointHessian(
     ddRdWdW = evalddRdWdW(W, S);
 
     // *************************************
-    // Sparse LU of Jacobian Transpose dRdW.transpose()
-    // *************************************
-    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver1;
-    slusolver1.compute(-dRdW.transpose());
-    if(slusolver1.info() != 0)
-        std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
-    // *************************************
     // Solve for Adjoint (1 Flow Eval)
     // *************************************
     VectorXd psi(3 * nx);
-    psi = slusolver1.solve(dIcdW);
-    VectorXd psiGMRES(3 * nx);
-    psiGMRES = solveGMRES(-dRdW.transpose(),dIcdW);
-
-    std::cout<<(psiGMRES-psi).norm()/psi.norm()<<std::endl;
+    //SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver1;
+    //slusolver1.compute(-dRdW.transpose());
+    //if(slusolver1.info() != 0)
+    //    std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
+    //VectorXd psi(3 * nx);
+    //psi = slusolver1.solve(dIcdW);
+    psi = solveGMRES(-dRdW.transpose(),dIcdW);
 
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
-    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver2;
-    slusolver2.compute(-dRdW);
-    if(slusolver2.info() != 0)
-        std::cout<<"Factorization failed. Error: "<<slusolver2.info()<<std::endl;
     MatrixXd dWdDes(3 * nx, nDesVar);
-    dWdDes = slusolver2.solve(dRdDes);
+    //SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver2;
+    //slusolver2.compute(-dRdW);
+    //if(slusolver2.info() != 0)
+    //    std::cout<<"Factorization failed. Error: "<<slusolver2.info()<<std::endl;
+    //dWdDes = slusolver2.solve(dRdDes);
+    dWdDes = solveGMRES(-dRdW,dRdDes);
 
     // *************************************
     // Evaluate total derivative DDIcDDesDDes
@@ -623,13 +619,13 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
 
     std::vector <double> tempS(nx + 1);
 
-    double I, dhi, dhj;
+    double dhi, dhj;
 
     std::vector <double> tempD(nDesVar);
 
     double h = 1e-3;
 
-    I = quasiOneD(x, dx, S, W);
+    quasiOneD(x, dx, S, W);
     for(int Wi = 0; Wi<3*nx; Wi++)
         W0[Wi] = W[Wi];
 
@@ -645,21 +641,21 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W1[Wi] = W[Wi];
 
                 tempD = designVar;
                 tempD[i] += dhi;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W2[Wi] = W[Wi];
 
                 tempD = designVar;
                 tempD[i] -= dhi;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W3[Wi] = W[Wi];
 
@@ -667,7 +663,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W4[Wi] = W[Wi];
 
@@ -681,7 +677,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W1[Wi] = W[Wi];
 
@@ -689,7 +685,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W2[Wi] = W[Wi];
 
@@ -697,7 +693,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W3[Wi] = W[Wi];
 
@@ -705,7 +701,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                I = quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, dx, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W4[Wi] = W[Wi];
 

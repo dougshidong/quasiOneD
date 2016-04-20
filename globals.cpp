@@ -1,11 +1,7 @@
 #include <math.h>
 #include "globals.h"
 #include <string>
-std::string fname()
-{
-    static std::string fn("./Results/run");
-    return fn;
-}
+
 const double PI = atan(1.0) * 4.0;
 
 int nx;
@@ -32,3 +28,5 @@ double gradConv;
 int maxDesign;
 
 double h_tar, t1_tar, t2_tar;
+
+int nctl, spline_degree;

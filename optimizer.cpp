@@ -5,12 +5,15 @@
 #include<Eigen/Dense>
 #include<stdlib.h>//exit
 #include"quasiOneD.h"
+#include"fitness.h"
 #include"grid.h"
 #include"adjoint.h"
 #include"directDifferentiation.h"
 #include"globals.h"
 #include"gradient.h"
 #include"analyticHessian.h"
+#include"output.h"
+#include<time.h>
 
 using namespace Eigen;
 
@@ -49,10 +52,11 @@ void design(
     std::vector <double> W(3 * nx, 0);
 
     std::vector <double> normGradList, gradList;
-    MatrixXd H(nDesVar, nDesVar), H_FD(nDesVar, nDesVar), H_BFGS(nDesVar, nDesVar);
-    double normGrad = 1;
+    std::vector <double> timeVec;
+    std::vector <double> Herror;
+    MatrixXd H(nDesVar, nDesVar), H_BFGS(nDesVar, nDesVar), realH(nDesVar, nDesVar);
+    double normGrad;
     double currentI;
-    int possemidef;
 
     int maxDesign = 10000;
 
@@ -62,7 +66,13 @@ void design(
 
     VectorXd pk(nDesVar), searchD(nDesVar);
 
-    currentI = quasiOneD(x, dx, S, W);
+    clock_t tic = clock();
+    clock_t toc;
+    double elapsed;
+
+
+    quasiOneD(x, dx, S, W);
+    currentI = evalFitness(dx, W);
 
     VectorXd gradient(nDesVar);
     gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar);
@@ -77,7 +87,10 @@ void design(
         H = invertHessian(H);
     }
 
-    normGradList.push_back(1);
+    normGrad = 0;
+    for(int i = 0; i < nDesVar; i++)
+        normGrad += pow(gradient[i], 2);
+    normGrad = sqrt(normGrad);
     int iDesign = 0;
 
     // Design Loop
@@ -96,10 +109,11 @@ void design(
 
         }
         S = evalS(designVar, x, dx, desParam);
-        currentI = quasiOneD(x, dx, S, W);
+        quasiOneD(x, dx, S, W);
+        currentI = evalFitness(dx, W);
         std::cout<<"Current Fitness: "<<currentI<<std::endl;
 
-        gradient =getGradient(gradientType, currentI, x, dx, S, W, designVar);
+        gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar);
 
         for(int i = 0; i < nDesVar; i++)
         {
@@ -114,12 +128,30 @@ void design(
             for(int i = 0; i < nDesVar; i++)
                 pk[i] =  - gradient[i];
         }
-        if(descentType == 2)
+        else if(descentType == 2)
         {
             if(iDesign > 1)
             {
                 H_BFGS = BFGS(H, gradList, searchD);
                 H = H_BFGS;
+            }
+
+            realH = getAnalyticHessian(x, dx, W, S, designVar, hessianType).inverse();
+            Herror.push_back((realH - H).norm()/realH.norm());
+
+//          std::cout<<"Current Inverse Hessian:"<<std::endl;
+//          std::cout<<H<<std::endl;
+//          std::cout<<"\n\n";
+
+            pk = -H * gradient;
+        }
+        else if(descentType == 3)
+        {
+            if(iDesign > 1)
+            {
+                H = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
+                checkCond(H);
+                H = invertHessian(H);
             }
 
             std::cout<<"Current Inverse Hessian:"<<std::endl;
@@ -153,6 +185,10 @@ void design(
         normGrad = sqrt(normGrad);
         normGradList.push_back(normGrad);
 
+        toc = clock();
+        elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+        timeVec.push_back(elapsed);
+
         std::cout<<"End of Design Iteration: "<<iDesign<<std::endl<<std::endl<<std::endl;
     }
 
@@ -167,7 +203,12 @@ void design(
 
     S = evalS(designVar, x, dx, desParam);
 
-    std::cout<<"Fitness: "<<quasiOneD(x, dx, S, W)<<std::endl;
+    quasiOneD(x, dx, S, W);
+    std::cout<<"Fitness: "<<evalFitness(dx, W)<<std::endl;
+
+    outVec("OptConv.dat", "w", normGradList);
+    outVec("OptTime.dat", "w", timeVec);
+    outVec("HessianErr.dat", "w", Herror);
 
 
     return;
@@ -233,7 +274,8 @@ double stepBacktrackUncons(
     }
 
     tempS = evalS(tempD, x, dx, desParam);
-    newVal = quasiOneD(x, dx, tempS, W);
+    quasiOneD(x, dx, tempS, W);
+    newVal = evalFitness(dx, W);
 
 
     while(newVal > (currentI + alpha/2.0 * c_pk_grad) && alpha > 1e-16)
@@ -244,7 +286,8 @@ double stepBacktrackUncons(
         for(int i = 0; i < nDesVar; i++)
             tempD[i] = designVar[i] + alpha * pk[i];
         tempS = evalS(tempD, x, dx, desParam);
-        newVal = quasiOneD(x, dx, tempS, W);
+        quasiOneD(x, dx, tempS, W);
+        newVal = evalFitness(dx, W);
         std::cout<<"newVal: "<<newVal<<std::endl;
         std::cout<<"currentI + alpha/2.0 * c_pk_grad: "<<
         currentI + alpha/ 2.0 * c_pk_grad<<std::endl;
@@ -275,7 +318,8 @@ MatrixXd finiteD2(
 
     if(currentI < 0 && gradientType != 3)
     {
-        I = quasiOneD(x, dx, S, W);
+        quasiOneD(x, dx, S, W);
+        I = evalFitness(dx, W);
     }
     else
     {
@@ -292,23 +336,27 @@ MatrixXd finiteD2(
             tempD[i] += dhi;
             tempD[j] += dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I1 = evalFitness(dx, W);
 
             tempD = designVar;
             tempD[i] += dhi;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I2 = evalFitness(dx, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempS = evalS(tempD, x, dx, desParam);
-            I3 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I3 = evalFitness(dx, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] -= dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I4 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I4 = evalFitness(dx, W);
             Hessian(i, j) = (-I1 + 16*I2 - 30*I + 16*I3 - I4) / (12 * dhi * dhj);
         }
         else
@@ -317,25 +365,29 @@ MatrixXd finiteD2(
             tempD[i] += dhi;
             tempD[j] += dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I1 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I1 = evalFitness(dx, W);
 
             tempD = designVar;
             tempD[i] += dhi;
             tempD[j] -= dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I2 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I2 = evalFitness(dx, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] += dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I3 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I3 = evalFitness(dx, W);
 
             tempD = designVar;
             tempD[i] -= dhi;
             tempD[j] -= dhj;
             tempS = evalS(tempD, x, dx, desParam);
-            I4 = quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, dx, tempS, W);
+            I4 = evalFitness(dx, W);
 
             Hessian(i, j) = (I1 - I2 - I3 + I4) / (4 * dhi * dhj);
             Hessian(j, i) = Hessian(i, j);

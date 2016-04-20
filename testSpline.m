@@ -37,33 +37,28 @@ end
 xx
 yy
 plot(xx, yy, '-o',x,y,'-o')
-
 %%
 clear; clc;
 
 xstart = 0;
 xend = 1;
-xeps = 1e-14;
+xeps = 1e-15;
 
 nx = 100;
-x = linspace(xstart, xend, nx)';
-y = sin(x*10);
-noise = y + 1 * rand(length(y), 1);
+x = linspace(0,1,nx)'
+y = sin(10*x)
+noise = 0.5 * rand(length(y), 1);
 y = y + noise;
 plot(x,y,'-o')
 
 
-n = 6;
+n = 9;
 nctl = n + 1;
 deg = 2;
 nknots = nctl + deg +1;
 T = [zeros(deg,1);
-     linspace(0, 1, nknots - 2 * deg)';
-     (xend+xeps) * ones(deg,1)];
-
-ctlpts = zeros(n+1, 1);
-
-getbij(10, nctl-2, deg, T)
+     linspace(0, 1+xeps, nknots - 2 * deg)';
+     (xend + xeps) * ones(deg,1)];
 
 for iu = 1:size(x,1)
     for ib = 1 : nctl

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "globals.h"
 #include "math.h"
+#include <string>
 
 void inputfile()
 {
@@ -106,7 +107,13 @@ void inputfile()
     fgets(buf, sizeof buf, inputf); // Skip Line
     fgets(buf, sizeof buf, inputf); // Read
     sscanf(buf, "%lf %lf %lf", &h_tar, &t1_tar, &t2_tar);
-    
+
+    fgets(buf, sizeof buf, inputf); // Skip Line
+    fgets(buf, sizeof buf, inputf); // Skip Line
+    fgets(buf, sizeof buf, inputf); // Skip Line
+    fgets(buf, sizeof buf, inputf); // Read
+    sscanf(buf, "%d %d", &nctl, &spline_degree);
+
     fclose(inputf);
 }
 

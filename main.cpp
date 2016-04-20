@@ -1,11 +1,13 @@
 #include <iostream>
-#include <stdio.h>
 #include <vector>
 #include <fenv.h>
 #include "globals.h"
 #include "input.h"
 #include "grid.h"
+#include "spline.h"
 #include "quasiOneD.h"
+#include "fitness.h"
+#include "output.h"
 #include "optimizer.h"
 #include "convert.h"
 #include"petsc.h"
@@ -19,7 +21,6 @@ int main(int argc,char **argv)
     std::vector <double> x(nx), S(nx + 1);
     std::vector <double> dx(nx);
     std::vector <double> W(3 * nx, 0);
-    double fitness;
     feenableexcept(FE_INVALID | FE_OVERFLOW);
 
     // Initialize Shape
@@ -33,7 +34,7 @@ int main(int argc,char **argv)
         geom[1] = t1_geom;
         geom[2] = t2_geom;
         S = evalS(geom, x, dx, 1);
-        fitness = quasiOneD(x, dx, S, W);
+        quasiOneD(x, dx, S, W);
     }
     if(opt == 1)
     {
@@ -42,8 +43,10 @@ int main(int argc,char **argv)
         geom[1] = t1_tar;
         geom[2] = t2_tar;
         S = evalS(geom, x, dx, 1);
+        outVec("TargetGeom.dat", "w", x);
+        outVec("TargetGeom.dat", "a", S);
 
-        fitness = quasiOneD(x, dx, S, W);
+        quasiOneD(x, dx, S, W);
         std::vector <double> pt(nx);
         getp(W, pt);
         ioTargetPressure(1, pt);
@@ -54,6 +57,7 @@ int main(int argc,char **argv)
         S = evalS(geom, x, dx, 1);
         if(desParam == 0) nDesVar = nx - 1;
         if(desParam == 1) nDesVar = 3;
+        if(desParam == 2) nDesVar = nctl - 2; // Inlet and Outlet are constant
 
         std::vector <double> desVar(nDesVar);
         if(desParam == 0)
@@ -63,8 +67,16 @@ int main(int argc,char **argv)
                 desVar[Si - 1] = S[Si];
             }
         }
-
         if(desParam == 1) desVar = geom;
+        if(desParam == 2)
+        {
+            geom = getCtlpts(x, dx, S); 
+            for(int iVar = 0; iVar < nDesVar; iVar++)
+            {
+                desVar[iVar] = geom[iVar+1];
+            }
+            S = evalS(desVar, x, dx, 2);
+        }
 
         PetscInitialize(&argc, &argv, (char*)0,help);
         design(x, dx, S, desVar);
