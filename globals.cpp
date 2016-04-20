@@ -74,5 +74,5 @@ const int StepScheme = 0;
 // Flux Scheme
 // 0   -   Steger Warming (SW)
 // 1   -   Scalar Dissipation
-const int FluxScheme = 2;
+const int FluxScheme = 3;
 double Scalareps = 0.5;
