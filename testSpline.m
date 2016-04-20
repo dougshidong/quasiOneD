@@ -43,9 +43,9 @@ clear; clc;
 
 xstart = 0;
 xend = 1;
-xeps = 1e-6;
+xeps = 1e-14;
 
-nx = 200;
+nx = 100;
 x = linspace(xstart, xend, nx)';
 y = sin(x*10);
 noise = y + 1 * rand(length(y), 1);
@@ -53,7 +53,7 @@ y = y + noise;
 plot(x,y,'-o')
 
 
-n = 5;
+n = 6;
 nctl = n + 1;
 deg = 2;
 nknots = nctl + deg +1;
@@ -71,8 +71,7 @@ for iu = 1:size(x,1)
     end
 end
 
-%ctls = (A'*A)\(A'*y);
-ctls = A\y
+ctls = A\y;
 
 yy = zeros(nx,1);
 
@@ -82,4 +81,4 @@ for iu = 1:size(x,1)
     end
 end
 
-plot(x, yy, '-o',x,y,'-o')
+plot(x, yy, '-o',x,y,'o')
