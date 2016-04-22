@@ -3,6 +3,7 @@
 #include<iostream>
 #include"globals.h"
 #include"grid.h"
+#include"spline.h"
 
 using namespace Eigen;
 
@@ -12,7 +13,14 @@ MatrixXd evaldSdDes(
     std::vector <double> designVar)
 {
     MatrixXd dSdDes(nx + 1, nDesVar);
-    if(desParam == 0) dSdDes.setIdentity();
+    if(desParam == 0) 
+    {
+        dSdDes.setZero();
+        for(int Si = 1; Si < nx; Si++)
+        {
+            dSdDes(Si, Si - 1) = 1;
+        }
+    }
     if(desParam == 1)
     {
         double d1 = designVar[0];
@@ -38,6 +46,10 @@ MatrixXd evaldSdDes(
                                   * pow(sin(PI * pow(xh, d2)), d3);
             }
         }
+    }
+    if(desParam == 2)
+    {
+        dSdDes = evalSplineDerivative(x, dx);
     }
     return dSdDes;
 }
@@ -138,9 +150,9 @@ std::vector <MatrixXd> evalddSdDesdDes(
     int nD = designVar.size();
     std::vector <MatrixXd> ddSdDesdDes(nx + 1);
     MatrixXd ddSidDesdDes(nD, nD);
-    if(desParam == 0)
+    ddSidDesdDes.setZero();
+    if(desParam == 0 || desParam == 2)
     {
-        ddSidDesdDes.setZero();
         for(int Si = 0; Si < nx + 1; Si++)
         {
             ddSdDesdDes[Si] = ddSidDesdDes;

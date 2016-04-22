@@ -2,7 +2,7 @@
 #include<Eigen/Core>
 #include<Eigen/Sparse>
 #include"globals.h"
-#include"quasiOneD.h"
+#include"fitness.h"
 #include<iostream>
 
 using namespace Eigen;

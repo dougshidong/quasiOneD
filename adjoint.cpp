@@ -9,13 +9,14 @@
 #include<stdio.h>
 #include<iomanip>
 #include"adjoint.h"
-#include"quasiOneD.h"
 #include"globals.h"
 #include"convert.h"
 #include"flux.h"
 #include"residuald1.h"
 #include"parametrization.h"
 #include"objectiveDerivatives.h"
+#include"output.h"
+#include"petscGMRES.h"
 
 using namespace Eigen;
 
@@ -24,7 +25,6 @@ VectorXd adjoint(
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
-    std::vector <double> &psi,
     std::vector <double> designVar)
 {
     //Get Primitive Variables
@@ -55,7 +55,7 @@ VectorXd adjoint(
     // Build B matrix
     // Evaluate dIcdW
     VectorXd bvec(3 * nx);
-    bvec = -evaldIcdW(W, dx);
+    bvec = evaldIcdW(W, dx);
 //  std::cout<<"Vector B:"<<std::endl;
 //  std::cout<<bvec<<std::endl;
 
@@ -65,16 +65,17 @@ VectorXd adjoint(
     // 0 = Sparse LU
     // 1 = Dense LU Full Piv
     // 2 = Sparse Iterative BiCGSTAB
-    int eig_solv = 0;
-    int directSolve = 1;
-    if(directSolve == 1)
-    {
-        psiV = solveSparseAXB(dRdWt, bvec, eig_solv);
-    }
-    else
-    {
-        psiV = itSolve(dRdWt, bvec);
-    }
+    //int eig_solv = 0;
+    //int directSolve = 1;
+    //if(directSolve == 1)
+    //{
+    //    psiV = solveSparseAXB(-dRdWt, bvec, eig_solv);
+    //}
+    //else
+    //{
+    //    psiV = itSolve(-dRdWt, bvec);
+    //}
+    psiV = solveGMRES(-dRdWt, bvec);
 
     // If supersonic copy psi2 onto psi1 garbage
     if(u[0] > c[0])
@@ -87,14 +88,7 @@ VectorXd adjoint(
 //  std::cout<<psiV<<std::endl;
 
     // Save Adjoint
-    FILE *Results;
-    Results = fopen("Adjoint.dat", "w");
-    fprintf(Results, "%d\n", nx);
-    for(int k = 0; k < 3; k++)
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", psiV(i * 3 + k));
-
-    fclose(Results);
+    outVec("adjoint.dat", "w", psiV);
 
     // Evaluate dIcdS
     VectorXd dIcdS(nx + 1);

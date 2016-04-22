@@ -4,12 +4,12 @@
 #include<Eigen/Core>
 #include<Eigen/Sparse>
 #include"petscksp.h"
+#include"globals.h"
 
 using namespace Eigen;
 
 MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
 {
-    PetscErrorCode ierr;
     Vec         x, b;
     Mat         A;
     KSP         ksp;
@@ -21,10 +21,11 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     PetscScalar *values;
 
 
-    MatCreate(PETSC_COMM_WORLD,&A);
-    MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
-    MatSetFromOptions(A);
-    MatSetUp(A);
+//  MatCreate(PETSC_COMM_SELF,&A);
+//  MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
+//  MatSetFromOptions(A);
+//  MatSetUp(A);
+    MatCreateSeqAIJ(PETSC_COMM_SELF, m, n, 9, 0, &A);
 
     for(int k = 0; k < Ain.outerSize(); ++k)
     {
@@ -41,25 +42,26 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
 
-    KSPCreate(PETSC_COMM_WORLD,&ksp);
+    KSPCreate(PETSC_COMM_SELF,&ksp);
+    KSPCreate(PETSC_COMM_SELF,&ksp);
 
     KSPSetOperators(ksp,A,A);
     KSPGetPC(ksp,&pc);
     PCSetType(pc,PCILU);
 
     KSPSetType(ksp, KSPGMRES);
-    KSPSetTolerances(ksp,1.e-4,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+    KSPSetTolerances(ksp,1.e-6,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     MatrixXd X(Bin.rows(), Bin.cols());
-    ierr = PetscMalloc(Bin.cols() * sizeof(PetscScalar), &values);
-    ierr = PetscMalloc(Bin.cols() * sizeof(PetscInt), &indices);
+    PetscMalloc1(Bin.rows() * sizeof(PetscScalar), &values);
+    PetscMalloc1(Bin.rows() * sizeof(PetscInt), &indices);
+    VecCreate(PETSC_COMM_SELF, &b);
+    VecSetSizes(b,PETSC_DECIDE, Bin.rows());
+    VecSetFromOptions(b);
+    VecDuplicate(b, &x);
     for(int bcol = 0; bcol < Bin.cols(); bcol++)
     {
-        VecCreate(PETSC_COMM_WORLD, &b);
-        VecSetSizes(b,PETSC_DECIDE, Bin.rows());
-        VecSetFromOptions(b);
-        VecDuplicate(b, &x);
 
         for(int brow = 0; brow < Bin.rows(); brow++)
         {
@@ -75,9 +77,7 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
             values[brow] = -1.0;
             indices[brow] = brow;
         }
-        ierr = VecGetValues(x, Bin.rows(), indices, values);
-        VecDestroy(&x);
-        VecDestroy(&b);
+        VecGetValues(x, Bin.rows(), indices, values);
 
         for(int brow = 0; brow < Bin.rows(); brow++)
         {
@@ -85,7 +85,13 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
         }
 
     }
+    PetscFree(values);
+    PetscFree(indices);
+    VecDestroy(&x);
+    VecDestroy(&b);
     MatDestroy(&A);
+
+    KSPDestroy(&ksp);
 
 
     return X;

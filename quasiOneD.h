@@ -8,11 +8,6 @@ double quasiOneD(
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> &W);
-
-double TotalPressureLoss(std::vector <double> W);
-
-void ioTargetPressure(int io, std::vector <double> &p);
-
 void inletBC(
     std::vector <double> &W,
     std::vector <double> &Resi,

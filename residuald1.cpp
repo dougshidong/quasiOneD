@@ -42,6 +42,7 @@ SparseMatrix<double> evaldRdW(
     std::vector <double> S)
 {
     SparseMatrix<double> dRdW(3 * nx, 3 * nx);
+    dRdW.reserve(27 * (nx - 2) + 27 * 4);
     double rhoin = W[0];
     double uin = W[1] / rhoin;
     double ein = W[2];

@@ -4,3 +4,6 @@
 [submodule "petsc"]
 	path = petsc
 	url = https://bitbucket.org/petsc/petsc
+[submodule "myPetsc"]
+	path = myPetsc
+	url = https://bitbucket.org/petsc/petsc

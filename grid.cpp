@@ -2,11 +2,13 @@
 #include <math.h>
 #include <vector>
 #include "globals.h"
+#include "spline.h"
 
 std::vector <double> sinParam(
     std::vector <double> geom,
     std::vector <double> x,
     std::vector <double> dx);
+
 
 // Evaluate X
 std::vector <double> evalX(double a, double b)
@@ -43,8 +45,30 @@ std::vector <double> evalS(
     int param)
 {
     std::vector <double> S(nx + 1);
-    if(param == 0) S = geom;
-    else if(param == 1) S = sinParam(geom, x, dx);
+    if(param == 0)
+    {
+        S[0] = 1.0;
+        S[nx] = 1.0;
+        for(int Si = 1; Si < nx; Si++)
+        {
+            S[Si] = geom[Si - 1];
+        }
+    }
+    else if(param == 1)
+    {
+        S = sinParam(geom, x, dx);\
+    }
+    else if(param == 2)
+    {
+        std::vector <double> ctl(nctl);
+        for(int ictl = 1; ictl < nctl - 1; ictl++)
+        {
+            ctl[ictl] = geom[ictl - 1];
+        }
+        ctl[0] = 1;
+        ctl[nctl - 1] = 1;
+        S = evalSpline(ctl, x, dx);
+    }
     return S;
 }
 
@@ -67,3 +91,4 @@ std::vector <double> sinParam(
 
     return S;
 }
+

@@ -12,7 +12,6 @@ VectorXd adjoint(
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
-    std::vector <double> &psi,
     std::vector <double> designVar);
 
 VectorXd evalpsidRdS(
