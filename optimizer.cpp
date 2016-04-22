@@ -207,10 +207,10 @@ double stepBacktrackUncons(
 
     double c_pk_grad = 0;
 
-    std::vector <double> tempD(nDesVar);
 
     c_pk_grad = c1 * gradient.dot(pk);
 
+    std::vector <double> tempD(nDesVar);
     for(int i = 0; i < nDesVar; i++)
     {
         tempD[i] = designVar[i] + alpha * pk[i];
@@ -394,7 +394,7 @@ MatrixXd BFGS(
     VectorXd dg(nDesVar), dx(nDesVar);
     MatrixXd dH(nDesVar, nDesVar), a(nDesVar, nDesVar), b(nDesVar, nDesVar);
 
-    dg = oldg - currentg;
+    dg = currentg - oldg;
     dx = searchD;
 
     a = ((dx.transpose() * dg + dg.transpose() * oldH * dg)(0) * (dx * dx.transpose()))
