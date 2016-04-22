@@ -10,7 +10,7 @@ void outVec(std::string fn2, std::string ra, vec data)
     // wa = "w" for read
     // wa = "a" for append
     FILE *Results;
-    std::string fn = "./Results/ExactBFGSerror" + fn2;
+    std::string fn = "./Results/temp" + fn2;
     Results = fopen(fn.c_str(), ra.c_str());
     for(int i = 0; i < (int)data.size(); i++)
     {

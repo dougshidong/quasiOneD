@@ -4,6 +4,7 @@
 #include<Eigen/Core>
 #include<Eigen/Sparse>
 #include"petscksp.h"
+#include"globals.h"
 
 using namespace Eigen;
 
@@ -20,10 +21,11 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     PetscScalar *values;
 
 
-    MatCreate(PETSC_COMM_WORLD,&A);
-    MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
-    MatSetFromOptions(A);
-    MatSetUp(A);
+//  MatCreate(PETSC_COMM_SELF,&A);
+//  MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
+//  MatSetFromOptions(A);
+//  MatSetUp(A);
+    MatCreateSeqAIJ(PETSC_COMM_SELF, m, n, 9, 0, &A);
 
     for(int k = 0; k < Ain.outerSize(); ++k)
     {
@@ -40,7 +42,8 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
 
-    KSPCreate(PETSC_COMM_WORLD,&ksp);
+    KSPCreate(PETSC_COMM_SELF,&ksp);
+    KSPCreate(PETSC_COMM_SELF,&ksp);
 
     KSPSetOperators(ksp,A,A);
     KSPGetPC(ksp,&pc);
@@ -53,7 +56,7 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     MatrixXd X(Bin.rows(), Bin.cols());
     PetscMalloc1(Bin.rows() * sizeof(PetscScalar), &values);
     PetscMalloc1(Bin.rows() * sizeof(PetscInt), &indices);
-    VecCreate(PETSC_COMM_WORLD, &b);
+    VecCreate(PETSC_COMM_SELF, &b);
     VecSetSizes(b,PETSC_DECIDE, Bin.rows());
     VecSetFromOptions(b);
     VecDuplicate(b, &x);
