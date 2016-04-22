@@ -13,6 +13,7 @@
 #include"flux.h"
 #include"quasiOneD.h"
 #include"grid.h"
+#include"petscGMRES.h"
 
 using namespace Eigen;
 
@@ -163,6 +164,10 @@ MatrixXd directAdjointHessian(
     // *************************************
     VectorXd psi(3 * nx);
     psi = slusolver1.solve(dIcdW);
+    VectorXd psiGMRES(3 * nx);
+    psiGMRES = solveGMRES(-dRdW.transpose(),dIcdW);
+
+    std::cout<<(psiGMRES-psi).norm()/psi.norm()<<std::endl;
 
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
@@ -527,6 +532,11 @@ MatrixXd directDirectHessian(
     if(slusolver.info() != 0)
         std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
     dWdDes = slusolver.solve(dRdDes);
+
+    MatrixXd dWdDesGMRES(3 * nx, nDesVar);
+    dWdDesGMRES = solveGMRES(-dRdW,dRdDes);
+
+    std::cout<<(dWdDesGMRES-dWdDes).norm()/dWdDes.norm()<<std::endl;
     // *************************************
     // Evaluate ddWdDesdDes (nDesVar * (nDesVar+1) / 2 Flow Eval)
     // *************************************

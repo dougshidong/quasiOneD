@@ -64,7 +64,7 @@ void design(
     double alpha = 1;
 
     double h = 1e-8;
-    
+
     int Hmethod = 3;
 
     VectorXd pk(nDesVar), searchD(nDesVar), dgradient(nDesVar);
@@ -90,14 +90,19 @@ void design(
             H(r, c) = 1;
         }
     }
-    MatrixXd HDD(nDesVar, nDesVar), 
+    MatrixXd HDD(nDesVar, nDesVar),
              HAD(nDesVar, nDesVar),
              HAA(nDesVar, nDesVar),
              HDA(nDesVar, nDesVar),
              HFD(nDesVar, nDesVar);
-    
-    H = getAnalyticHessian(x, dx, W, S, designVar, Hmethod).inverse();
+
+    H = getAnalyticHessian(x, dx, W, S, designVar, 1).inverse();
 //  H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
+    std::cout<<H<<std::endl;
+    H = getAnalyticHessian(x, dx, W, S, designVar, 3).inverse();
+//  H = finiteD2(x, dx, S, designVar, h, currentI, possemidef).inverse();
+    std::cout<<H<<std::endl;
+    exit (EXIT_FAILURE);
 
     normGradList.push_back(1);
     int iDesign = 0;
@@ -123,7 +128,7 @@ void design(
         gradientFD = finiteD(x, dx, S, designVar, h, currentI);
         gradientAV = adjoint(x, dx, S, W, psi, designVar);
 
-        
+
 
         for(int i = 0; i < nDesVar; i++)
         {
