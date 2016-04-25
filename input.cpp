@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "math.h"
 #include <string>
+#include <algorithm> // remove_if
 
 void inputfile()
 {
@@ -11,6 +12,9 @@ void inputfile()
 
     char buf[100];
     // Number of Cells in Grid
+    fgets(buf, sizeof buf, inputf); // Skip Line
+    filename = buf;
+    filename.erase(std::remove_if(filename.begin(), filename.end(), isspace), filename.end());
     fgets(buf, sizeof buf, inputf); // Skip Line
     fgets(buf, sizeof buf, inputf); // Skip Line
     fgets(buf, sizeof buf, inputf); // Skip Line

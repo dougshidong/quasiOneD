@@ -1,7 +1,11 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include <string>
+
 extern const double PI;
+
+extern std::string filename;
 
 extern int nx;
 extern double a_geom, b_geom;
