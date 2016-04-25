@@ -3,17 +3,19 @@
 
 #include<vector>
 
+void initializeTimeStep(int nx);
+
 void stepInTime(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
 
 void getDomainResi(
-    std::vector <double> W,
-    std::vector <double> Flux,
-    std::vector <double> S,
+    const std::vector <double> &W,
+    const std::vector <double> &Flux,
+    const std::vector <double> &S,
     std::vector <double> &Resi);
 
 #endif

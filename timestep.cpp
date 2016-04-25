@@ -10,37 +10,43 @@
 int ki, kip;
 
 void EulerExplicitStep(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> V,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &V,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
 
 void rk4(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> V,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &V,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
 
 void jamesonrk(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> V,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &V,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W);
 
+std::vector <double> V(nx);
+std::vector <double> Flux;
+std::vector <double> Q;
+
+std::vector <double> W1, W2, W3, Wtemp;
+std::vector <double> Resi0, Resi1, Resi2;
+
 void stepInTime(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
-    std::vector <double> V(nx);
     for(int i = 0; i < nx; i++)
     {
         V[i] = (S[i] + S[i + 1]) / 2.0 * dx[i];
@@ -59,14 +65,35 @@ void stepInTime(
     }
 }
 
+void initializeTimeStep(int nx)
+{
+    V.resize(nx);
+    Flux.resize(3 * (nx + 1));
+    Q.resize(3 * nx);
+    if(StepScheme == 1) // RK4
+    {
+        W1.resize(3 * nx);
+        W2.resize(3 * nx);
+        W3.resize(3 * nx);
+        Wtemp.resize(3 * nx);
+        Resi0.resize(3 * nx);
+        Resi1.resize(3 * nx);
+        Resi2.resize(3 * nx);
+    }
+    else if(StepScheme == 2) // JRK4
+    {
+        Wtemp.resize(3 * nx);
+        Resi1.resize(3 * nx);
+    }
+}
+
 // Domain Residual R = FS_i+1/2 - FS_i-1/2 - Qi
 void getDomainResi(
-    std::vector <double> W,
-    std::vector <double> Flux,
-    std::vector <double> S,
+    const std::vector <double> &W,
+    const std::vector <double> &Flux,
+    const std::vector <double> &S,
     std::vector <double> &Resi)
 {
-    std::vector <double> Q(3 * nx);
     WtoQ(W, Q, S);
     for(int k = 0; k < 3; k++)
     {
@@ -81,10 +108,10 @@ void getDomainResi(
 
 // Euler Explicit
 void EulerExplicitStep(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> V,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &V,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
@@ -104,16 +131,13 @@ void EulerExplicitStep(
 
 // 4th order Runge - Kutta Stepping Scheme
 void rk4(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> V,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &V,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
 { 
-    std::vector <double> W1(3 * nx), W2(3 * nx), W3(3 * nx), Wtemp(3 * nx);
-    std::vector <double> Resi0(3 * nx), Resi1(3 * nx), Resi2(3 * nx);
-    std::vector <double> Flux(3 * (nx + 1));
     // Residual 0
     getFlux(Flux, W);
     getDomainResi(W, Flux, S, Resi0);
@@ -175,16 +199,13 @@ void rk4(
 
 // Jameson's 4th order Runge - Kutta Stepping Scheme
 void jamesonrk(
-    std::vector <double> S,
-    std::vector <double> dx,
-    std::vector <double> V,
-    std::vector <double> dt,
+    const std::vector <double> &S,
+    const std::vector <double> &dx,
+    const std::vector <double> &V,
+    const std::vector <double> &dt,
     std::vector <double> &Resi,
     std::vector <double> &W)
 {
-    std::vector <double> Wtemp(3 * nx);
-    std::vector <double> Flux(3 * (nx + 1));
-    std::vector <double> Resi1(3 * nx);
     // Initialize First Stage
     for(int k = 0; k < 3; k++)
     {

@@ -14,7 +14,7 @@ void outVec(std::string fn2, std::string ra, vec data)
     Results = fopen(fn.c_str(), ra.c_str());
     for(int i = 0; i < (int)data.size(); i++)
     {
-        fprintf(Results, "%.15f\n", data[i]);
+        fprintf(Results, "%1.15e\n", data[i]);
     }
 
     fclose(Results);

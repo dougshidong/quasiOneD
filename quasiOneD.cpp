@@ -7,14 +7,11 @@
 #include "timestep.h"
 #include "globals.h"
 #include "output.h"
+#include "fitness.h"
 
 double isenP(double pt, double M);
 
 double isenT(double Tt, double M);
-
-std::vector <double> calcVolume(
-    std::vector <double> S,
-    std::vector <double> dx);
 
 void inletBC(
     std::vector <double> &W,
@@ -36,20 +33,22 @@ double quasiOneD(
     std::vector <double> Resi(3 * nx, 0);
 //  std::vector <std::vector <double> > W(3, std::vector <double> (nx, 0)),
 
-    std::vector <double> dt(nx), V(nx);
+    std::vector <double> dt(nx);
 
     std::vector <int> itV(maxIt/printIt);
     std::vector <double> normV(maxIt/printIt);
+    std::vector <double> timeVec(maxIt/printIt);
+
+
+    std::cout<<std::setprecision(15);
 
     int iterlength;
     double normR = 1.0;
     int iterations = 0;
 
-    V = calcVolume(S, dx);
-
 
     // Inlet flow properties
-    Mach[0]=Min;
+    Mach[0] = Min;
     T[0] = isenT(Ttin, Mach[0]);
     p[0] = isenP(ptin, Mach[0]);
     rho[0] = p[0] / (R * T[0]);
@@ -77,20 +76,16 @@ double quasiOneD(
         W[i * 3 + 2] = e[i];
     }
 
+    initializeTimeStep(nx); // Initiliaze Vector Sizes in timestep.cpp
+    initializeFlux(nx); // Initiliaze Vector Sizes in flux.cpp
+
+    clock_t tic = clock();
+    clock_t toc;
+    double elapsed;
+
     while(normR > flowConv && iterations < maxIt)
     {
         iterations++;
-
-        if(iterations%printIt == 0)
-        {
-            if(printConv == 1)
-            {
-                std::cout<<"Iteration "<<iterations
-                         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
-            }
-            itV[iterations / printIt - 1] = iterations;
-            normV[iterations / printIt - 1] = normR;
-        }
 
         // Calculate Time Step
         for(int i = 0; i < nx; i++)
@@ -122,6 +117,22 @@ double quasiOneD(
         for(int i = 0; i < nx; i++)
             normR = normR + pow(Resi[i * 3 + 0], 2);
         normR = sqrt(normR);
+
+        // Monitor Convergence
+        if(iterations%printIt == 0)
+        {
+            if(printConv == 1)
+            {
+                std::cout<<"Iteration "<<iterations
+                         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
+            }
+            itV[iterations / printIt - 1] = iterations;
+            normV[iterations / printIt - 1] = normR;
+
+            toc = clock();
+            elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+            timeVec[iterations / printIt - 1] = elapsed;
+        }
     }
 
     if(printW == 1)
@@ -135,6 +146,8 @@ double quasiOneD(
     }
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
 
+    std::cout<<"Total Pressure Loss: "<<evalFitness(dx, W)<<std::endl;
+
 
     outVec("Geom.dat", "w", x);
     outVec("Geom.dat", "a", S);
@@ -143,7 +156,11 @@ double quasiOneD(
     outVec("Flow.dat", "w", pn);
     outVec("Flow.dat", "a", rho);
     outVec("Flow.dat", "a", Mach);
-    outVec("FlowConv.dat", "w", normV);
+    std::vector <double> conv(iterations);
+    for(int i = 0; i < iterations; i++) conv[i] = normV[i];
+    outVec("FlowConv.dat", "w", conv);
+    for(int i = 0; i < iterations; i++) conv[i] = timeVec[i];
+    outVec("FlowTime.dat", "w", conv);
 
     return 1;
 }
@@ -158,19 +175,6 @@ double isenT(double Tt, double M)
     return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
 }
 
-
-// Define Volume
-std::vector <double> calcVolume(
-    std::vector <double> S,
-    std::vector <double> dx)
-{
-    std::vector <double> V;
-    int ndx = dx.size();
-    for(int i = 0; i < ndx; i++)
-        V.push_back((S[i] + S[i + 1]) / 2 * dx[i]);
-
-    return V;
-}
 
 void inletBC(
     std::vector <double> &W,
