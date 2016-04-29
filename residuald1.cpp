@@ -54,10 +54,11 @@ SparseMatrix<double> evaldRdW(
     double val;
     // Get Jacobians and Fluxes
     std::vector <double> Ap(nx * 3 * 3, 0), An(nx * 3 * 3, 0);
-    if(FluxScheme == 1) ScalarJac(W, Ap, An);
+    if(FluxScheme == 0) ScalarJac(W, Ap, An);
     // Get Boundary Jacobians
+    // DO NOT USE IMPLICIT FLOW SOLVERS WITH ADJOINT
     std::vector <double> dBidWi(9), dBidWd(9), dBodWd(9), dBodWo(9);
-    BCJac(W, dt, dx, dBidWi, dBidWd, dBodWd, dBodWo);
+    if(StepScheme < 3)  BCJac(W, dt, dx, dBidWi, dBidWd, dBodWd, dBodWo);
     // Evaluate dpdW
     std::vector <double> dpdW(3 * nx, 0);
     dpdW = evaldpdW(W, S);
@@ -207,7 +208,7 @@ SparseMatrix<double> evaldRdW_FD(
     {
         for(int Wi = 0; Wi < nx; Wi++) // LOOP OVER W
         {
-            double h = 0.00000001;
+            double h = 1e-8;
             for(int statei = 0; statei < 3; statei++) // LOOP OVER STATEI
             {
                 for(int i = 0; i < 3 * nx; i++)
