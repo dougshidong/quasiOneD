@@ -419,18 +419,15 @@ MatrixXd adjointDirectHessian(
     // *************************************
     // Solve for dpsidDes (nDesVar Flow Eval)
     // *************************************
-    VectorXd RHS1(3 * nx);
+    MatrixXd RHS(3 * nx, nDesVar);
     MatrixXd dpsidDes(3 * nx, nDesVar);
-    for(int di = 0; di < nDesVar; di++)
+    RHS = ddIcdWdDes + ddIcdWdW * dWdDes;
+    for(int Ri = 0; Ri < 3 * nx; Ri++)
     {
-        RHS1 = ddIcdWdDes.col(di) + ddIcdWdW * dWdDes.col(di);
-        for(int Ri = 0; Ri < 3 * nx; Ri++)
-        {
-            RHS1 += psi(Ri) * ddRdWdDes[Ri].col(di);
-            RHS1 += psi(Ri) * ddRdWdW[Ri] * dWdDes.col(di);
-        }
-        dpsidDes.col(di) = slusolver1.solve(RHS1);
+        RHS += psi(Ri) * ddRdWdDes[Ri];
+        RHS += psi(Ri) * ddRdWdW[Ri] * dWdDes;
     }
+    dpsidDes = slusolver1.solve(RHS);
 
     // *************************************
     // Evaluate total derivative DDIcDDesDDes
