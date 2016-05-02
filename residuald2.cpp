@@ -1076,7 +1076,7 @@ void evalddFluxdWdW(
     std::vector <MatrixXd> &ddFluxdWdW3,
     std::vector <double> W)
 {
-    if(FluxScheme == 1)
+    if(FluxScheme == 0)
     {
         evalddScalarFluxdWdW(ddFluxdWdW1, ddFluxdWdW2, ddFluxdWdW3, W);
     }
