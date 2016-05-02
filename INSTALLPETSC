@@ -1,0 +1,4 @@
+./configure PETSC_DIR=$(pwd) PETSC_ARCH=linux-gcc --with-cc=gcc --with-cxx=g++ --with-fc=gfortran --download-fblaslapack --download-mpich
+
+make PETSC_DIR=$(pwd) PETSC_ARCH=linux-gcc all
+make PETSC_DIR=$(pwd) PETSC_ARCH=linux-gcc test

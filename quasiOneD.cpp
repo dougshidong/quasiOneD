@@ -6,23 +6,12 @@
 #include "flux.h"
 #include "timestep.h"
 #include "globals.h"
+#include "output.h"
+#include "fitness.h"
 
 double isenP(double pt, double M);
 
 double isenT(double Tt, double M);
-
-std::vector <double> calcVolume(
-    std::vector <double> S,
-    std::vector <double> dx);
-
-double TotalPressureLoss(std::vector <double> W);
-
-void ioTargetPressure(int io, std::vector <double> &p);
-
-double inverseFitness(
-    std::vector <double> pcurrent,
-    std::vector <double> ptarget,
-    std::vector <double> dx);
 
 void inletBC(
     std::vector <double> &W,
@@ -44,21 +33,22 @@ double quasiOneD(
     std::vector <double> Resi(3 * nx, 0);
 //  std::vector <std::vector <double> > W(3, std::vector <double> (nx, 0)),
 
-    std::vector <double> dt(nx), V(nx);
+    std::vector <double> dt(nx);
 
     std::vector <int> itV(maxIt/printIt);
     std::vector <double> normV(maxIt/printIt);
+    std::vector <double> timeVec(maxIt/printIt);
+
+
+    std::cout<<std::setprecision(15);
 
     int iterlength;
     double normR = 1.0;
     int iterations = 0;
 
 
-    V = calcVolume(S, dx);
-
-
     // Inlet flow properties
-    Mach[0]=Min;
+    Mach[0] = Min;
     T[0] = isenT(Ttin, Mach[0]);
     p[0] = isenP(ptin, Mach[0]);
     rho[0] = p[0] / (R * T[0]);
@@ -86,20 +76,16 @@ double quasiOneD(
         W[i * 3 + 2] = e[i];
     }
 
-    while(normR > conv && iterations < maxIt)
+    initializeTimeStep(nx); // Initiliaze Vector Sizes in timestep.cpp
+    initializeFlux(nx); // Initiliaze Vector Sizes in flux.cpp
+
+    clock_t tic = clock();
+    clock_t toc;
+    double elapsed;
+
+    while(normR > flowConv && iterations < maxIt)
     {
         iterations++;
-
-        if(iterations%printIt == 0)
-        {
-            if(printConv == 1)
-            {
-                std::cout<<"Iteration "<<iterations
-                         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
-            }
-            itV[iterations / printIt - 1] = iterations;
-            normV[iterations / printIt - 1] = normR;
-        }
 
         // Calculate Time Step
         for(int i = 0; i < nx; i++)
@@ -131,6 +117,22 @@ double quasiOneD(
         for(int i = 0; i < nx; i++)
             normR = normR + pow(Resi[i * 3 + 0], 2);
         normR = sqrt(normR);
+
+        // Monitor Convergence
+        if(iterations%printIt == 0)
+        {
+            if(printConv == 1)
+            {
+                std::cout<<"Iteration "<<iterations
+                         <<"   NormR "<<std::setprecision(15)<<normR<<std::endl;
+            }
+            itV[iterations / printIt - 1] = iterations;
+            normV[iterations / printIt - 1] = normR;
+
+            toc = clock();
+            elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+            timeVec[iterations / printIt - 1] = elapsed;
+        }
     }
 
     if(printW == 1)
@@ -142,52 +144,25 @@ double quasiOneD(
                 std::cout<<W[i * 3 + k]<<std::endl;
         }
     }
-//  std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
+
+    std::cout<<"Total Pressure Loss: "<<evalFitness(dx, W)<<std::endl;
 
 
-    FILE  * Results;
-    Results = fopen("Results.dat", "w");
-    fprintf(Results, "%d\n", nx);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", x[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", p[i] / ptin);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", rho[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", Mach[i]);
-    for(int i = 0; i < nx; i++)
-        fprintf(Results, "%.15f\n", x[i] - dx[i] / 2);
-    fprintf(Results, "%f\n", x.back() + dx.back() / 2);
-    for(int i = 0; i < nx + 1; i++)
-        fprintf(Results, "%.15f\n", S[i]);
+    outVec("Geom.dat", "w", x);
+    outVec("Geom.dat", "a", S);
+    std::vector <double> pn(nx);
+    for(int i = 0; i < nx; i++) pn[i] = p[i]/ptin;
+    outVec("Flow.dat", "w", pn);
+    outVec("Flow.dat", "a", rho);
+    outVec("Flow.dat", "a", Mach);
+    std::vector <double> conv(iterations);
+    for(int i = 0; i < iterations; i++) conv[i] = normV[i];
+    outVec("FlowConv.dat", "w", conv);
+    for(int i = 0; i < iterations; i++) conv[i] = timeVec[i];
+    outVec("FlowTime.dat", "w", conv);
 
-    iterlength = itV.size();
-    for(int i = 0; i < iterlength; i++)
-        fprintf(Results, "%.15d\n", itV[i]);
-    for(int i = 0; i < iterlength; i++)
-        fprintf(Results, "%.15f\n", normV[i]);
-
-
-
-    fclose(Results);
-
-    // Create Target Pressure
-    if(createTarget == 1) ioTargetPressure(1, p);
-
-    // Compute Fitness
-    if(fitnessFun == 0)
-        return TotalPressureLoss(W);
-    else if(fitnessFun == 1)
-    {
-        std::vector <double> ptarget(nx, 0);
-        ioTargetPressure(-1, ptarget);
-        return inverseFitness(p, ptarget, dx);
-    }
-
-
-    return  - 9999.99;
-
+    return 1;
 }
 
 double isenP(double pt, double M)
@@ -198,88 +173,6 @@ double isenP(double pt, double M)
 double isenT(double Tt, double M)
 {
     return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
-}
-
-double TotalPressureLoss(std::vector <double> W)
-{
-    double rhoout = W[(nx - 1) * 3 + 0];
-    double uout = W[(nx - 1) * 3 + 1] / rhoout;
-    double pout = (gam - 1) * (W[(nx - 1) * 3 + 2] - rhoout * pow(uout, 2) / 2);
-    //double Tout = pout/(rhoout * R);
-
-    double ptout_normalized;
-
-    double ToverTt = 1 - pow(uout, 2) / a2 * (gam - 1) / (gam + 1);
-
-    double poverpt = pow(ToverTt, (gam / (gam - 1)));
-
-    ptout_normalized = 1 - (pout / poverpt) / ptin;
-
-    return ptout_normalized;
-}
-
-// Define Volume
-std::vector <double> calcVolume(
-    std::vector <double> S,
-    std::vector <double> dx)
-{
-    std::vector <double> V;
-    int ndx = dx.size();
-    for(int i = 0; i < ndx; i++)
-        V.push_back((S[i] + S[i + 1]) / 2 * dx[i]);
-
-    return V;
-}
-
-// Input/Output Target Pressure Distribution
-void ioTargetPressure(int io, std::vector <double> &p)
-{
-
-    FILE  * TargetP;
-    int err;
-    // Output
-    if(io > 0)
-    {
-        TargetP = fopen("targetP.dat", "w");
-        fprintf(TargetP, "%d\n", nx);
-//      for(int i = 0; i < nx; i++)
-//          fprintf(TargetP, "%.15f\n", x[i]);
-        for(int i = 0; i < nx; i++)
-            fprintf(TargetP, "%.15f\n", p[i] / ptin);
-    }
-    // Input
-    else
-    {
-        int nxT;
-
-        TargetP = fopen("targetP.dat", "r");
-        rewind(TargetP);
-        err = fscanf(TargetP, "%d", &nxT);
-        if(nxT!=nx) std::cout<< "nx and nxT are different for targetP";
-        for(int iT = 0; iT < nxT; iT++)
-        {
-            err = fscanf(TargetP, "%lf", &p[iT]);
-        }
-        if(err != 1) std::cout<< "Err";
-    }
-
-    fclose(TargetP);
-}
-
-// Return Inverse Design Fitness
-
-double inverseFitness(
-    std::vector <double> pcurrent,
-    std::vector <double> ptarget,
-    std::vector <double> dx)
-{
-    double fit = 0;
-    for(int i = 0; i < nx; i++)
-    {
-        fit += pow(pcurrent[i] / ptin - ptarget[i], 2) * dx[i];
-    }
-//  std::cout<<"InverseFitness =  "<<fit / 2<<std::endl;
-    return fit / 2;
 }
 
 

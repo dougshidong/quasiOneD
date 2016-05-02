@@ -1,45 +1,37 @@
+#ifndef GLOBALS_H
+#define GLOBALS_H
+
+#include <string>
+
 extern const double PI;
 
-extern const int nx;
+extern std::string filename;
 
-extern const int opt;
+extern int nx;
+extern double a_geom, b_geom;
+extern double h_geom, t1_geom, t2_geom;
 
-extern const int desParam;
-extern int nDesVar;
-extern const double a_geom, b_geom;
-extern const double h_geom, t1_geom, t2_geom;
-
-extern const int fitnessFun;
-
-extern const int descentType;
-
-extern const int gradientType;
-
-extern const int createTarget;
-
-extern const double gam;
-extern const double R;
-extern const double Cv;
-
-extern const double Min;
-extern const double Ttin;
-extern const double ptin;
-
-extern const double pexit;
-
-extern const double a2;
-
-extern const double CFL;
-extern const double conv;
-
-extern const int maxIt;
-
-extern const int printIt;
-extern const int printConv;
-extern const int printW;
-
-extern const int StepScheme;
-
-extern const int FluxScheme;
-
+extern int StepScheme, FluxScheme;
 extern double Scalareps;
+
+extern double CFL;
+extern double flowConv;
+extern int maxIt;
+
+extern int printIt, printConv, printW;
+
+extern double gam, R, Cv;
+extern double Min, Ttin, ptin, pexit;
+extern double a2;
+
+extern int opt, desParam, fitnessFun;
+extern int nDesVar;
+extern int descentType, gradientType, hessianType, exactHessian;
+extern double gradConv;
+extern int maxDesign;
+
+extern double h_tar, t1_tar, t2_tar;
+
+extern int nctl, spline_degree;
+
+#endif

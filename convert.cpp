@@ -8,7 +8,7 @@
 
 // Get pressure
 void getp(
-    std::vector <double> W,
+    const std::vector <double> &W,
     std::vector <double> &p)
 {
     for(int i = 0; i < nx; i++)
@@ -19,7 +19,7 @@ void getp(
 
 // Get primitive variables
 void WtoP(
-    std::vector <double> W,
+    const std::vector <double> &W,
     std::vector <double> &rho,
     std::vector <double> &u,
     std::vector <double> &e)
@@ -34,7 +34,7 @@ void WtoP(
 
 // Get other primitive variables
 void WtoP2(
-    std::vector <double> W,
+    const std::vector <double> &W,
     std::vector <double> &rho,
     std::vector <double> &u,
     std::vector <double> &p)
@@ -50,7 +50,7 @@ void WtoP2(
 // Given rho, u p, get W
 void PtoW(
     std::vector <double> &W,
-    std::vector <double> Wp)
+    const std::vector <double> &Wp)
 {
     for(int i = 0; i < nx; i++)
     {
@@ -63,7 +63,7 @@ void PtoW(
 
 // Get more primitive variables
 void WtoP(
-    std::vector <double> W,
+    const std::vector <double> &W,
     std::vector <double> &rho,
     std::vector <double> &u,
     std::vector <double> &e,
@@ -86,7 +86,7 @@ void WtoP(
 // Wp = [rho, u, p]
 void dWpdW(
     std::vector <double> &M,
-    std::vector <double> W,
+    const std::vector <double> &W,
     int i)
 {
     double rho, u;
@@ -104,7 +104,7 @@ void dWpdW(
 }
 
 Eigen::MatrixXd dWpdW(
-    std::vector <double> W,
+    const std::vector <double> &W,
     int i)
 {
     Eigen::MatrixXd M(3, 3);
@@ -130,7 +130,7 @@ Eigen::MatrixXd dWpdW(
 // Wp = [rho, u, p]
 void dWdWp(
     std::vector <double> &M,
-    std::vector <double> W,
+    const std::vector <double> &W,
     int i)
 {
     double rho, u;
@@ -148,7 +148,7 @@ void dWdWp(
 }
 // Get F
 void WtoF(
-    std::vector <double> W,
+    const std::vector <double> &W,
     std::vector <double> &F)
 {
     double w1, w2, w3;
@@ -165,9 +165,9 @@ void WtoF(
 
 // get Q
 void WtoQ(
-    std::vector <double> W,
+    const std::vector <double> &W,
     std::vector <double> &Q,
-    std::vector <double> S)
+    const std::vector <double> &S)
 {
     std::vector <double> p(nx);
     getp(W, p);
