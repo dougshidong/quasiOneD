@@ -79,7 +79,8 @@ std::vector <double> getCtlpts(
     double xh;
     for(int Si = 0; Si < nx + 1; Si++)
     {
-        xh = x[Si] - dx[Si] / 2.0;
+        if(Si < nx) xh = x[Si] - dx[Si] / 2.0;
+        else xh = b_geom;
         s_eig(Si) = S[Si];
         for(int ictl = 0; ictl < nctl; ictl++)
         {
@@ -87,7 +88,6 @@ std::vector <double> getCtlpts(
         }
     }
     ctl_eig = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(s_eig);
-    
     
     std::vector <double> ctlpts(nctl);
     for(int ictl = 0; ictl < nctl; ictl++)
