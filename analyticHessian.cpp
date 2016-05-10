@@ -1,7 +1,8 @@
 #include<iostream>
 #include<math.h>
 #include<vector>
-#include<Eigen/Eigen>
+#include<Eigen/Core>
+#include<Eigen/Sparse>
 #include"globals.h"
 #include"convert.h"
 #include"parametrization.h"
@@ -156,24 +157,45 @@ MatrixXd directAdjointHessian(
     // Solve for Adjoint (1 Flow Eval)
     // *************************************
     VectorXd psi(3 * nx);
-    //SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver1;
-    //slusolver1.compute(-dRdW.transpose());
-    //if(slusolver1.info() != 0)
-    //    std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
-    //VectorXd psi(3 * nx);
-    //psi = slusolver1.solve(dIcdW);
-    psi = solveGMRES(-dRdW.transpose(),dIcdW);
+      SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver1;
+      slusolver1.compute(-dRdW.transpose());
+      if(slusolver1.info() != 0)
+          std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
+    psi = slusolver1.solve(dIcdW);
+    //psi = solveGMRES(-dRdW.transpose(),dIcdW);
 
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
     MatrixXd dWdDes(3 * nx, nDesVar);
-    //SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver2;
-    //slusolver2.compute(-dRdW);
-    //if(slusolver2.info() != 0)
-    //    std::cout<<"Factorization failed. Error: "<<slusolver2.info()<<std::endl;
-    //dWdDes = slusolver2.solve(dRdDes);
+    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver2;
+    slusolver2.compute(-dRdW);
+    if(slusolver2.info() != 0)
+        std::cout<<"Factorization failed. Error: "<<slusolver2.info()<<std::endl;
     dWdDes = solveGMRES(-dRdW,dRdDes);
+
+    std::cout<<"dWdDes ||r||/||b|| residual:"<<std::endl;
+    std::cout<<(-dRdW*dWdDes - dRdDes).norm()/dRdDes.norm()<<std::endl;
+
+//  BiCGSTAB<SparseMatrix<double> > itsolver;
+//  itsolver.setMaxIterations(100);
+//  itsolver.setTolerance(1.0e-1);
+//  itsolver.compute(-dRdW);
+//  VectorXd xx(3 * nx), b(3 * nx);
+//  for(int iDes = 0; iDes < nDesVar; iDes++)
+//  {
+//      b = dRdDes.col(iDes);
+//      xx = itsolver.solve(b);
+//      dWdDes.col(iDes) = xx;
+//      std::cout << "#iterations:     " << itsolver.iterations() << std::endl;
+//      std::cout << "estimated error: " << itsolver.error()      << std::endl;
+//  }
+
+    MatrixXd realdWdDes(3*nx,nDesVar);
+    realdWdDes = slusolver2.solve(dRdDes);
+    std::cout<<"dWdDes exact vs approx error:"<<std::endl;
+    std::cout<<(realdWdDes - dWdDes).norm()/realdWdDes.norm()<<std::endl;
+
 
     // *************************************
     // Evaluate total derivative DDIcDDesDDes
@@ -191,7 +213,7 @@ MatrixXd directAdjointHessian(
     }
     for(int Ri = 0; Ri < 3 * nx; Ri++)
     {
-//        DDIcDDesDDes += psi(Ri) * ddRdDesdDes;
+//        DDIcDDesDDes += psi(Ri) * ddRdDesdDes; //ddRdDesdDes is 0
         DDIcDDesDDes += psi(Ri) * (dWdDes.transpose() * ddRdWdDes[Ri]);
         DDIcDDesDDes += (psi(Ri) * (dWdDes.transpose() * ddRdWdDes[Ri])).transpose();
         DDIcDDesDDes += psi(Ri) * (dWdDes.transpose() * ddRdWdW[Ri] * dWdDes);
@@ -436,10 +458,11 @@ MatrixXd adjointDirectHessian(
     DDIcDDesDDes.setZero();
     DDIcDDesDDes = ddIcdDesdDes
                    + dWdDes.transpose() * ddIcdWdDes
-                   + dpsidDes.transpose() * dRdDes;
+                   + dRdDes.transpose() * dpsidDes;
+
     for(int Ri = 0; Ri < 3 * nx; Ri++)
     {
-        DDIcDDesDDes += psi(Ri) * dWdDes.transpose() * ddRdWdDes[Ri];
+        DDIcDDesDDes += psi(Ri) * (dWdDes.transpose() * ddRdWdDes[Ri]).transpose();
     }
     for(int Si = 0; Si < nx + 1; Si++)
     {

@@ -25,7 +25,8 @@ VectorXd adjoint(
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
-    std::vector <double> designVar)
+    std::vector <double> designVar,
+    VectorXd &psi)
 {
     //Get Primitive Variables
     std::vector <double> rho(nx), u(nx), e(nx);
@@ -43,14 +44,6 @@ VectorXd adjoint(
     dRdWt = dRdW.transpose();
 //  dRdWt = matAFD2.transpose();
     std::cout.precision(17);
-//  std::cout<<dRdW<<std::endl;
-//  std::cout<<matAFD2<<std::endl;
-//  std::cout<<"(matAFD2 - dRdW).norm() / dRdW.norm():"<<std::endl;
-//  std::cout<<(matAFD2 - dRdW).norm() / dRdW.norm()<<std::endl;
-
-//  dRdWt.coeffRef(dRdWt.rows() - 3, dRdWt.cols() - 3) += 0.00001;
-//  dRdWt.coeffRef(dRdWt.rows() - 2, dRdWt.cols() - 2) += 0.00001;
-//  dRdWt.coeffRef(dRdWt.rows() - 1, dRdWt.cols() - 1) += 0.00001;
 
     // Build B matrix
     // Evaluate dIcdW
@@ -59,8 +52,7 @@ VectorXd adjoint(
 //  std::cout<<"Vector B:"<<std::endl;
 //  std::cout<<bvec<<std::endl;
 
-    VectorXd psiV(3 * nx);
-    psiV.setZero();
+    psi.setZero();
     // Solver type eig_solv
     // 0 = Sparse LU
     // 1 = Dense LU Full Piv
@@ -69,26 +61,31 @@ VectorXd adjoint(
     //int directSolve = 1;
     //if(directSolve == 1)
     //{
-    //    psiV = solveSparseAXB(-dRdWt, bvec, eig_solv);
+    //    psi = solveSparseAXB(-dRdWt, bvec, eig_solv);
     //}
     //else
     //{
-    //    psiV = itSolve(-dRdWt, bvec);
+    //    psi = itSolve(-dRdWt, bvec);
     //}
-    psiV = solveGMRES(-dRdWt, bvec);
+    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
+    slusolver.compute(-dRdWt);
+    if(slusolver.info() != 0)
+        std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
+    psi = slusolver.solve(bvec);
+//  psi = solveGMRES(-dRdWt, bvec);
 
     // If supersonic copy psi2 onto psi1 garbage
     if(u[0] > c[0])
     {
-        psiV(0) = psiV(3);
-        psiV(1) = psiV(4);
-        psiV(2) = psiV(5);
+        psi(0) = psi(3);
+        psi(1) = psi(4);
+        psi(2) = psi(5);
     }
 //  std::cout<<"Adjoint Result:"<<std::endl;
-//  std::cout<<psiV<<std::endl;
+//  std::cout<<psi<<std::endl;
 
     // Save Adjoint
-    outVec("adjoint.dat", "w", psiV);
+    outVec("adjoint.dat", "w", psi);
 
     // Evaluate dIcdS
     VectorXd dIcdS(nx + 1);
@@ -98,9 +95,9 @@ VectorXd adjoint(
     std::vector <double> Flux(3 * (nx + 1), 0);
     getFlux(Flux, W);
 
-    // Evaluate psiV * dRdS
+    // Evaluate psi * dRdS
     VectorXd psidRdS(nx + 1);
-    psidRdS = evalpsidRdS(psiV, Flux, p);
+    psidRdS = evalpsidRdS(psi, Flux, p);
 
     // Finite Difference dRdS
     MatrixXd dRdS(3 * nx, nx + 1);
@@ -110,7 +107,7 @@ VectorXd adjoint(
 
     VectorXd psidRdSFD(nx + 1);
     psidRdSFD.setZero();
-    psidRdSFD = psiV.transpose() * dRdS;
+    psidRdSFD = psi.transpose() * dRdS;
 
     // Evaluate dSdDes
     MatrixXd dSdDes(nx + 1, designVar.size());
@@ -118,7 +115,7 @@ VectorXd adjoint(
 
     // Evaluate dIdDes
     VectorXd grad(designVar.size());
-    grad = psidRdSFD.transpose() * dSdDes;
+    grad = psidRdS.transpose() * dSdDes;
 
     std::cout<<"Gradient from Adjoint:"<<std::endl;
     std::cout<<std::setprecision(15)<<grad<<std::endl;
@@ -137,7 +134,7 @@ VectorXd buildbMatrix(std::vector <double> dIcdW)
 }
 
 VectorXd evalpsidRdS(
-    VectorXd psiV,
+    VectorXd psi,
     std::vector <double> Flux,
     std::vector <double> p)
 {
@@ -146,32 +143,32 @@ VectorXd evalpsidRdS(
     for(int i = 2; i < nx - 1; i++)
     for(int k = 0; k < 3; k++)
     {
-        psidRdS(i) += psiV((i - 1) * 3 + k) * Flux[i * 3 + k];
-        psidRdS(i) -= psiV(i * 3 + k) * Flux[i * 3 + k];
+        psidRdS(i) += psi((i - 1) * 3 + k) * Flux[i * 3 + k];
+        psidRdS(i) -= psi(i * 3 + k) * Flux[i * 3 + k];
         if(k == 1)
         {
-            psidRdS(i) -= psiV((i - 1) * 3 + k) * p[i - 1];
-            psidRdS(i) += psiV(i * 3 + k) * p[i];
+            psidRdS(i) -= psi((i - 1) * 3 + k) * p[i - 1];
+            psidRdS(i) += psi(i * 3 + k) * p[i];
         }
     }
 
-    // Evaluate psiV * dRdS neat the Boundaries
+    // Evaluate psi * dRdS neat the Boundaries
     for(int k = 0; k < 3; k++)
     {
         // Cell 0 Inlet is not a function of the shape
 
         // Cell 1
-        psidRdS(1) -= psiV(1 * 3 + k) * Flux[1 * 3 + k];
+        psidRdS(1) -= psi(1 * 3 + k) * Flux[1 * 3 + k];
 
         // Cell nx - 1
-        psidRdS(nx - 1) += psiV((nx - 2) * 3 + k) * Flux[(nx - 1) * 3 + k];
+        psidRdS(nx - 1) += psi((nx - 2) * 3 + k) * Flux[(nx - 1) * 3 + k];
 
         // Cell nx Outlet is not a function of the shape
 
         if(k == 1)
         {
-            psidRdS(1) += psiV(1 * 3 + k) * p[1];
-            psidRdS(nx - 1) -= psiV((nx - 2) * 3 + k) * p[nx - 1];
+            psidRdS(1) += psi(1 * 3 + k) * p[1];
+            psidRdS(nx - 1) -= psi((nx - 2) * 3 + k) * p[nx - 1];
         }
     }
     return psidRdS;

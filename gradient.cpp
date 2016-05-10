@@ -22,7 +22,8 @@ VectorXd getGradient(int gType,
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
-    std::vector <double> designVar)
+    std::vector <double> designVar,
+    VectorXd &psi)
 {
     VectorXd grad(nDesVar);
     if(gType < 0)
@@ -32,7 +33,7 @@ VectorXd getGradient(int gType,
     }
     else if(gType == 1)
     {
-        grad = adjoint(x, dx, S, W, designVar);
+        grad = adjoint(x, dx, S, W, designVar, psi);
     }
     else if(gType == 2)
     {

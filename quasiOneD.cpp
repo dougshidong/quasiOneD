@@ -146,9 +146,6 @@ double quasiOneD(
     }
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
 
-    std::cout<<"Total Pressure Loss: "<<evalFitness(dx, W)<<std::endl;
-
-
     outVec("Geom.dat", "w", x);
     outVec("Geom.dat", "a", S);
     std::vector <double> pn(nx);

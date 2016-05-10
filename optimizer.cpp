@@ -13,6 +13,7 @@
 #include"gradient.h"
 #include"analyticHessian.h"
 #include"output.h"
+#include"truncatedNewton.h"
 #include<time.h>
 
 using namespace Eigen;
@@ -26,6 +27,7 @@ MatrixXd finiteD2(std::vector <double> x,
     int &possemidef);
 
 double stepBacktrackUncons(
+    double alpha,
     std::vector <double> &designVar,
     VectorXd &searchD,
     VectorXd pk,
@@ -45,6 +47,8 @@ double checkCond(MatrixXd H);
 MatrixXd invertHessian(MatrixXd H);
 LLT<MatrixXd> checkPosDef(MatrixXd H);
 
+VectorXd implicitSmoothing(VectorXd gradient, double epsilon);
+
 void design(
     std::vector <double> x,
     std::vector <double> dx,
@@ -56,10 +60,13 @@ void design(
     std::vector <double> normGradList;
     std::vector <double> timeVec;
     std::vector <double> Herror;
+    std::vector <double> svdvalues;
+    std::vector <double> svdvaluesreal;
     std::vector <double> Hcond;
     MatrixXd H(nDesVar, nDesVar), H_BFGS(nDesVar, nDesVar), realH(nDesVar, nDesVar);
     double normGrad;
     double currentI;
+    double alpha;
 
     int printConv = 1;
 
@@ -73,12 +80,17 @@ void design(
     quasiOneD(x, dx, S, W);
     currentI = evalFitness(dx, W);
 
+    VectorXd psi(3 * nx);
+
     VectorXd gradient(nDesVar);
     VectorXd oldGrad(nDesVar); //BFGS
-    gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar);
+    gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar, psi);
+    
+
 
     // Initialize B
     H.setIdentity();
+    H = H * 1.0;
     if(exactHessian == 1)
     {
         H = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
@@ -105,12 +117,17 @@ void design(
             std::cout<<"Current Design:\n";
             for(int i = 0; i < nDesVar; i++)
                 std::cout<<designVar[i]<<std::endl;
+
+//          std::cout<<"Current Shape:\n";
+//          for(int i = 0; i < nx + 1; i++)
+//              std::cout<<S[i]<<std::endl;
         }
         std::cout<<"Current Fitness: "<<currentI<<std::endl;
 
 //      1  =  Steepest Descent
 //      2  =  Quasi-Newton (BFGS)
 //      3  =  Newton
+//      4  =  Truncated Newton with Adjoint-Direct Matrix-Vector Product
         if(descentType == 1) pk =  -gradient;
         else if(descentType == 2)
         {
@@ -120,7 +137,40 @@ void design(
                 H = H_BFGS;
             }
 
-            realH = getAnalyticHessian(x, dx, W, S, designVar, hessianType).inverse();
+            realH = getAnalyticHessian(x, dx, W, S, designVar, 2);
+            JacobiSVD<MatrixXd> svd1(H.inverse(), ComputeFullU | ComputeFullV);
+            JacobiSVD<MatrixXd> svd2(realH, ComputeFullU | ComputeFullV);
+
+            std::cout<<"svd1"<<std::endl;
+            std::cout<<svd1.singularValues()<<std::endl;
+            std::cout<<"svd2"<<std::endl;
+            std::cout<<svd2.singularValues()<<std::endl;
+            for(int i = 0; i < nDesVar; i++)
+            {
+                svdvalues.push_back(svd1.singularValues()(i));
+                svdvaluesreal.push_back(svd2.singularValues()(i));
+            }
+  
+            std::cout<<"svd singular values error"<<std::endl;
+            std::cout<<
+                (svd1.singularValues()-svd2.singularValues()).norm()
+                /svd2.singularValues().norm()<<std::endl;
+
+            std::cout<<"svd singular vectors error"<<std::endl;
+            std::cout<<
+                (svd1.matrixV()-svd2.matrixV()).norm()
+                /svd2.matrixV().norm()<<std::endl;
+            // Eigenvalues are not returned in ascending order.
+//          std::cout<<"eig1"<<std::endl;
+//          std::cout<<H.inverse().eigenvalues()<<std::endl;
+//          std::cout<<"eig2"<<std::endl;
+//          std::cout<<realH.eigenvalues()<<std::endl;
+//          std::cout<<"Eig error"<<std::endl;
+//          std::cout<<
+//              (H.inverse().eigenvalues()-realH.eigenvalues()).norm()
+//              /realH.eigenvalues().norm()<<std::endl;
+
+            realH = realH.inverse();
             Hcond.push_back(checkCond(realH.inverse()));
             double err = (realH - H).norm()/realH.norm();
             std::cout<<"Hessian error: "<<err<<std::endl;
@@ -130,32 +180,48 @@ void design(
         }
         else if(descentType == 3)
         {
-            if(iDesign > 1)
-            {
-                H = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
-                checkCond(H);
-                H = invertHessian(H);
-            }
-            realH = getAnalyticHessian(x, dx, W, S, designVar, 2).inverse();
-            Hcond.push_back(checkCond(realH.inverse()));
+            H = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
+            realH = getAnalyticHessian(x, dx, W, S, designVar, 2);
             double err = (realH - H).norm()/realH.norm();
             std::cout<<"Hessian error: "<<err<<std::endl;
             Herror.push_back(err);
 
+            checkCond(H);
+            H = invertHessian(H);
+            Hcond.push_back(checkCond(realH.inverse()));
+
             pk = -H * gradient;
         }
-//      std::cout<<"Current Inverse Hessian:"<<std::endl;
-//      std::cout<<H<<std::endl;
-//      std::cout<<"\n\n";
+        else if(descentType == 4)
+        {
+            if(iDesign == 1)
+            {
+                searchD = -gradient;
+            }
+            pk = truncatedNewton_AD(searchD, gradient, psi, x, dx, W, S, designVar);
+            realH = getAnalyticHessian(x, dx, W, S, designVar, 2);
+            checkCond(realH);
+            VectorXd realpk = -invertHessian(realH) * gradient;
+            std::cout<<"pk error: "<<(pk-realpk).norm()/realpk.norm()<<std::endl;
+            std::cout<<"realpk:\n"<<std::endl;
+            std::cout<<realpk<<std::endl;
+        }
+        std::cout<<realH<<std::endl;
+        
+//      std::cout<<"pk before smoothing:\n"<<std::endl;
+//      std::cout<<pk<<std::endl;
 
-        std::cout<<"pk:\n"<<std::endl;
+//      pk = implicitSmoothing(pk, 0.5);
+        alpha = 1.0;
+
+        std::cout<<"pk after smoothing:\n"<<std::endl;
         std::cout<<pk<<std::endl;
 
-        currentI = stepBacktrackUncons(designVar, searchD, pk, gradient, currentI, x, dx, W);
+        currentI = stepBacktrackUncons(alpha, designVar, searchD, pk, gradient, currentI, x, dx, W);
 
         S = evalS(designVar, x, dx, desParam);
         oldGrad = gradient;
-        gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar);
+        gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar, psi);
 
         normGrad = 0;
         for(int i = 0; i < nDesVar; i++)
@@ -166,6 +232,7 @@ void design(
         toc = clock();
         elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
         timeVec.push_back(elapsed);
+        std::cout<<"Time: "<<elapsed<<std::endl;
 
         std::cout<<"End of Design Iteration: "<<iDesign<<std::endl<<std::endl<<std::endl;
     }
@@ -183,12 +250,15 @@ void design(
     outVec("OptTime.dat", "w", timeVec);
     outVec("HessianErr.dat", "w", Herror);
     outVec("HessianCond.dat", "w", Hcond);
+    outVec("svd.dat", "w", svdvalues);
+    outVec("svdreal.dat", "w", svdvaluesreal);
 
 
     return;
 }
 
 double stepBacktrackUncons(
+    double alpha,
     std::vector <double> &designVar,
     VectorXd &searchD,
     VectorXd pk,
@@ -200,7 +270,6 @@ double stepBacktrackUncons(
 {
 //  std::vector <double> W(3 * nx, 0);
 
-    double alpha = 1;
     double c1 = 1e-4;
     std::vector <double> tempS(nx + 1);
     double newVal;
@@ -406,4 +475,27 @@ MatrixXd BFGS(
     newH = oldH + dH;
 
     return newH;
+}
+
+VectorXd implicitSmoothing(VectorXd gradient, double epsilon)
+{
+    int n = gradient.size();
+    MatrixXd A(n, n);
+    A.setZero();
+
+    for(int i = 0; i < n - 1; i++)
+    {
+        A(i  , i) = 1.0 + 2.0 * epsilon;
+        A(i+1, i) = -epsilon;
+        A(i, i+1) = -epsilon;
+    }
+    A(n-1,n-1) = 1.0 + 2.0 * epsilon;
+
+    LLT<MatrixXd> llt;
+    llt.compute(A);
+    if(llt.info() != 0)
+        std::cout<<"Factorization failed. Error: "<<llt.info()<<std::endl;
+    VectorXd smoothGrad = llt.solve(gradient);
+
+    return smoothGrad;
 }

@@ -88,8 +88,9 @@ void inputfile()
     fgets(buf, sizeof buf, inputf); // Skip Line
     // Descent Type for Optimization
     // 1  -  Steepest Descent
+    // 2  -  Quasi-Newton (BFGS)
     // 3  -  Newton
-    // 4  -  Quasi-Newton (BFGS)
+    // 4  -  Truncated-Newton
     // Gradient Type
     //-3  -  FD Centered
     //-2  -  FD Centered
@@ -99,6 +100,11 @@ void inputfile()
     // Hessian Type
     fgets(buf, sizeof buf, inputf); // Read
     sscanf(buf, "%d %d %d %d", &descentType, &gradientType, &hessianType, &exactHessian);
+
+    // Number of CG steps when using Truncated Newton
+    fgets(buf, sizeof buf, inputf); // Skip Line
+    fgets(buf, sizeof buf, inputf); // Read
+    sscanf(buf, "%d", &nCG);
 
     // Design Convergence
     fgets(buf, sizeof buf, inputf); // Skip Line

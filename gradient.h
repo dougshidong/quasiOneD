@@ -8,5 +8,6 @@ VectorXd getGradient(int gType,
     std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> W,
-    std::vector <double> designVar);
+    std::vector <double> designVar,
+    VectorXd &psi);
 #endif

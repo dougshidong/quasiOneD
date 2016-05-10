@@ -20,7 +20,6 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     PetscInt    *indices;
     PetscScalar *values;
 
-
 //  MatCreate(PETSC_COMM_SELF,&A);
 //  MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
 //  MatSetFromOptions(A);
@@ -43,15 +42,19 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
 
 
     KSPCreate(PETSC_COMM_SELF,&ksp);
-    KSPCreate(PETSC_COMM_SELF,&ksp);
 
     KSPSetOperators(ksp,A,A);
     KSPGetPC(ksp,&pc);
-    PCSetType(pc,PCILU);
+    PCSetType(pc,PCNONE);
+//  PCSetType(pc,PCJACOBI);
+//  PCSetType(pc,PCILU);
 
     KSPSetType(ksp, KSPGMRES);
-    KSPSetTolerances(ksp,1.e-6,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+//  KSPSetTolerances(ksp,1.e-1,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+    KSPSetTolerances(ksp,1.e-2,1.e-2,PETSC_DEFAULT,PETSC_DEFAULT);
+//  KSPSetMonitor(ksp,KSPDefaultMonitor,PETSC_NULL,PETSC_NULL);
     KSPSetFromOptions(ksp);
+
 
     MatrixXd X(Bin.rows(), Bin.cols());
     PetscMalloc1(Bin.rows() * sizeof(PetscScalar), &values);

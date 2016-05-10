@@ -58,8 +58,6 @@ void ioTargetPressure(int io, std::vector <double> &p)
     {
         TargetP = fopen("targetP.dat", "w");
         fprintf(TargetP, "%d\n", nx);
-//      for(int i = 0; i < nx; i++)
-//          fprintf(TargetP, "%.15f\n", x[i]);
         for(int i = 0; i < nx; i++)
             fprintf(TargetP, "%.15f\n", p[i] / ptin);
     }
