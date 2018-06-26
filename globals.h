@@ -27,6 +27,7 @@ extern double a2;
 extern int opt, desParam, fitnessFun;
 extern int nDesVar;
 extern int descentType, gradientType, hessianType, exactHessian;
+extern double htol;
 extern int nCG;
 extern double gradConv;
 extern int maxDesign;

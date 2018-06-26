@@ -99,7 +99,7 @@ void inputfile()
     // 2  -  Direct Differentiation
     // Hessian Type
     fgets(buf, sizeof buf, inputf); // Read
-    sscanf(buf, "%d %d %d %d", &descentType, &gradientType, &hessianType, &exactHessian);
+    sscanf(buf, "%d %d %d %d %lf", &descentType, &gradientType, &hessianType, &exactHessian, &htol);
 
     // Number of CG steps when using Truncated Newton
     fgets(buf, sizeof buf, inputf); // Skip Line

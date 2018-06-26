@@ -1,4 +1,5 @@
 #include<iostream>
+#include<iomanip>
 #include<math.h>
 #include<vector>
 #include<Eigen/Core>
@@ -66,21 +67,11 @@ MatrixXd getAnalyticHessian(
 {
     MatrixXd Hessian(nDesVar, nDesVar);
 
-    if(method == 0)
-    {
-        Hessian = directDirectHessian(x, dx, W, S, designVar);
-    }
-    else if(method == 1)
-    {
-        Hessian = adjointDirectHessian(x, dx, W, S, designVar);
-    }
-    else if(method == 2)
-    {
-        Hessian = adjointAdjointHessian(x, dx, W, S, designVar);
-    }
-    else if(method == 3)
-    {
-        Hessian = directAdjointHessian(x, dx, W, S, designVar);
+    switch(method) {
+        case 0: Hessian = directDirectHessian(x, dx, W, S, designVar);
+        case 1: Hessian = adjointDirectHessian(x, dx, W, S, designVar);
+        case 2: Hessian = adjointAdjointHessian(x, dx, W, S, designVar);
+        case 3: Hessian = directAdjointHessian(x, dx, W, S, designVar);
     }
 
     return Hessian;
@@ -168,33 +159,28 @@ MatrixXd directAdjointHessian(
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
     MatrixXd dWdDes(3 * nx, nDesVar);
-    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver2;
-    slusolver2.compute(-dRdW);
-    if(slusolver2.info() != 0)
-        std::cout<<"Factorization failed. Error: "<<slusolver2.info()<<std::endl;
-    dWdDes = solveGMRES(-dRdW,dRdDes);
+    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > factdrdw;
+    factdrdw.compute(-dRdW);
+    if(factdrdw.info() != 0)
+        std::cout<<"Factorization failed. Error: "<<factdrdw.info()<<std::endl;
+    if(exactHessian == 1)  dWdDes = factdrdw.solve(dRdDes);
+    else if(exactHessian < 0)
+    {
+        // Iterative Solution of dWdDes
+        dWdDes = solveGMRES(-dRdW,dRdDes);
 
-    std::cout<<"dWdDes ||r||/||b|| residual:"<<std::endl;
-    std::cout<<(-dRdW*dWdDes - dRdDes).norm()/dRdDes.norm()<<std::endl;
+        std::cout<<"dWdDes ||r||/||b|| residual:"<<std::endl;
+        std::cout<<(-dRdW*dWdDes - dRdDes).norm()/dRdDes.norm()<<std::endl;
 
-//  BiCGSTAB<SparseMatrix<double> > itsolver;
-//  itsolver.setMaxIterations(100);
-//  itsolver.setTolerance(1.0e-1);
-//  itsolver.compute(-dRdW);
-//  VectorXd xx(3 * nx), b(3 * nx);
-//  for(int iDes = 0; iDes < nDesVar; iDes++)
-//  {
-//      b = dRdDes.col(iDes);
-//      xx = itsolver.solve(b);
-//      dWdDes.col(iDes) = xx;
-//      std::cout << "#iterations:     " << itsolver.iterations() << std::endl;
-//      std::cout << "estimated error: " << itsolver.error()      << std::endl;
-//  }
+        // Direct Solution of dWdDes
+        MatrixXd realdWdDes(3*nx,nDesVar);
+        realdWdDes = factdrdw.solve(dRdDes);
 
-    MatrixXd realdWdDes(3*nx,nDesVar);
-    realdWdDes = slusolver2.solve(dRdDes);
-    std::cout<<"dWdDes exact vs approx error:"<<std::endl;
-    std::cout<<(realdWdDes - dWdDes).norm()/realdWdDes.norm()<<std::endl;
+        std::cout<<"Relative error of approximate dWdDes vs exact dWdDes:"<<std::endl;
+        std::cout<<(realdWdDes - dWdDes).norm()/realdWdDes.norm()<<std::endl;
+        for(int icol = 0; icol < nDesVar; icol++)
+            std::cout << icol << "\t" << (realdWdDes.col(icol) - dWdDes.col(icol)).norm()/realdWdDes.col(icol).norm()<<std::endl;
+    }
 
 
     // *************************************
@@ -542,56 +528,73 @@ MatrixXd directDirectHessian(
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
+    double errdwddes;
     MatrixXd dWdDes(3 * nx, nDesVar);
-    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
-    slusolver.compute(-dRdW);
-    if(slusolver.info() != 0)
-        std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
-    dWdDes = slusolver.solve(dRdDes);
+    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > factdrdw;
+    factdrdw.compute(-dRdW);
+    if(factdrdw.info() != 0)
+        std::cout<<"Factorization failed. Error: "<<factdrdw.info()<<std::endl;
+    if(exactHessian == 1) {
+        dWdDes = factdrdw.solve(dRdDes);
+    }
+    else if(exactHessian == -1 || exactHessian == -3) {
+        // Iterative Solution of dWdDes
+        dWdDes = solveGMRES(-dRdW,dRdDes);
 
-    MatrixXd dWdDesGMRES(3 * nx, nDesVar);
-    dWdDesGMRES = solveGMRES(-dRdW,dRdDes);
+        std::cout<<"dWdDes ||r|| residual:"<<std::endl;
+        std::cout<<(-dRdW*dWdDes - dRdDes).norm()<<std::endl;
+        std::cout<<"dWdDes ||r||/||b|| residual:"<<std::endl;
+        std::cout<<(-dRdW*dWdDes - dRdDes).norm()/dRdDes.norm()<<std::endl;
 
-    std::cout<<(dWdDesGMRES-dWdDes).norm()/dWdDes.norm()<<std::endl;
+        // Direct Solution of dWdDes
+        MatrixXd realdWdDes(3*nx,nDesVar);
+        realdWdDes = factdrdw.solve(dRdDes);
+
+        std::cout<<"Relative error of approximate dWdDes vs exact dWdDes:"<<std::endl;
+        std::cout<<(realdWdDes - dWdDes).norm()/realdWdDes.norm()<<std::endl;
+        errdwddes = (realdWdDes - dWdDes).norm()/realdWdDes.norm();
+    }
     // *************************************
     // Evaluate ddWdDesdDes (nDesVar * (nDesVar+1) / 2 Flow Eval)
     // *************************************
     std::vector <MatrixXd> ddWdDesdDes(3 * nx);
     MatrixXd dummy(nDesVar, nDesVar);
-    for(int Wi = 0; Wi < 3 * nx; Wi++)
-    {
+    dummy.setZero();
+    for(int Wi = 0; Wi < 3 * nx; Wi++) {
         ddWdDesdDes[Wi] = dummy;
     }
 
-    VectorXd ddWdDesidDesj(3 * nx);
-    VectorXd RHS(3 * nx);
-    for(int di = 0; di < nDesVar; di++)
-    {
-        for(int dj = di; dj < nDesVar; dj++)
+    if(exactHessian >= -1) {
+        VectorXd ddWdDesidDesj(3 * nx);
+        VectorXd RHS(3 * nx);
+        for(int di = 0; di < nDesVar; di++)
         {
-            // Evaluate RHS
-            RHS.setZero();
-            for(int Ri = 0; Ri < 3 * nx; Ri++)
+            for(int dj = di; dj < nDesVar; dj++)
             {
-                RHS[Ri] += dWdDes.col(dj).transpose() * ddRdWdS[Ri] * dSdDes.col(di);
-                RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdS[Ri] * dSdDes.col(dj);
-                RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdW[Ri] * dWdDes.col(dj);
-            }
-
-            for(int Si = 0; Si < nx + 1; Si++)
-            {
-                RHS += dRdS.col(Si) * ddSdDesdDes[Si](di, dj);
-            }
-
-            // Solve
-            ddWdDesidDesj = slusolver.solve(RHS);
-
-            for(int Wi = 0; Wi < 3 * nx; Wi++)
-            {
-                ddWdDesdDes[Wi](di, dj) = ddWdDesidDesj[Wi];
-                if(di != dj)
+                // Evaluate RHS
+                RHS.setZero();
+                for(int Ri = 0; Ri < 3 * nx; Ri++)
                 {
-                    ddWdDesdDes[Wi](dj, di) = ddWdDesdDes[Wi](di, dj);
+                    RHS[Ri] += dWdDes.col(dj).transpose() * ddRdWdS[Ri] * dSdDes.col(di);
+                    RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdS[Ri] * dSdDes.col(dj);
+                    RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdW[Ri] * dWdDes.col(dj);
+                }
+
+                for(int Si = 0; Si < nx + 1; Si++)
+                {
+                    RHS += dRdS.col(Si) * ddSdDesdDes[Si](di, dj);
+                }
+
+                // Solve
+                ddWdDesidDesj = factdrdw.solve(RHS);
+
+                for(int Wi = 0; Wi < 3 * nx; Wi++)
+                {
+                    ddWdDesdDes[Wi](di, dj) = ddWdDesidDesj[Wi];
+                    if(di != dj)
+                    {
+                        ddWdDesdDes[Wi](dj, di) = ddWdDesdDes[Wi](di, dj);
+                    }
                 }
             }
         }
@@ -601,6 +604,13 @@ MatrixXd directDirectHessian(
     // Evaluate total derivative DDIcDDesDDes
     // *************************************
     MatrixXd DDIcDDesDDes(nDesVar, nDesVar);
+    MatrixXd A(nDesVar, nDesVar);
+    A = dWdDes.transpose() * ddIcdWdDes
+        + (dWdDes.transpose() * ddIcdWdDes).transpose()
+        + dWdDes.transpose() * ddIcdWdW * dWdDes
+        + dWdDes.transpose() * ddIcdWdW * dWdDes
+        ;
+//      + dWdDes.transpose() * ddIcdWdW * dWdDes;
     DDIcDDesDDes = ddIcdDesdDes
                    + dWdDes.transpose() * ddIcdWdDes
                    + (dWdDes.transpose() * ddIcdWdDes).transpose()
@@ -612,6 +622,17 @@ MatrixXd directDirectHessian(
     for(int Wi = 0; Wi < 3 * nx; Wi++)
     {
         DDIcDDesDDes += dIcdW(Wi) * ddWdDesdDes[Wi];
+    }
+
+    if(exactHessian == -1){
+    for(int i = 0; i<nDesVar; i++){
+    for(int j = 0; j<nDesVar; j++){
+        std::cout << i << "\t" << j 
+            << "\t" << std::setprecision(5) 
+            << errdwddes / (DDIcDDesDDes(i,j)/A(i,j))
+            << std::endl;
+    }
+    }
     }
 
     return DDIcDDesDDes;

@@ -26,6 +26,7 @@ double a2;
 int opt, desParam, fitnessFun;
 int nDesVar;
 int descentType, gradientType, hessianType, exactHessian;
+double htol;
 int nCG;
 double gradConv;
 int maxDesign;

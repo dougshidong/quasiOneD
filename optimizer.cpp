@@ -1,4 +1,5 @@
 #include<iostream>
+#include<fstream>
 #include<math.h>
 #include<vector>
 #include<iomanip>
@@ -13,11 +14,17 @@
 #include"gradient.h"
 #include"analyticHessian.h"
 #include"output.h"
-#include"truncatedNewton.h"
 #include<time.h>
+#include<stdlib.h>     /* srand, rand */
 
 using namespace Eigen;
 
+MatrixXd finiteD2g(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    double h);
 MatrixXd finiteD2(std::vector <double> x,
     std::vector <double> dx,
     std::vector <double> S,
@@ -76,6 +83,9 @@ void design(
     clock_t toc;
     double elapsed;
 
+    std::ofstream myfile;
+    myfile.open("convergence.dat");
+    myfile << " Iteration \t Cost Function \t Gradient Norm \t Average Error \n";
 
     quasiOneD(x, dx, S, W);
     currentI = evalFitness(dx, W);
@@ -85,8 +95,40 @@ void design(
     VectorXd gradient(nDesVar);
     VectorXd oldGrad(nDesVar); //BFGS
     gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar, psi);
-    
 
+//    MatrixXd H_FD(nDesVar, nDesVar), H_exact(nDesVar, nDesVar), H_DA(nDesVar, nDesVar);
+//    std::cout << std::scientific;
+////  std::cout << "FD:" << std::endl;
+////  H_FD = finiteD2g(x, dx, S, designVar, 1.0e-7);
+////  std::cout << std::setprecision(15) << H_FD << std::endl;
+////  std::cout << std::setprecision(15) << "DD:" << std::endl;
+////  std::cout << std::setprecision(15) << getAnalyticHessian(x, dx, W, S, designVar, 0) << std::endl;
+////  std::cout << std::setprecision(15) << "AD:" << std::endl;
+////  std::cout << std::setprecision(15) << getAnalyticHessian(x, dx, W, S, designVar, 1) << std::endl;
+////  std::cout << std::setprecision(15) << "AA:" << std::endl;
+////  std::cout << std::setprecision(15) << getAnalyticHessian(x, dx, W, S, designVar, 2) << std::endl;
+//    std::cout << std::setprecision(15) << "DA:" << std::endl;
+//    H_exact = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
+//    std::cout << std::setprecision(15) << H_exact << std::endl;
+//    exactHessian = -1;
+//    std::cout << std::setprecision(15) << "inexact DA:" << std::endl;
+//    H_DA = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
+//    std::cout << std::setprecision(15) << H_DA << std::endl;
+//
+//    for(int i = 0; i<nDesVar; i++){
+//    for(int j = 0; j<nDesVar; j++){
+//        std::cout << i << "\t" << j 
+//            << "\t" << std::setprecision(3) 
+//            << H_exact(i,j)
+//            << "\t"
+//            << H_exact(i,j) - H_DA(i,j) 
+//            << "\t"
+//            << (H_exact(i,j) - H_DA(i,j))/H_exact(i,j) 
+//            << std::endl;
+//    }
+//    }
+//
+//    return;
 
     // Initialize B
     H.setIdentity();
@@ -128,7 +170,25 @@ void design(
 //      2  =  Quasi-Newton (BFGS)
 //      3  =  Newton
 //      4  =  Truncated Newton with Adjoint-Direct Matrix-Vector Product
-        if(descentType == 1) pk =  -gradient;
+        if(descentType == 1)
+        {
+            //int expo = rand() % 5 + 1 - 3;
+            double averageerr = 0;
+            for(int i = 0; i<nDesVar; i++){
+                srand (time(NULL));
+                double fMin = -2.0;
+                double fMax = 2.0;
+                double expo = (double)rand() / RAND_MAX;
+                expo =  fMin + expo * (fMax - fMin);
+                expo =  0.0;
+                pk(i) =  -10*gradient(i)*pow(10,expo);
+                averageerr += fabs(expo)/nDesVar;
+                //pk(i) =  -gradient(i);
+            }
+            //pk =  -500*gradient;
+            myfile << iDesign << "\t" << currentI <<"\t"<< normGrad << "\t" << averageerr << "\n";
+            myfile.flush();
+        }
         else if(descentType == 2)
         {
             if(iDesign > 1)
@@ -192,21 +252,7 @@ void design(
 
             pk = -H * gradient;
         }
-        else if(descentType == 4)
-        {
-            if(iDesign == 1)
-            {
-                searchD = -gradient;
-            }
-            pk = truncatedNewton_AD(searchD, gradient, psi, x, dx, W, S, designVar);
-            realH = getAnalyticHessian(x, dx, W, S, designVar, 2);
-            checkCond(realH);
-            VectorXd realpk = -invertHessian(realH) * gradient;
-            std::cout<<"pk error: "<<(pk-realpk).norm()/realpk.norm()<<std::endl;
-            std::cout<<"realpk:\n"<<std::endl;
-            std::cout<<realpk<<std::endl;
-        }
-        std::cout<<realH<<std::endl;
+//        std::cout<<realH<<std::endl;
         
 //      std::cout<<"pk before smoothing:\n"<<std::endl;
 //      std::cout<<pk<<std::endl;
@@ -214,7 +260,9 @@ void design(
 //      pk = implicitSmoothing(pk, 0.5);
         alpha = 1.0;
 
-        std::cout<<"pk after smoothing:\n"<<std::endl;
+        std::cout<<"gradient:\n"<<std::endl;
+        std::cout<<-gradient<<std::endl;
+        std::cout<<"pk:\n"<<std::endl;
         std::cout<<pk<<std::endl;
 
         currentI = stepBacktrackUncons(alpha, designVar, searchD, pk, gradient, currentI, x, dx, W);
@@ -253,6 +301,7 @@ void design(
     outVec("svd.dat", "w", svdvalues);
     outVec("svdreal.dat", "w", svdvaluesreal);
 
+    myfile.close();
 
     return;
 }
@@ -312,6 +361,46 @@ double stepBacktrackUncons(
     }
 
     return newVal;
+}
+
+MatrixXd finiteD2g(
+    std::vector <double> x,
+    std::vector <double> dx,
+    std::vector <double> S,
+    std::vector <double> designVar,
+    double h)
+{
+    MatrixXd Hessian(nDesVar, nDesVar);
+    std::vector <double> W(3 * nx, 0);
+    std::vector <double> tempS(nx + 1);
+    std::vector <double> tempD(nDesVar);
+    VectorXd gradp(nDesVar);
+    VectorXd gradn(nDesVar);
+    VectorXd psi(3 * nx);
+
+    double currentI = -1;
+    Hessian.setZero();
+    for(int i = 0; i < nDesVar; i++)
+    {
+        tempD = designVar;
+        tempD[i] += h;
+        tempS = evalS(tempD, x, dx, desParam);
+        quasiOneD(x, dx, tempS, W);
+        gradp = getGradient(gradientType, currentI, x, dx, tempS, W, tempD, psi);
+
+        tempD = designVar;
+        tempD[i] -= h;
+        tempS = evalS(tempD, x, dx, desParam);
+        quasiOneD(x, dx, tempS, W);
+        gradn = getGradient(gradientType, currentI, x, dx, tempS, W, tempD, psi);
+        for(int j = 0; j < nDesVar; j++)
+        {
+            Hessian(i, j) += (gradp(j) - gradn(j)) / (2*h);
+            Hessian(j, i) += (gradp(j) - gradn(j)) / (2*h);
+        }
+    }
+    Hessian = Hessian / 2.0;
+    return Hessian;
 }
 
 MatrixXd finiteD2(
@@ -410,6 +499,8 @@ MatrixXd finiteD2(
             Hessian(j, i) = Hessian(i, j);
         }
     }
+    Hessian = Hessian + Hessian.transpose();
+    Hessian = Hessian / 2.0;
     return Hessian;
 }
 

@@ -690,7 +690,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
 
     // Get Jacobians and Fluxes
     std::vector <double> Ap(nx * 3 * 3, 0), An(nx * 3 * 3, 0);
-    if(FluxScheme == 1) ScalarJac(W, Ap, An);
+    if(FluxScheme == 0) ScalarJac(W, Ap, An);
     // Evaluate dpdW
     std::vector <double> dpdW(3 * nx, 0);
     dpdW = evaldpdW(W, S);

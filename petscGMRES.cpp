@@ -51,8 +51,11 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
 
     KSPSetType(ksp, KSPGMRES);
 //  KSPSetTolerances(ksp,1.e-1,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
-    KSPSetTolerances(ksp,1.e-2,1.e-2,PETSC_DEFAULT,PETSC_DEFAULT);
+    KSPSetTolerances(ksp,htol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
 //  KSPSetMonitor(ksp,KSPDefaultMonitor,PETSC_NULL,PETSC_NULL);
+    PetscViewerAndFormat *vf;
+    PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);
+    KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*))KSPMonitorTrueResidualNorm,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
     KSPSetFromOptions(ksp);
 
 
