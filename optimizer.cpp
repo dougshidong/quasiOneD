@@ -96,39 +96,31 @@ void design(
     VectorXd oldGrad(nDesVar); //BFGS
     gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar, psi);
 
-//    MatrixXd H_FD(nDesVar, nDesVar), H_exact(nDesVar, nDesVar), H_DA(nDesVar, nDesVar);
-//    std::cout << std::scientific;
-////  std::cout << "FD:" << std::endl;
-////  H_FD = finiteD2g(x, dx, S, designVar, 1.0e-7);
-////  std::cout << std::setprecision(15) << H_FD << std::endl;
-////  std::cout << std::setprecision(15) << "DD:" << std::endl;
-////  std::cout << std::setprecision(15) << getAnalyticHessian(x, dx, W, S, designVar, 0) << std::endl;
-////  std::cout << std::setprecision(15) << "AD:" << std::endl;
-////  std::cout << std::setprecision(15) << getAnalyticHessian(x, dx, W, S, designVar, 1) << std::endl;
-////  std::cout << std::setprecision(15) << "AA:" << std::endl;
-////  std::cout << std::setprecision(15) << getAnalyticHessian(x, dx, W, S, designVar, 2) << std::endl;
-//    std::cout << std::setprecision(15) << "DA:" << std::endl;
-//    H_exact = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
-//    std::cout << std::setprecision(15) << H_exact << std::endl;
-//    exactHessian = -1;
-//    std::cout << std::setprecision(15) << "inexact DA:" << std::endl;
-//    H_DA = getAnalyticHessian(x, dx, W, S, designVar, hessianType);
-//    std::cout << std::setprecision(15) << H_DA << std::endl;
-//
-//    for(int i = 0; i<nDesVar; i++){
-//    for(int j = 0; j<nDesVar; j++){
-//        std::cout << i << "\t" << j 
-//            << "\t" << std::setprecision(3) 
-//            << H_exact(i,j)
-//            << "\t"
-//            << H_exact(i,j) - H_DA(i,j) 
-//            << "\t"
-//            << (H_exact(i,j) - H_DA(i,j))/H_exact(i,j) 
-//            << std::endl;
-//    }
-//    }
-//
-//    return;
+//  exactHessian = 1; // Calculate exact Hessian to compare with BFGS
+//  realH = getAnalyticHessian(x, dx, W, S, designVar, 3);
+//  int tempi;
+//  double err;
+
+//  H= finiteD2g(x, dx, S, designVar, 1.0e-07);
+//  err = (realH - H).norm()/realH.norm();
+//  std::cout<<"Exact - FDg: "<<err<<std::endl;
+
+//  H= getAnalyticHessian(x, dx, W, S, designVar, 1);
+//  err = (realH - H).norm()/realH.norm();
+//  std::cout<<"DA - AD: "<<err<<std::endl;
+//  std::cout<<std::setprecision(15)<<H<<std::endl;
+
+//  H= getAnalyticHessian(x, dx, W, S, designVar, 2);
+//  err = (realH - H).norm()/realH.norm();
+//  std::cout<<"DA - AA: "<<err<<std::endl;
+//  std::cout<<std::setprecision(15)<<H<<std::endl;
+
+
+//  H= getAnalyticHessian(x, dx, W, S, designVar, 0);
+//  err = (realH - H).norm()/realH.norm();
+//  std::cout<<"DA - DD: "<<err<<std::endl;
+//  std::cout<<std::setprecision(15)<<H<<std::endl;
+//  return;
 
     // Initialize B
     H.setIdentity();
@@ -173,21 +165,21 @@ void design(
         if(descentType == 1)
         {
             //int expo = rand() % 5 + 1 - 3;
-            double averageerr = 0;
-            for(int i = 0; i<nDesVar; i++){
-                srand (time(NULL));
-                double fMin = -2.0;
-                double fMax = 2.0;
-                double expo = (double)rand() / RAND_MAX;
-                expo =  fMin + expo * (fMax - fMin);
-                expo =  0.0;
-                pk(i) =  -10*gradient(i)*pow(10,expo);
-                averageerr += fabs(expo)/nDesVar;
-                //pk(i) =  -gradient(i);
-            }
-            //pk =  -500*gradient;
-            myfile << iDesign << "\t" << currentI <<"\t"<< normGrad << "\t" << averageerr << "\n";
-            myfile.flush();
+            //double averageerr = 0;
+            //for(int i = 0; i<nDesVar; i++){
+            //    srand (time(NULL));
+            //    double fMin = -2.0;
+            //    double fMax = 2.0;
+            //    double expo = (double)rand() / RAND_MAX;
+            //    expo =  fMin + expo * (fMax - fMin);
+            //    expo =  0.0;
+            //    pk(i) =  -10*gradient(i)*pow(10,expo);
+            //    averageerr += fabs(expo)/nDesVar;
+            //    //pk(i) =  -gradient(i);
+            //}
+            //myfile << iDesign << "\t" << currentI <<"\t"<< normGrad << "\t" << averageerr << "\n";
+            //myfile.flush();
+            pk =  -500*gradient;
         }
         else if(descentType == 2)
         {
@@ -197,29 +189,29 @@ void design(
                 H = H_BFGS;
             }
 
-            realH = getAnalyticHessian(x, dx, W, S, designVar, 2);
-            JacobiSVD<MatrixXd> svd1(H.inverse(), ComputeFullU | ComputeFullV);
-            JacobiSVD<MatrixXd> svd2(realH, ComputeFullU | ComputeFullV);
+//          realH = getAnalyticHessian(x, dx, W, S, designVar, 2);
+//          JacobiSVD<MatrixXd> svd1(H.inverse(), ComputeFullU | ComputeFullV);
+//          JacobiSVD<MatrixXd> svd2(realH, ComputeFullU | ComputeFullV);
 
-            std::cout<<"svd1"<<std::endl;
-            std::cout<<svd1.singularValues()<<std::endl;
-            std::cout<<"svd2"<<std::endl;
-            std::cout<<svd2.singularValues()<<std::endl;
-            for(int i = 0; i < nDesVar; i++)
-            {
-                svdvalues.push_back(svd1.singularValues()(i));
-                svdvaluesreal.push_back(svd2.singularValues()(i));
-            }
-  
-            std::cout<<"svd singular values error"<<std::endl;
-            std::cout<<
-                (svd1.singularValues()-svd2.singularValues()).norm()
-                /svd2.singularValues().norm()<<std::endl;
+//          std::cout<<"svd1"<<std::endl;
+//          std::cout<<svd1.singularValues()<<std::endl;
+//          std::cout<<"svd2"<<std::endl;
+//          std::cout<<svd2.singularValues()<<std::endl;
+//          for(int i = 0; i < nDesVar; i++)
+//          {
+//              svdvalues.push_back(svd1.singularValues()(i));
+//              svdvaluesreal.push_back(svd2.singularValues()(i));
+//          }
+//
+//          std::cout<<"svd singular values error"<<std::endl;
+//          std::cout<<
+//              (svd1.singularValues()-svd2.singularValues()).norm()
+//              /svd2.singularValues().norm()<<std::endl;
 
-            std::cout<<"svd singular vectors error"<<std::endl;
-            std::cout<<
-                (svd1.matrixV()-svd2.matrixV()).norm()
-                /svd2.matrixV().norm()<<std::endl;
+//          std::cout<<"svd singular vectors error"<<std::endl;
+//          std::cout<<
+//              (svd1.matrixV()-svd2.matrixV()).norm()
+//              /svd2.matrixV().norm()<<std::endl;
             // Eigenvalues are not returned in ascending order.
 //          std::cout<<"eig1"<<std::endl;
 //          std::cout<<H.inverse().eigenvalues()<<std::endl;
@@ -230,11 +222,11 @@ void design(
 //              (H.inverse().eigenvalues()-realH.eigenvalues()).norm()
 //              /realH.eigenvalues().norm()<<std::endl;
 
-            realH = realH.inverse();
-            Hcond.push_back(checkCond(realH.inverse()));
-            double err = (realH - H).norm()/realH.norm();
-            std::cout<<"Hessian error: "<<err<<std::endl;
-            Herror.push_back(err);
+//          realH = realH.inverse();
+//          Hcond.push_back(checkCond(realH.inverse()));
+//          double err = (realH - H).norm()/realH.norm();
+//          std::cout<<"Hessian error: "<<err<<std::endl;
+//          Herror.push_back(err);
 
             pk = -H * gradient;
         }
