@@ -56,6 +56,26 @@ LLT<MatrixXd> checkPosDef(MatrixXd H);
 
 VectorXd implicitSmoothing(VectorXd gradient, double epsilon);
 
+void test_grad(int gradientType1, int gradientType2, double currentI, 
+	std::vector<double> x, std::vector<double> dx, 
+	std::vector<double> S, std::vector<double> W, 
+	std::vector<double> designVar, VectorXd psi)
+{
+	printf("Comparing GradientType1: %d and GradientType2: %d", gradientType1, gradientType2);
+	int n_des = designVar.size();
+    VectorXd gradient1(n_des);
+    VectorXd gradient2(n_des);
+    gradient1 = getGradient(gradientType1, currentI, x, dx, S, W, designVar, psi);
+    gradient2 = getGradient(gradientType2, currentI, x, dx, S, W, designVar, psi);
+
+	printf("GradientType1: %d \t GradientType2: %d \t Relative Difference\n", gradientType1, gradientType2);
+	for (int i = 0; i < n_des; i++) {
+		double g1 = gradient1[i];
+		double g2 = gradient2[i];
+		printf("%23.15e \t %23.15e \t %23.15e\n", g1, g2, (g1-g2)/(g1+1e-15));
+	}
+	return;
+}
 void design(
     std::vector <double> x,
     std::vector <double> dx,
@@ -95,6 +115,14 @@ void design(
     VectorXd gradient(nDesVar);
     VectorXd oldGrad(nDesVar); //BFGS
     gradient = getGradient(gradientType, currentI, x, dx, S, W, designVar, psi);
+
+	bool testingGradient = true;
+	testingGradient = false;
+	if (testingGradient) {
+		test_grad(gradientType, -3, currentI, x, dx, S, W, designVar, psi);
+		exit(0);
+	}
+
 
 //  exactHessian = 1; // Calculate exact Hessian to compare with BFGS
 //  realH = getAnalyticHessian(x, dx, W, S, designVar, 3);
