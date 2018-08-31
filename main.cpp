@@ -21,7 +21,7 @@ int main(int argc,char **argv)
     std::vector <double> x(nx), S(nx + 1);
     std::vector <double> dx(nx);
     std::vector <double> W(3 * nx, 0);
-    feenableexcept(FE_INVALID | FE_OVERFLOW);
+    feraiseexcept(FE_INVALID | FE_OVERFLOW);
 
     // Initialize Shape
     std::vector <double> geom(3);
