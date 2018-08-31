@@ -1,5 +1,5 @@
 #ifndef objectiveDerivatives_h
-#define obejctiveDerivatives_h
+#define objectiveDerivatives_h
 #include<Eigen/Core>
 #include<vector>
 
