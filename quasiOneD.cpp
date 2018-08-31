@@ -153,10 +153,11 @@ double quasiOneD(
     outVec("Flow.dat", "w", pn);
     outVec("Flow.dat", "a", rho);
     outVec("Flow.dat", "a", Mach);
-    std::vector <double> conv(iterations);
-    for(int i = 0; i < iterations; i++) conv[i] = normV[i];
+	int nItPrint = iterations/printIt;
+    std::vector <double> conv(nItPrint);
+    for(int i = 0; i < nItPrint; i++) conv[i] = normV[i];
     outVec("FlowConv.dat", "w", conv);
-    for(int i = 0; i < iterations; i++) conv[i] = timeVec[i];
+    for(int i = 0; i < nItPrint; i++) conv[i] = timeVec[i];
     outVec("FlowTime.dat", "w", conv);
 
     return 1;

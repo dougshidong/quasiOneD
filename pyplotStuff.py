@@ -11,12 +11,13 @@ f = open("input.in", "r")
 header = f.readline()
 header = f.readline()
 header = f.readline()
+header = f.readline()
 line   = f.readline()
 line   = line.strip()
 columns = line.split()
 nx = int(columns[0])
 
-fn = 'IdenBFGS'
+fn = 'temp'
 gfname = './Results/'+fn+'Geom.dat'
 tgfname = './Results/'+fn+'TargetGeom.dat'
 flfname = './Results/'+fn+'Flow.dat'
