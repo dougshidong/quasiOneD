@@ -528,7 +528,7 @@ MatrixXd directDirectHessian(
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
-    double errdwddes;
+    double errdwddes = -1.0;
     MatrixXd dWdDes(3 * nx, nDesVar);
     SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > factdrdw;
     factdrdw.compute(-dRdW);

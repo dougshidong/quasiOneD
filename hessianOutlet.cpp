@@ -348,6 +348,43 @@ void HessianOutlet(
     ddR3dp2dp2 = 2.0 * deig3dp2
                  + (-p1 + p2 + c1 * r1 * (u1 - u2)) * ddeig3dp2dp2;
 
+	UNUSED(ddR1dr2dr1);
+	UNUSED(ddR1du2dr1);
+	UNUSED(ddR1du2du1);
+	UNUSED(ddR1dr1dp1);
+	UNUSED(ddR1du1dp1);
+	UNUSED(ddR1dr2dp1);
+	UNUSED(ddR1du2dp1);
+	UNUSED(ddR1dp2dp1);
+	UNUSED(ddR1du1dr2);
+	UNUSED(ddR1dr1dp2);
+	UNUSED(ddR1du1dp2);
+	UNUSED(ddR1dr2dp2);
+	UNUSED(ddR1du2dp2);
+
+	UNUSED(ddR2dr1dp1);
+	UNUSED(ddR2du1dp1);
+	UNUSED(ddR2du1dr2);
+	UNUSED(ddR2dr1dp2);
+	UNUSED(ddR2du1dp2);
+	UNUSED(ddR2dr2dp2);
+	UNUSED(ddR2du2dp2);
+
+	UNUSED(ddR3dr1du1);
+	UNUSED(ddR3dr1dp1);
+	UNUSED(ddR3du1dp1);
+	UNUSED(ddR3dr1dr2);
+	UNUSED(ddR3du1dr2);
+	UNUSED(ddR3dp1dr2);
+	UNUSED(ddR3dr1du2);
+	UNUSED(ddR3du1du2);
+	UNUSED(ddR3dp1du2);
+	UNUSED(ddR3dr2du2);
+	UNUSED(ddR3dr1dp2);
+	UNUSED(ddR3du1dp2);
+	UNUSED(ddR3dp1dp2);
+	UNUSED(ddR3dr2dp2);
+	UNUSED(ddR3du2dp2);
     // ***********************************************************************
     // dp1/dt
     double dp1dt;
@@ -466,6 +503,16 @@ void HessianOutlet(
         ddp1dtdu2dp2 = ddp1dtdp2du2;
         ddp1dtdp2dp2 = (ddR2dp2dp2 + ddR3dp2dp2) / 2.0;
     }
+	UNUSED(ddp1dtdr1dp1);
+	UNUSED(ddp1dtdu1dp1);
+	UNUSED(ddp1dtdu1dr2);
+	UNUSED(ddp1dtdr1dp2);
+	UNUSED(ddp1dtdu1dp2);
+	UNUSED(ddp1dtdr2dp2);
+	UNUSED(ddp1dtdu2dp2);
+	UNUSED(ddp1dtdu1dr2);
+	UNUSED(ddp1dtdr1dp2);
+	UNUSED(ddp1dtdu1dp2);
 
     // ***********************************************************************
     // drho1/dt
@@ -676,6 +723,10 @@ void HessianOutlet(
     ddu1dtdr2dp2 = ddu1dtdp2dr2;
     ddu1dtdu2dp2 = ddu1dtdp2du2;
     ddu1dtdp2dp2 = (-ddp1dtdp2dp2 + ddR2dp2dp2) / (c1 * r1);
+
+	UNUSED(ddu1dtdu1dr2);
+	UNUSED(ddu1dtdr1dp2);
+	UNUSED(ddu1dtdu1dp2);
 
     // ***********************************************************************
     // d(ru)1/dt

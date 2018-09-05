@@ -28,6 +28,8 @@ double evalFitness(
         ioTargetPressure(-1, ptarget);
         return inverseFitness(pcurrent, ptarget, dx);
     }
+	abort();
+	return -999.999;
 }
 
 double TotalPressureLoss(std::vector <double> W)

@@ -42,7 +42,6 @@ double quasiOneD(
 
     std::cout<<std::setprecision(15);
 
-    int iterlength;
     double normR = 1.0;
     int iterations = 0;
 

@@ -189,10 +189,10 @@ MatrixXd solveSparseAXB(
     double offset = 0;//0.00001;
     matAdense = matAdense + eye * offset;
 
-    JacobiSVD<MatrixXd> svd(matAdense);
-    double svdmax = svd.singularValues()(0);
-    double svdmin = svd.singularValues()(svd.singularValues().size()-1);
-    double cond = svdmax / svdmin;
+//  JacobiSVD<MatrixXd> svd(matAdense);
+//  double svdmax = svd.singularValues()(0);
+//  double svdmin = svd.singularValues()(svd.singularValues().size()-1);
+//  double cond = svdmax / svdmin;
 //  std::cout<<"Condition Number SVD"<<std::endl;
 //  std::cout<<cond<<std::endl;
 //  std::cout<<"Max/Min Singular Values"<<std::endl;

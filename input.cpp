@@ -1,38 +1,42 @@
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
 #include "globals.h"
 #include "math.h"
 #include <string>
 #include <algorithm> // remove_if
 
+#define MAX_STRLEN 256
 void inputfile()
 {
     FILE *inputf;
     inputf = fopen("input.in", "r");
 
-    char buf[100];
+    char buf[MAX_STRLEN];
     // Number of Cells in Grid
-    fgets(buf, sizeof buf, inputf); // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+	printf("asdasd %td %s \n",sizeof(buf), buf);
     filename = buf;
     filename.erase(std::remove_if(filename.begin(), filename.end(), isspace), filename.end());
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d", &nx);
+	printf("asdasd %td %s \n",sizeof(buf), buf);
 
     // Input Geometry
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%lf %lf", &a_geom, &b_geom);
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%lf %lf %lf", &h_geom, &t1_geom, &t2_geom);
 
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     // Flow Solver Paramameter
     // Stepping Scheme
     // 0   -   Euler Explicit
@@ -45,35 +49,35 @@ void inputfile()
     sscanf(buf, "%d %d %lf", &StepScheme, &FluxScheme, &Scalareps);
 
     // Flow Convergence
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     int tol;
     sscanf(buf, "%lf %d %d", &CFL, &tol, &maxIt);
     flowConv = pow(10.0, tol);
 
     // Printing Flow Stuff for Debugging
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d %d %d", &printIt, &printConv, &printW);
 
     // Flow Inputs
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%lf %lf", &gam, &R);
     Cv = R / (gam - 1.0);
 
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     double temp;
     sscanf(buf, "%lf %lf %lf %lf", &Min, &Ttin, &ptin, &temp);
     pexit = temp * ptin;
     a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0) / (gam + 1.0));
 
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     // Design Optimization Parameters
     // opt = 0 or 1 to Turn ON/OFF Optimization
     // Design Variables
@@ -82,10 +86,10 @@ void inputfile()
     // Fitness Function
     // 0  -  Total Pressure Loss
     // 1  -  Pressure Target
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d %d %d", &opt, &desParam, &fitnessFun);
 
-    fgets(buf, sizeof buf, inputf); // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     // Descent Type for Optimization
     // 1  -  Steepest Descent
     // 2  -  Quasi-Newton (BFGS)
@@ -98,30 +102,30 @@ void inputfile()
     // 1  -  Adjoint Variable
     // 2  -  Direct Differentiation
     // Hessian Type
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d %d %d %d %lf", &descentType, &gradientType, &hessianType, &exactHessian, &htol);
 
     // Number of CG steps when using Truncated Newton
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d", &nCG);
 
     // Design Convergence
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d %d", &tol, &maxDesign);
     gradConv = pow(10.0, tol);
 
     // Target Geometry
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%lf %lf %lf", &h_tar, &t1_tar, &t2_tar);
 
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Skip Line
-    fgets(buf, sizeof buf, inputf); // Read
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
+    if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
     sscanf(buf, "%d %d", &nctl, &spline_degree);
 
     fclose(inputf);

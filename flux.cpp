@@ -320,7 +320,7 @@ void Flux_Roe(
     double lamb[3], lambp1[3], lambH[3];
     double lambdaP[3][3], lambdaN[3][3];
     double S[3][3], Sinv[3][3], C[3][3], Cinv[3][3];
-    double A[3][3], Ap[3][3], An[3][3];
+    double Ap[3][3], An[3][3];
     for(int row = 0; row < 3; row++)
     {
         for(int col = 0; col < 3; col++)
@@ -329,7 +329,6 @@ void Flux_Roe(
             C[row][col]=0;
             Cinv[row][col]=0;
             Sinv[row][col]=0;
-            A[row][col]=0;
             Ap[row][col]=0;
             An[row][col]=0;
             lambdaP[row][col] = 0;
@@ -452,7 +451,6 @@ void Flux_Roe(
             temp = 0;
             for(int col = 0; col < 3; col++)
             {
-//              temp += fabs(A[row][col]) * (W[i2 + col] - W[i1 + col]);
                 temp += (Ap[row][col] - An[row][col]) * (W[i2 + col] - W[i1 + col]);
             }
             Flux[i2 + row] =

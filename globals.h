@@ -3,6 +3,8 @@
 
 #include <string>
 
+template<class T> void UNUSED( const T& ) { }
+
 extern const double PI;
 
 extern std::string filename;

@@ -296,7 +296,7 @@ void dFdW(
     J[8] = u * gam;
 
     double Sa = (Sp + Sm) / 2.0;
-    for(int i = i; i < 9; i++)
+    for(int i = 0; i < 9; i++)
     {
         J[i] *= Sa;
     }

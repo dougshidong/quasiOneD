@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 '''Ploting results'''
 import sys
 import matplotlib
@@ -61,7 +61,7 @@ conv = data[lbound:len(data)]
 
 # Read target pressure
 data = np.loadtxt(ptname)
-nx = data[0]
+nx = int(data[0])
 
 targetp=data[1:nx+1]
 
@@ -113,7 +113,8 @@ pp.savefig()
 plt.figure()
 plt.title('Flow Convergence')
 nIt=len(conv)
-convCurve = plt.loglog(range(nIt),conv, '-x')
+#convCurve = plt.loglog(range(nIt),conv, '-x')
+convCurve = plt.semilogy(range(nIt),conv, '-x')
 plt.grid(b=True, which='both', color='black', linestyle='-',alpha=0.5)
 pp.savefig()
 

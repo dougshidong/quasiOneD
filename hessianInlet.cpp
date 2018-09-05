@@ -168,7 +168,13 @@ void HessianInlet(
         ddR3dp2dp2 = -2.0 * deig3dp2
                      + (p1 - p2 + c1 * r1 * (-u1 + u2)) * ddeig3dp2dp2;
 
-
+		UNUSED(ddR3dr1dp1);
+		UNUSED(ddR3dr1dp2);
+		UNUSED(ddR3du1dp1);
+		UNUSED(ddR3du1dr2);
+		UNUSED(ddR3du1dp2);
+		UNUSED(ddR3dr2dp2);
+		UNUSED(ddR3du2dp2);
 
         // dp1
         double dp1du1, ddp1du1du1, dddp1du1du1du1;
@@ -304,6 +310,10 @@ void HessianInlet(
         ddu1dtdu2dp2 = ddu1dtdp2du2;
         ddu1dtdp2dp2 = ddR3dp2dp2 / (dp1du1 - c1 * r1);
 
+		UNUSED(ddu1dtdu1dr2);
+		UNUSED(ddu1dtdu1dp2);
+		UNUSED(ddu1dtdr1dp2);
+
         // Primitive values at time-step n+1
         double unp1, pnp1, rnp1, tnp1;
         unp1 = u1 + du1dt;
@@ -349,6 +359,8 @@ void HessianInlet(
         dp1dtdr2 = dpnp1dunp1 * dunp1dr2;
         dp1dtdu2 = dpnp1dunp1 * dunp1du2;
         dp1dtdp2 = dpnp1dunp1 * dunp1dp2;
+
+		UNUSED(dp1dt);
         
         // Second Derivative
         // NOTE: second derivative of (unp1) = second derivative of (du1dt)
@@ -422,6 +434,14 @@ void HessianInlet(
         ddp1dtdu2dp2 = ddp1dtdp2du2;
         ddp1dtdp2dp2 = dpnp1dunp1 * ddu1dtdp2dp2
                        + ddpnp1dunp1dunp1 * dunp1dp2 * dunp1dp2;
+
+		UNUSED(ddp1dtdr1dp1);
+		UNUSED(ddp1dtdu1dp1);
+		UNUSED(ddp1dtdu1dr2);
+		UNUSED(ddp1dtdr1dp2);
+		UNUSED(ddp1dtdu1dp2);
+		UNUSED(ddp1dtdr2dp2);
+		UNUSED(ddp1dtdu2dp2);
 
         // dr1
         // Total derivative from rho_n+1 to p_n+1 and u_n+1
