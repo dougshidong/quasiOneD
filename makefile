@@ -1,14 +1,14 @@
 CXX	= g++
-INCLEI  = ./eigen/
+INCLEI  = ./eigen-git-mirror/
 #DEBUG	= -g -Wall
 DEBUG	= -O3
 OBJDIR  = ./obj
 CPP_FILES	=	$(wildcard *.cpp)
 OBJ_FILES	=	$(addprefix	$(OBJDIR)/,	$(notdir	$(CPP_FILES:.cpp=.o)))
-CFLAGS	= -Wall $(DEBUG) -I $(INCLEI)
-LFLAGS	= -Wall $(DEBUG)
-PETSC_DIR	=	~/Libraries/petsc/petsc-3.8.4
-PETSC_ARCH	=	linux-mkl-mpich-release
+CFLAGS	= -Wall -Werror $(DEBUG) -I $(INCLEI)
+LFLAGS	= -Wall -Werror $(DEBUG)
+#PETSC_DIR	=	~/Libraries/petsc/petsc-3.8.4
+#PETSC_ARCH	=	linux-mkl-mpich-release
 PETSC_LIB2	=	${PETSC_DIR}/$(PETSC_ARCH)/lib
 INCLPE  = -L ${PETSC_DIR}/include/ ${PETSC_CC_INCLUDES}
 
