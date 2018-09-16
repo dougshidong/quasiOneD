@@ -1,5 +1,3 @@
-// Flux Splitting Schemes
-
 #include<vector>
 #include<math.h>
 #include<iostream>
@@ -477,3 +475,4 @@ void matrixMult(double A[][3], double B[][3], double result[][3])
         for(int col=0;col<3;col++)
             result[row][col]=temp[row][col];
 }
+

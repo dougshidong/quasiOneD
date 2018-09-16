@@ -10,7 +10,7 @@ std::vector <double> evalSpline(
 std::vector <double> getCtlpts(
     std::vector <double> x,
     std::vector <double> dx,
-    std::vector <double> S);
+    std::vector <double> area);
 
 Eigen::MatrixXd evalSplineDerivative(
     std::vector <double> x,

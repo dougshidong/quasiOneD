@@ -27,11 +27,11 @@ void BCJac(
 
 std::vector <double> evaldQdW(
     std::vector <double> W,
-    std::vector <double> S);
+    std::vector <double> area);
 
 std::vector <double> evaldpdW(
     std::vector <double> W,
-    std::vector <double> S);
+    std::vector <double> area);
 
 //************************************************************************
 // Calculates Jacobian
@@ -39,7 +39,7 @@ SparseMatrix<double> evaldRdW(
     std::vector <double> W,
     std::vector <double> dx,
     std::vector <double> dt,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     SparseMatrix<double> dRdW(3 * nx, 3 * nx);
     dRdW.reserve(27 * (nx - 2) + 27 * 4);
@@ -61,7 +61,7 @@ SparseMatrix<double> evaldRdW(
     if(StepScheme < 3)  BCJac(W, dt, dx, dBidWi, dBidWd, dBodWd, dBodWo);
     // Evaluate dpdW
     std::vector <double> dpdW(3 * nx, 0);
-    dpdW = evaldpdW(W, S);
+    dpdW = evaldpdW(W, area);
     // Input 4 lines where BC Jacobians occur
     // psi(1), psi(2), psi(n-1), psi(n)
     for(int row = 0; row < 3; row++)
@@ -122,7 +122,7 @@ SparseMatrix<double> evaldRdW(
                 rowi = Ri * 3 + row;
                 coli = Wi * 3 + col;
 
-                val = - Ap[Wi * 9 + k] * S[Ri];
+                val = - Ap[Wi * 9 + k] * area[Ri];
                 dRdW.insert(rowi, coli) = val;
             }
         }
@@ -137,11 +137,11 @@ SparseMatrix<double> evaldRdW(
                 rowi = Ri * 3 + row;
                 coli = Wi * 3 + col;
 
-                val = Ap[Wi * 9 + k] * S[Ri + 1];
-                val -= An[Wi * 9 + k] * S[Ri];
+                val = Ap[Wi * 9 + k] * area[Ri + 1];
+                val -= An[Wi * 9 + k] * area[Ri];
                 if(row == 1)
                 {
-                    val -= dpdW[Wi * 3 + col] * (S[Ri + 1] - S[Ri]);
+                    val -= dpdW[Wi * 3 + col] * (area[Ri + 1] - area[Ri]);
                 }
 
                 dRdW.insert(rowi, coli) = val;
@@ -158,7 +158,7 @@ SparseMatrix<double> evaldRdW(
                 rowi = Ri * 3 + row;
                 coli = Wi * 3 + col;
 
-                val = An[Wi * 9 + k] * S[Ri + 1];
+                val = An[Wi * 9 + k] * area[Ri + 1];
                 dRdW.insert(rowi, coli) = val;
             }
         }
@@ -183,7 +183,7 @@ SparseMatrix<double> evaldRdW(
 
 SparseMatrix<double> evaldRdW_FD(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     SparseMatrix<double> dRdW(3 * nx, 3 * nx);
     double rhoin = W[0];
@@ -198,7 +198,7 @@ SparseMatrix<double> evaldRdW_FD(
     std::vector <double> Flux(3 * (nx + 1), 0);
     std::vector <double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
     std::vector <double> dRdW_block(9, 0), dRdWp(9, 0);
-    WtoQ(W, Q, S);
+    WtoQ(W, Q, area);
     getFlux(Flux, W);
     int ki, kip;
     double pert;
@@ -225,14 +225,14 @@ SparseMatrix<double> evaldRdW_FD(
                 // Domain
                 else
                 {
-                    WtoQ(Wd, Q, S);
+                    WtoQ(Wd, Q, area);
                     getFlux(Flux, Wd);
 
                     for(int resii = 0; resii < 3; resii++)
                     {
                         ki = Ri * 3 + resii;
                         kip = (Ri + 1) * 3 + resii;
-                        Resi1[ki] = Flux[kip] * S[Ri + 1] - Flux[ki] * S[Ri] - Q[ki];
+                        Resi1[ki] = Flux[kip] * area[Ri + 1] - Flux[ki] * area[Ri] - Q[ki];
                     }
                 }
 
@@ -248,14 +248,14 @@ SparseMatrix<double> evaldRdW_FD(
                 // Domain
                 else
                 {
-                    WtoQ(Wd, Q, S);
+                    WtoQ(Wd, Q, area);
                     getFlux(Flux, Wd);
 
                     for(int resii = 0; resii < 3; resii++)
                     {
                         ki = Ri * 3 + resii;
                         kip = (Ri + 1) * 3 + resii;
-                        Resi2[ki] = Flux[kip] * S[Ri + 1] - Flux[ki] * S[Ri] - Q[ki];
+                        Resi2[ki] = Flux[kip] * area[Ri + 1] - Flux[ki] * area[Ri] - Q[ki];
                     }
                 }
 
@@ -553,7 +553,7 @@ void ScalarJac(
 
 std::vector <double> evaldQdW(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     double dpdw[3], rho, u, dS;
     std::vector <double> dQdW(3 * nx);
@@ -566,7 +566,7 @@ std::vector <double> evaldQdW(
         dpdw[1] = - (gam - 1) * u;
         dpdw[2] = (gam - 1);
 
-        dS = S[i + 1] - S[i];
+        dS = area[i + 1] - area[i];
 
         dQdW[i * 3 + 0] = dpdw[0] * dS;
         dQdW[i * 3 + 1] = dpdw[1] * dS;
@@ -577,7 +577,7 @@ std::vector <double> evaldQdW(
 
 std::vector <double> evaldpdW(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     std::vector <double> dpdW(3 * nx);
     double rho, u;
@@ -596,12 +596,12 @@ std::vector <double> evaldpdW(
 
 MatrixXd evaldRdS(
     std::vector <double> Flux,
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> W)
 {
     MatrixXd dRdS(3 * nx, nx + 1);
     std::vector <double> Q(3 * nx, 0), p(nx);
-    WtoQ(W, Q, S);
+    WtoQ(W, Q, area);
     getp(W, p);
     int Si, kR, kS;
     dRdS.setZero();
@@ -627,7 +627,7 @@ MatrixXd evaldRdS(
 
 MatrixXd evaldRdS_FD(
     std::vector <double> Flux,
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> W)
 {
     MatrixXd dRdS(3 * nx, nx + 1);
@@ -643,10 +643,10 @@ MatrixXd evaldRdS_FD(
         for(int Si = 0; Si < nx + 1; Si++)
         {
             for(int m = 0; m < nx + 1; m++)
-                Sd[m] = S[m];
+                Sd[m] = area[m];
 
-            pert = S[Si] * h;
-            Sd[Si] = S[Si] + pert;
+            pert = area[Si] * h;
+            Sd[Si] = area[Si] + pert;
 
             WtoQ(W, Q, Sd);
 
@@ -658,9 +658,9 @@ MatrixXd evaldRdS_FD(
             }
 
             for(int m = 0; m < nx + 1; m++)
-                Sd[m] = S[m];
+                Sd[m] = area[m];
 
-            Sd[Si] = S[Si] - pert;
+            Sd[Si] = area[Si] - pert;
 
             WtoQ(W, Q, Sd);
 

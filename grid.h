@@ -4,7 +4,7 @@
 #include <vector>
 
 std::vector <double> calcVolume(
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> dx);
 
 std::vector <double> evalX(double a, double b);

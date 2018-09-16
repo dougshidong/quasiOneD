@@ -45,7 +45,7 @@ double TotalPressureLoss(std::vector <double> W)
 
     double poverpt = pow(ToverTt, (gam / (gam - 1)));
 
-    ptout_normalized = 1 - (pout / poverpt) / ptin;
+    ptout_normalized = 1 - (pout / poverpt) / inlet_total_p;
 
     return ptout_normalized;
 }
@@ -61,7 +61,7 @@ void ioTargetPressure(int io, std::vector <double> &p)
         TargetP = fopen("targetP.dat", "w");
         fprintf(TargetP, "%d\n", nx);
         for(int i = 0; i < nx; i++)
-            fprintf(TargetP, "%.15f\n", p[i] / ptin);
+            fprintf(TargetP, "%.15f\n", p[i] / inlet_total_p);
     }
     // Input
     else
@@ -92,7 +92,7 @@ double inverseFitness(
     double fit = 0;
     for(int i = 0; i < nx; i++)
     {
-        fit += pow(pcurrent[i] / ptin - ptarget[i], 2) * dx[i];
+        fit += pow(pcurrent[i] / inlet_total_p - ptarget[i], 2) * dx[i];
     }
 //  std::cout<<"InverseFitness =  "<<fit / 2<<std::endl;
     return fit / 2;

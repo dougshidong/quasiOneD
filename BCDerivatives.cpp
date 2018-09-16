@@ -593,10 +593,10 @@ void BCJac(
         // dp1
         double dp1du1, dp1du1du1;
         // Same Values
-        dp1du1 = -2.0 * gamr * ptin * u1 * pow(fu, 1.0 / (gam - 1.0)) * gam
+        dp1du1 = -2.0 * gamr * inlet_total_p * u1 * pow(fu, 1.0 / (gam - 1.0)) * gam
                  / (a2 * (gam - 1.0));
 
-        dp1du1du1 = 2.0 * gamr * ptin * pow(fu, gam / (gam - 1.0)) * gam
+        dp1du1du1 = 2.0 * gamr * inlet_total_p * pow(fu, gam / (gam - 1.0)) * gam
                     * (a2 - a2 * gam + gamr * u1 * u1 * (gam + 1))
                     / pow((a2 - gamr * u1 * u1) * (gam - 1.0), 2);
 
@@ -615,11 +615,11 @@ void BCJac(
         // Primitive values at time-step n+1
         double unp1, pnp1, rnp1, tnp1;
         unp1 = u1 + du1dt;
-        pnp1 = ptin * pow(1 - gamr * pow(unp1, 2) / a2, gam / (gam - 1.0));
-        tnp1 = Ttin * ( 1 - gamr * unp1 * unp1 / a2 );
+        pnp1 = inlet_total_p * pow(1 - gamr * pow(unp1, 2) / a2, gam / (gam - 1.0));
+        tnp1 = inlet_total_T * ( 1 - gamr * unp1 * unp1 / a2 );
         rnp1 = pnp1 / (R * tnp1);
         double dpnp1dunp1;
-        dpnp1dunp1 = -2.0 * gamr * ptin * unp1
+        dpnp1dunp1 = -2.0 * gamr * inlet_total_p * unp1
                      * pow((1.0 - gamr * unp1 * unp1 / a2), 1.0 / (gam - 1.0))
                      * gam / (a2 * (gam - 1.0));
 
@@ -646,14 +646,14 @@ void BCJac(
         double drnp1dpnp1, drnp1dtnp1, dtnp1dpnp1;
         drnp1dpnp1 = 1.0 / (R * tnp1);
         drnp1dtnp1 = -pnp1 / (R * tnp1 * tnp1);
-        dtnp1dpnp1 = Ttin / ptin * (gam - 1.0) / gam * pow(pnp1 / ptin, - 1.0 / gam);
+        dtnp1dpnp1 = inlet_total_T / inlet_total_p * (gam - 1.0) / gam * pow(pnp1 / inlet_total_p, - 1.0 / gam);
         double Drnp1Dpnp1 = drnp1dpnp1 + drnp1dtnp1 * dtnp1dpnp1;
         double drnp1dunp1 = Drnp1Dpnp1 * dpnp1dunp1;
-        drnp1dunp1 = (-2.0 * a2 * (1.0 + gam) * ptin *unp1 
+        drnp1dunp1 = (-2.0 * a2 * (1.0 + gam) * inlet_total_p *unp1 
                      * pow(1.0 + (pow(unp1, 2) 
                      - gam * pow(unp1, 2)) / (a2 + a2*gam),
                      gam/(-1 + gam)))
-                     / (R * Ttin * pow(a2 + a2 * gam + pow(unp1, 2) 
+                     / (R * inlet_total_T * pow(a2 + a2 * gam + pow(unp1, 2) 
                      - gam * pow(unp1, 2), 2));
 
         dr1dt = rnp1 - r1;

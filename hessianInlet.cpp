@@ -179,16 +179,16 @@ void HessianInlet(
         // dp1
         double dp1du1, ddp1du1du1, dddp1du1du1du1;
         // Same Values
-        dp1du1 = (ptin * u1 * pow(1.0 - (gamr * u1 * u1) / a2, gam/(-1.0 + gam))
+        dp1du1 = (inlet_total_p * u1 * pow(1.0 - (gamr * u1 * u1) / a2, gam/(-1.0 + gam))
                  * gam * (2.0 * gamr)) / ((-a2 + gamr * u1 * u1) * (-1.0 + gam));
 
-        ddp1du1du1 = (2.0 * gamr * ptin *
+        ddp1du1du1 = (2.0 * gamr * inlet_total_p *
                       pow(1.0 - (gamr * pow(u1, 2)) / a2
                       , gam/(-1 + gam)) * gam *
                       (a2 - a2 * gam + gamr * pow(u1, 2) * (1 + gam)))
                       /(pow(a2 - gamr * pow(u1,2), 2) * pow(-1 + gam, 2));
 
-        dddp1du1du1du1 = (4.0 * pow(gamr, 2) * ptin * u1 *
+        dddp1du1du1du1 = (4.0 * pow(gamr, 2) * inlet_total_p * u1 *
                          pow(1 - (gamr * pow(u1, 2)) / a2
                          , gam / (-1 + gam)) * gam *
                          (-3.0 * a2 * (-1.0 + gam)
@@ -317,21 +317,21 @@ void HessianInlet(
         // Primitive values at time-step n+1
         double unp1, pnp1, rnp1, tnp1;
         unp1 = u1 + du1dt;
-        pnp1 = ptin * pow(1.0 - gamr * pow(unp1, 2) / a2, gam / (gam - 1.0));
-        tnp1 = Ttin * (1.0 - gamr * unp1 * unp1 / a2);
+        pnp1 = inlet_total_p * pow(1.0 - gamr * pow(unp1, 2) / a2, gam / (gam - 1.0));
+        tnp1 = inlet_total_T * (1.0 - gamr * unp1 * unp1 / a2);
         rnp1 = pnp1 / (R * tnp1);
         double dpnp1dunp1, ddpnp1dunp1dunp1;
-//      dpnp1dunp1 = -2.0 * gamr * ptin * unp1
+//      dpnp1dunp1 = -2.0 * gamr * inlet_total_p * unp1
 //                   * pow((1.0 - gamr * unp1 * unp1 / a2), 1.0 / (gam - 1.0))
 //                   * gam / (a2 * (gam - 1.0));
 
-        dpnp1dunp1 = (ptin * unp1
+        dpnp1dunp1 = (inlet_total_p * unp1
                      * pow(1.0 - (gamr * unp1 * unp1) / a2,
                            gam/(-1.0 + gam))
                      * gam * (2.0 * gamr))
                      / ((-a2 + gamr * unp1 * unp1)
                      * (-1.0 + gam));
-        ddpnp1dunp1dunp1 = (2.0 * gamr * ptin *
+        ddpnp1dunp1dunp1 = (2.0 * gamr * inlet_total_p *
                            pow(1.0 - (gamr * pow(unp1, 2)) / a2,
                                gam / (-1.0 + gam)) * gam
                            * (a2 - a2 * gam + gamr * pow(unp1, 2)
@@ -448,21 +448,21 @@ void HessianInlet(
         double drnp1dpnp1, drnp1dtnp1, dtnp1dpnp1;
         drnp1dpnp1 = 1.0 / (R * tnp1);
         drnp1dtnp1 = -pnp1 / (R * tnp1 * tnp1);
-        dtnp1dpnp1 = Ttin / ptin * (gam - 1.0) / gam * pow(pnp1 / ptin, - 1.0 / gam);
+        dtnp1dpnp1 = inlet_total_T / inlet_total_p * (gam - 1.0) / gam * pow(pnp1 / inlet_total_p, - 1.0 / gam);
         
         double Drnp1Dpnp1 = drnp1dpnp1 + drnp1dtnp1 * dtnp1dpnp1;
         double drnp1dunp1 = Drnp1Dpnp1 * dpnp1dunp1;
 
         drnp1dunp1 = 
-            (-2.0 * a2 * (1.0 + gam) * ptin *unp1 
+            (-2.0 * a2 * (1.0 + gam) * inlet_total_p *unp1 
             * pow(1.0 + (pow(unp1, 2) - gam * pow(unp1, 2)) / (a2 + a2 * gam),
-            gam/(-1 + gam))) / (R * Ttin * pow(a2 + a2 * gam + pow(unp1, 2) 
+            gam/(-1 + gam))) / (R * inlet_total_T * pow(a2 + a2 * gam + pow(unp1, 2) 
             - gam * pow(unp1, 2), 2));
         double ddrnp1dunp1dunp1 = 
-            (-2.0 * a2 * (1.0 + gam) * ptin * (a2 * (1.0 + gam) 
+            (-2.0 * a2 * (1.0 + gam) * inlet_total_p * (a2 * (1.0 + gam) 
             + (-3.0 + gam) * pow(unp1, 2)) * pow(1.0 + (pow(unp1, 2) - gam 
             * pow(unp1, 2)) / (a2 + a2 * gam), gam/(-1.0 + gam))) 
-            / (R * Ttin * pow(a2 + a2 * gam 
+            / (R * inlet_total_T * pow(a2 + a2 * gam 
             + pow(unp1, 2) - gam * pow(unp1, 2), 3));
     
     

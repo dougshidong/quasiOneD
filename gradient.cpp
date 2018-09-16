@@ -10,7 +10,7 @@
 VectorXd finiteD(
     std::vector <double> x,
     std::vector <double> dx,
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> designVar,
     int gType,
     double h,
@@ -20,24 +20,19 @@ VectorXd getGradient(int gType,
     double currentI,
     std::vector <double> x,
     std::vector <double> dx,
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> W,
     std::vector <double> designVar,
     VectorXd &psi)
 {
     VectorXd grad(nDesVar);
-    if(gType < 0)
-    {
+    if(gType < 0) {
         double h = 1e-8;
-        grad = finiteD(x, dx, S, designVar, gType, h, currentI);
-    }
-    else if(gType == 1)
-    {
-        grad = adjoint(x, dx, S, W, designVar, psi);
-    }
-    else if(gType == 2)
-    {
-        grad = directDifferentiation(x, dx, S, W, designVar);
+        grad = finiteD(x, dx, area, designVar, gType, h, currentI);
+    } else if(gType == 1) {
+        grad = adjoint(x, dx, area, W, designVar, psi);
+    } else if(gType == 2) {
+        grad = directDifferentiation(x, dx, area, W, designVar);
     }
     return grad;
 }
@@ -46,7 +41,7 @@ VectorXd getGradient(int gType,
 VectorXd finiteD(
     std::vector <double> x,
     std::vector <double> dx,
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> designVar,
     int gType,
     double h,
@@ -62,7 +57,7 @@ VectorXd finiteD(
 
     if(currentI < 0 && gType != -3)
     {
-        quasiOneD(x, dx, S, W);
+        quasiOneD(x, area, W);
         I0 = evalFitness(dx, W);
     }
     else
@@ -79,7 +74,7 @@ VectorXd finiteD(
         {
             tempD[i] += dh;
             tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, tempS, W);
             I1 = evalFitness(dx, W);
             grad[i] = (I1 - I0) / dh;
         }
@@ -87,7 +82,7 @@ VectorXd finiteD(
         {
             tempD[i] -= dh;
             tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, tempS, W);
             I2 = evalFitness(dx, W);
             grad[i] = (I0 - I2) / dh;
         }
@@ -95,13 +90,13 @@ VectorXd finiteD(
         {
             tempD[i] += dh;
             tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, tempS, W);
             I1 = evalFitness(dx, W);
             tempD = designVar;
 
             tempD[i] -= dh;
             tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, dx, tempS, W);
+            quasiOneD(x, tempS, W);
             I2 = evalFitness(dx, W);
             grad[i] = (I1 - I2) / (2 * dh);
         }

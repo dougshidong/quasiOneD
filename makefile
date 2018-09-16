@@ -1,6 +1,6 @@
 CXX	= g++
 INCLEI  = ./eigen-git-mirror/
-#DEBUG	= -g -Wall
+#DEBUG	= -g -Wall -Warray-bounds
 DEBUG	= -O3
 OBJDIR  = ./obj
 CPP_FILES	=	$(wildcard *.cpp)

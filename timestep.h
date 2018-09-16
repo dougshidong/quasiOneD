@@ -6,7 +6,7 @@
 void initializeTimeStep(int nx);
 
 void stepInTime(
-    const std::vector <double> &S,
+    const std::vector <double> &area,
     const std::vector <double> &dx,
     const std::vector <double> &dt,
     std::vector <double> &Resi,
@@ -15,7 +15,7 @@ void stepInTime(
 void getDomainResi(
     const std::vector <double> &W,
     const std::vector <double> &Flux,
-    const std::vector <double> &S,
+    const std::vector <double> &area,
     std::vector <double> &Resi);
 
 #endif

@@ -7,6 +7,7 @@
 #include <algorithm> // remove_if
 
 #define MAX_STRLEN 256
+
 void inputfile()
 {
     FILE *inputf;
@@ -70,10 +71,10 @@ void inputfile()
 
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
-    double temp;
-    sscanf(buf, "%lf %lf %lf %lf", &Min, &Ttin, &ptin, &temp);
-    pexit = temp * ptin;
-    a2 = 2.0 * gam * Cv * Ttin * ((gam - 1.0) / (gam + 1.0));
+    double oulet_ratio;
+    sscanf(buf, "%lf %lf %lf %lf", &inlet_mach, &inlet_total_T, &inlet_total_p, &oulet_ratio);
+    outlet_p = oulet_ratio * inlet_total_p;
+    a2 = 2.0 * gam * Cv * inlet_total_T * ((gam - 1.0) / (gam + 1.0));
 
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
@@ -126,7 +127,7 @@ void inputfile()
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Read
-    sscanf(buf, "%d %d", &nctl, &spline_degree);
+    sscanf(buf, "%d %d", &n_control_pts, &spline_degree);
 
     fclose(inputf);
 }

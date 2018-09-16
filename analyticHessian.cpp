@@ -666,7 +666,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
 
     double h = 1e-3;
 
-    quasiOneD(x, dx, S, W);
+    quasiOneD(x, S, W);
     for(int Wi = 0; Wi<3*nx; Wi++)
         W0[Wi] = W[Wi];
 
@@ -682,21 +682,21 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W1[Wi] = W[Wi];
 
                 tempD = designVar;
                 tempD[i] += dhi;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W2[Wi] = W[Wi];
 
                 tempD = designVar;
                 tempD[i] -= dhi;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W3[Wi] = W[Wi];
 
@@ -704,7 +704,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W4[Wi] = W[Wi];
 
@@ -718,7 +718,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W1[Wi] = W[Wi];
 
@@ -726,7 +726,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W2[Wi] = W[Wi];
 
@@ -734,7 +734,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W3[Wi] = W[Wi];
 
@@ -742,7 +742,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
-                quasiOneD(x, dx, tempS, W);
+                quasiOneD(x, tempS, W);
                 for(int Wi = 0; Wi<3*nx; Wi++)
                     W4[Wi] = W[Wi];
 

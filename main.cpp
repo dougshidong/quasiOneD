@@ -34,7 +34,7 @@ int main(int argc,char **argv)
         geom[1] = t1_geom;
         geom[2] = t2_geom;
         S = evalS(geom, x, dx, 1);
-        quasiOneD(x, dx, S, W);
+        quasiOneD(x, S, W);
     }
     if(opt == 1)
     {
@@ -46,7 +46,7 @@ int main(int argc,char **argv)
         outVec("TargetGeom.dat", "w", x);
         outVec("TargetGeom.dat", "a", S);
 
-        quasiOneD(x, dx, S, W);
+        quasiOneD(x, S, W);
         std::vector <double> pt(nx);
         getp(W, pt);
         ioTargetPressure(1, pt);
@@ -57,7 +57,7 @@ int main(int argc,char **argv)
         S = evalS(geom, x, dx, 1);
         if(desParam == 0) nDesVar = nx - 1;
         if(desParam == 1) nDesVar = 3;
-        if(desParam == 2) nDesVar = nctl - 2; // Inlet and Outlet are constant
+        if(desParam == 2) nDesVar = n_control_pts - 2; // Inlet and Outlet are constant
 
         std::vector <double> desVar(nDesVar);
         if(desParam == 0)

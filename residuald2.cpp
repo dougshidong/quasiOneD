@@ -29,7 +29,7 @@ std::vector <MatrixXd> evalddQdWdW(std::vector <double> W);
 
 std::vector <SparseMatrix <double> > evalddRdWdW_FD(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     std::vector <SparseMatrix <double> > ddRdWdW_FD(3 * nx);
 
@@ -66,37 +66,37 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                         Wd[Wi] = W[Wi] + pertWi;
                         Wd[Wj] = W[Wj] + pertWj;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi1 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi1 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R2
                         Wd[Wi] = W[Wi] + pertWi;
                         Wd[Wj] = W[Wj] - pertWj;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi2 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi2 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R3
                         Wd[Wi] = W[Wi] - pertWi;
                         Wd[Wj] = W[Wj] + pertWj;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi3 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi3 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R4
                         Wd[Wi] = W[Wi] - pertWi;
                         Wd[Wj] = W[Wj] - pertWj;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi4 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi4 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
                                                      / (4 * pertWi * pertWj);
@@ -112,42 +112,42 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
                         for(int m = 0; m < 3 * nx; m++)
                             Wd[m] = W[m];
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi0 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi0 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R1
                         Wd[Wi] = W[Wi] + 2.0 * pertWi;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi1 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi1 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R2
                         Wd[Wi] = W[Wi] + pertWi;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi2 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi2 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R3
                         Wd[Wi] = W[Wi] - pertWi;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi3 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi3 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         // R4
                         Wd[Wi] = W[Wi] - 2.0 * pertWi;
 
-                        WtoQ(Wd, Q, S);
+                        WtoQ(Wd, Q, area);
                         getFlux(Flux, Wd);
 
-                        Resi4 = Flux[Rikp] * S[Ri + 1] - Flux[Rik] * S[Ri] - Q[Rik];
+                        Resi4 = Flux[Rikp] * area[Ri + 1] - Flux[Rik] * area[Ri] - Q[Rik];
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) = (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
                                                      / (12 * pertWi * pertWj);
@@ -368,7 +368,7 @@ std::vector <SparseMatrix <double> > evalddRdWdW_FD(
 // Calculates Residual Hessian
 std::vector < SparseMatrix <double> > evalddRdWdW(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     std::vector <SparseMatrix <double> > ddRdWdW(3 * nx);
     SparseMatrix <double> dummySMat(3 * nx, 3 * nx);
@@ -478,21 +478,21 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
             Rik = Ri * 3 + Rk;
             Rikp = (Ri + 1) * 3 + Rk;
 
-            // R(i) = Flux(i + 1) * S(i + 1) - Flux(i) * S(i) - Q(i)
+            // R(i) = Flux(i + 1) * area(i + 1) - Flux(i) * area(i) - Q(i)
 
             // ***************
             // Diagonal Terms
             // ***************
 
             //ddR(i) / dW(i-1)dW(i-1)
-            // = - ddFlux(i) / dW(i-1)dW(i-1) * S(i)
+            // = - ddFlux(i) / dW(i-1)dW(i-1) * area(i)
             Wi1 = Ri - 1;
             Wi2 = Ri - 1;
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                            -ddFluxdWdW1[Rik].coeffRef(row, col) * S[Ri];
+                            -ddFluxdWdW1[Rik].coeffRef(row, col) * area[Ri];
             }
 //          if(Rik == 25*3)
 //          {
@@ -501,8 +501,8 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
 //          }
 
             //ddR(i) / dW(i)dW(i)
-            // = ddFlux(i + 1) / dW(i)dW(i) * S(i + 1)
-            //   - ddFlux(i) / dW(i)dW(i) * S(i)
+            // = ddFlux(i + 1) / dW(i)dW(i) * area(i + 1)
+            //   - ddFlux(i) / dW(i)dW(i) * area(i)
             //   - ddQ(i) / dW(i)dW(i) * dS
             Wi1 = Ri;
             Wi2 = Ri;
@@ -510,68 +510,68 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                            ddFluxdWdW1[Rikp].coeffRef(row, col) * S[Ri + 1]
-                            - ddFluxdWdW2[Rik].coeffRef(row, col) * S[Ri]
-                            - ddQdWdW[Rik].coeffRef(row, col) * (S[Ri + 1] - S[Ri]);
+                            ddFluxdWdW1[Rikp].coeffRef(row, col) * area[Ri + 1]
+                            - ddFluxdWdW2[Rik].coeffRef(row, col) * area[Ri]
+                            - ddQdWdW[Rik].coeffRef(row, col) * (area[Ri + 1] - area[Ri]);
             }
 
             //ddR(i) / dW(i+1)dW(i+1)
-            // = ddFlux(i+1) / dW(i+1)dW(i+1) * S(i+1)
+            // = ddFlux(i+1) / dW(i+1)dW(i+1) * area(i+1)
             Wi1 = Ri + 1;
             Wi2 = Ri + 1;
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                            ddFluxdWdW2[Rikp].coeffRef(row, col) * S[Ri + 1];
+                            ddFluxdWdW2[Rikp].coeffRef(row, col) * area[Ri + 1];
             }
 
             // *******************
             // Off-Diagonal Terms
             // *******************
 
-            // R(i) = Flux(i + 1) * S(i + 1) - Flux(i) * S(i) - Q(i)
+            // R(i) = Flux(i + 1) * area(i + 1) - Flux(i) * area(i) - Q(i)
 
             //ddR(i) / dW(i-1)dW(i)
-            // = ddFlux(i) / dW(i-1)dW(i) * S(i)
+            // = ddFlux(i) / dW(i-1)dW(i) * area(i)
             Wi1 = Ri - 1;
             Wi2 = Ri;
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                    -ddFluxdWdW3[Rik].coeffRef(row, col) * S[Ri];
+                    -ddFluxdWdW3[Rik].coeffRef(row, col) * area[Ri];
             }
             //ddR(i) / dW(i)dW(i-1)
-            // = (ddFlux(i) / dW(i-1)dW(i) * S(i)).transpose()
+            // = (ddFlux(i) / dW(i-1)dW(i) * area(i)).transpose()
             Wi1 = Ri;
             Wi2 = Ri - 1;
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                    -ddFluxdWdW3[Rik].coeffRef(col, row) * S[Ri];
+                    -ddFluxdWdW3[Rik].coeffRef(col, row) * area[Ri];
             }
 
             //ddR(i) / dW(i)dW(i+1)
-            // = ddFlux(i) / dW(i)dW(i+1) * S(i+1)
+            // = ddFlux(i) / dW(i)dW(i+1) * area(i+1)
             Wi1 = Ri;
             Wi2 = Ri + 1;
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                    ddFluxdWdW3[Rikp].coeffRef(row, col) * S[Ri + 1];
+                    ddFluxdWdW3[Rikp].coeffRef(row, col) * area[Ri + 1];
             }
             //ddR(i) / dW(i+1)dW(i) Symmetry
-            // = (ddFlux(i) / dW(i)dW(i+1) * S(i+1)).transpose()
+            // = (ddFlux(i) / dW(i)dW(i+1) * area(i+1)).transpose()
             Wi1 = Ri + 1;
             Wi2 = Ri;
             for(int row = 0; row < 3; row++)
             for(int col = 0; col < 3; col++)
             {
                 ddRdWdW[Rik].insert(Wi1 * 3 + row, Wi2 * 3 + col) =
-                    ddFluxdWdW3[Rikp].coeffRef(col, row) * S[Ri + 1];
+                    ddFluxdWdW3[Rikp].coeffRef(col, row) * area[Ri + 1];
             }
 
             //ddR(i) / dW(i-1)dW(i+1) = 0
@@ -584,7 +584,7 @@ std::vector < SparseMatrix <double> > evalddRdWdW(
 
 std::vector <SparseMatrix <double> > evalddRdWdS_FD(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
 
@@ -612,17 +612,17 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
                 pertW = W[Wi] * h;
                 for(int Si = Ri; Si <= Ri+1; Si++)
                 {
-                    pertS = S[Si] * h;
+                    pertS = area[Si] * h;
                     for(int m = 0; m < 3 * nx; m++)
                         Wd[m] = W[m];
                     for(int m = 0; m < nx + 1; m++)
-                        Sd[m] = S[m];
+                        Sd[m] = area[m];
                     // R1
                     Wd[Wi] = W[Wi];
-                    Sd[Si] = S[Si];
+                    Sd[Si] = area[Si];
 
                     Wd[Wi] = W[Wi] + pertW;
-                    Sd[Si] = S[Si] + pertS;
+                    Sd[Si] = area[Si] + pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
@@ -631,11 +631,11 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
 
                     // R2
                     Wd[Wi] = W[Wi];
-                    Sd[Si] = S[Si];
+                    Sd[Si] = area[Si];
 
-                    pertS = S[Si] * h;
+                    pertS = area[Si] * h;
                     Wd[Wi] = W[Wi] + pertW;
-                    Sd[Si] = S[Si] - pertS;
+                    Sd[Si] = area[Si] - pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
@@ -644,11 +644,11 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
 
                     // R3
                     Wd[Wi] = W[Wi];
-                    Sd[Si] = S[Si];
+                    Sd[Si] = area[Si];
 
-                    pertS = S[Si] * h;
+                    pertS = area[Si] * h;
                     Wd[Wi] = W[Wi] - pertW;
-                    Sd[Si] = S[Si] + pertS;
+                    Sd[Si] = area[Si] + pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
@@ -657,11 +657,11 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
 
                     // R4
                     Wd[Wi] = W[Wi];
-                    Sd[Si] = S[Si];
+                    Sd[Si] = area[Si];
 
-                    pertS = S[Si] * h;
+                    pertS = area[Si] * h;
                     Wd[Wi] = W[Wi] - pertW;
-                    Sd[Si] = S[Si] - pertS;
+                    Sd[Si] = area[Si] - pertS;
 
                     WtoQ(Wd, Q, Sd);
                     getFlux(Flux, Wd);
@@ -679,7 +679,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS_FD(
 
 std::vector <SparseMatrix <double> > evalddRdWdS(
     std::vector <double> W,
-    std::vector <double> S)
+    std::vector <double> area)
 {
     // Allocate ddRdWdS Sparse Matrix
     std::vector <SparseMatrix <double> > ddRdWdS(3 * nx);
@@ -693,7 +693,7 @@ std::vector <SparseMatrix <double> > evalddRdWdS(
     if(FluxScheme == 0) ScalarJac(W, Ap, An);
     // Evaluate dpdW
     std::vector <double> dpdW(3 * nx, 0);
-    dpdW = evaldpdW(W, S);
+    dpdW = evaldpdW(W, area);
 
     int Wi, Si;
     int Rik, Wik;

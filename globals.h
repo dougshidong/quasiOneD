@@ -23,7 +23,7 @@ extern int maxIt;
 extern int printIt, printConv, printW;
 
 extern double gam, R, Cv;
-extern double Min, Ttin, ptin, pexit;
+extern double inlet_mach, inlet_total_T, inlet_total_p, outlet_p;
 extern double a2;
 
 extern int opt, desParam, fitnessFun;
@@ -36,6 +36,6 @@ extern int maxDesign;
 
 extern double h_tar, t1_tar, t2_tar;
 
-extern int nctl, spline_degree;
+extern int n_control_pts, spline_degree;
 
 #endif

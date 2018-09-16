@@ -23,7 +23,7 @@ using namespace Eigen;
 VectorXd adjoint(
     std::vector <double> x,
     std::vector <double> dx,
-    std::vector <double> S,
+    std::vector <double> area,
     std::vector <double> W,
     std::vector <double> designVar,
     VectorXd &psi)
@@ -39,8 +39,8 @@ VectorXd adjoint(
     // Build A matrix
     SparseMatrix <double> dRdWt, dRdW;
     SparseMatrix <double> matAFD, matAFD2;
-    dRdW = evaldRdW(W, dx, dt, S);
-//  matAFD2 = evaldRdW_FD(W, S, u[0]/c[0]);
+    dRdW = evaldRdW(W, dx, dt, area);
+//  matAFD2 = evaldRdW_FD(W, area, u[0]/c[0]);
     dRdWt = dRdW.transpose();
 //  dRdWt = matAFD2.transpose();
     std::cout.precision(17);
@@ -62,10 +62,6 @@ VectorXd adjoint(
     //if(directSolve == 1)
     //{
     //    psi = solveSparseAXB(-dRdWt, bvec, eig_solv);
-    //}
-    //else
-    //{
-    //    psi = itSolve(-dRdWt, bvec);
     //}
     SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
     slusolver.compute(-dRdWt);
@@ -102,8 +98,8 @@ VectorXd adjoint(
     // Finite Difference dRdS
     MatrixXd dRdS(3 * nx, nx + 1);
     MatrixXd dRdSFD(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
-    dRdSFD = evaldRdS_FD(Flux, S, W);
+    dRdS = evaldRdS(Flux, area, W);
+    dRdSFD = evaldRdS_FD(Flux, area, W);
 
     VectorXd psidRdSFD(nx + 1);
     psidRdSFD.setZero();
@@ -236,95 +232,3 @@ MatrixXd solveSparseAXB(
     return X;
 }
 
-VectorXd itSolve(SparseMatrix <double> A, VectorXd b)
-{
-    double resi1 = 1, resi2 = 1, resi3 = 1;
-    // Directly Solve the Linear System Iteratively
-    // Using Sub-Matrices
-    //  --------------
-    // |  A1   |  A2  |   | b1 |
-    // |--------------| = |    |
-    // |  A3   |  A4  |   | b2 |
-    //  --------------
-    MatrixXd A1(3 * (nx - 1), 3 * (nx - 1));
-    MatrixXd A2(3 * (nx - 1), 3 * (nx - 1));
-    MatrixXd A3(3 * (nx - 1), 3 * (nx - 1));
-    MatrixXd A4(3 * (nx - 1), 3 * (nx - 1));
-    A1 = MatrixXd(A.block(0, 0, 3 * (nx - 1), 3 * (nx - 1)));
-    A2 = MatrixXd(A.block(3 * (nx - 2), 3 * (nx - 1), 3, 3));
-    A3 = MatrixXd(A.block(3 * (nx - 1), 3 * (nx - 2), 3, 3));
-    A4 = MatrixXd(A.block(3 * (nx - 1), 3 * (nx - 1), 3, 3));
-    A4 = A4 + MatrixXd(3, 3).setIdentity() * 0.000001;
-//  std::cout<<A<<std::endl;
-//  std::cout<<std::endl;
-//  std::cout<<std::endl;
-//  std::cout<<std::endl;
-
-
-    VectorXd b1(3 * (nx - 1)), b2(3);
-    b1 = b.head(3 * (nx - 1));
-    b2 = b.tail(3);
-
-    VectorXd b1mod(3 * (nx - 1)), b2mod(3);
-    b1mod = b1;
-    b2mod = b2;
-
-    VectorXd fullX(3 * nx);
-    fullX.setZero();
-    fullX.setOnes();
-    fullX = MatrixXd(A).fullPivLu().solve(b);
-
-    VectorXd x1(3 * (nx - 1));
-    VectorXd x2(3);
-    x1 = fullX.head(3 * (nx - 1));
-    x2 = fullX.tail(3);
-
-//  b1mod.tail(3) = b1.tail(3) - A2 * x2.tail(3);
-//  b2mod.tail(3) = b2.tail(3) - A3 * x1.tail(3);
-
-    double tol1 = 5e-13;
-    double tol2 = tol1;
-    double tol3 = 1;//tol1;
-    int it = 0;
-    while(resi1 > tol1 || resi2 > tol2 || resi3 > tol3)
-    {
-        it++;
-        x1 = A1.fullPivLu().solve(b1mod);
-        x2 = A4.fullPivLu().solve(b2mod);
-        b1mod.tail(3) = b1.tail(3) - A2 * x2.tail(3);
-        b2mod.tail(3) = b2.tail(3) - A3 * x1.tail(3);
-
-        resi1 = (A1 * x1 - b1mod).norm();
-        resi2 = (A4 * x2 - b2mod).norm();
-        fullX.head(3 * (nx - 1)) = x1;
-        fullX.tail(3) = x2;
-        resi3 = (A * fullX - b).norm();
-
-        std::cout<<"Iteration: "<<it
-                 <<" resi1: "<<resi1
-                 <<" resi2: "<<resi2
-                 <<" resi3: "<<resi3
-                 <<std::endl;
-    }
-    JacobiSVD<MatrixXd> svd(A1);
-    double svdmax = svd.singularValues()(0);
-    double svdmin = svd.singularValues()(svd.singularValues().size()-1);
-    double cond = svdmax / svdmin;
-    std::cout<<"Condition Number A1"<<std::endl;
-    std::cout<<cond<<std::endl;
-    std::cout<<"Max/Min Singular Values"<<std::endl;
-    std::cout<<svdmax<< " / "<<svdmin<<std::endl;
-    JacobiSVD<MatrixXd> svd2(A4);
-    svdmax = svd2.singularValues()(0);
-    svdmin = svd2.singularValues()(svd2.singularValues().size()-1);
-    cond = svdmax / svdmin;
-    std::cout<<"Condition Number A4"<<std::endl;
-    std::cout<<cond<<std::endl;
-    std::cout<<"Max/Min Singular Values"<<std::endl;
-    std::cout<<svdmax<< " / "<<svdmin<<std::endl;
-
-    std::cout<<"||Ax - b||"<<std::endl;
-    std::cout<<(A * fullX - b).norm()<<std::endl;
-
-    return fullX;
-}

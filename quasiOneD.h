@@ -5,7 +5,6 @@
 
 double quasiOneD(
     std::vector <double> x,
-    std::vector <double> dx,
     std::vector <double> S,
     std::vector <double> &W);
 void inletBC(
