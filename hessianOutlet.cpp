@@ -8,17 +8,17 @@
 using namespace Eigen;
 
 void HessianOutlet(
-    std::vector <double> W,
+    std::vector<double> W,
     std::vector <MatrixXd> &ddRoutdWdW)
 {
     // First Derivatives Required for Second Derivatives
     Matrix3d dRodWd, dRodWo;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         ddRoutdWdW[Rk].setZero();
     }
 
-    std::vector <double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector<double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
     WtoP(W, rho, u, e, p, c, T);
 
     // ************************
@@ -397,7 +397,7 @@ void HessianOutlet(
     ddp1dtdr1dr2, ddp1dtdu1dr2, ddp1dtdp1dr2, ddp1dtdr2dr2, ddp1dtdu2dr2, ddp1dtdp2dr2,
     ddp1dtdr1du2, ddp1dtdu1du2, ddp1dtdp1du2, ddp1dtdr2du2, ddp1dtdu2du2, ddp1dtdp2du2,
     ddp1dtdr1dp2, ddp1dtdu1dp2, ddp1dtdp1dp2, ddp1dtdr2dp2, ddp1dtdu2dp2, ddp1dtdp2dp2;
-    if(u1 < c1)
+    if (u1 < c1)
     {
         dp1dt = 0.0;
 
@@ -1348,11 +1348,11 @@ void HessianOutlet(
     std::vector <Matrix3d> ddwpdwdwp = ddWpdWdWp(W, nx - 2);
 
     MatrixXd temp(3, 3);
-    for(int Ri = 0; Ri < 3; Ri++)
+    for (int Ri = 0; Ri < 3; Ri++)
     {
         temp.setZero();
         temp += dwpdw.transpose() * ddRoutdWdW[Ri].topLeftCorner(3, 3);
-        for(int Wpi = 0; Wpi < 3; Wpi++)
+        for (int Wpi = 0; Wpi < 3; Wpi++)
         {
             temp += dRodWd(Ri, Wpi) * ddwpdwdwp[Wpi];
         }
@@ -1363,11 +1363,11 @@ void HessianOutlet(
     dwpdw = dWpdW(W, nx - 1);
     ddwpdwdwp = ddWpdWdWp(W, nx - 1);
 
-    for(int Ri = 0; Ri < 3; Ri++)
+    for (int Ri = 0; Ri < 3; Ri++)
     {
         temp.setZero();
         temp += dwpdw.transpose() * ddRoutdWdW[Ri].bottomRightCorner(3, 3);
-        for(int Wpi = 0; Wpi < 3; Wpi++)
+        for (int Wpi = 0; Wpi < 3; Wpi++)
         {
             temp += dRodWo(Ri, Wpi) * ddwpdwdwp[Wpi];
         }
@@ -1378,12 +1378,12 @@ void HessianOutlet(
     dwpdw = dWpdW(W, nx - 1);
     MatrixXd dwpdw2 = dWpdW(W, nx - 2);
 
-    for(int Ri = 0; Ri < 3; Ri++)
+    for (int Ri = 0; Ri < 3; Ri++)
     {
         ddRoutdWdW[Ri].topRightCorner(3, 3) =
             dwpdw.transpose() * ddRoutdWdW[Ri].topRightCorner(3, 3) * dwpdw2;
     }
-    for(int Ri = 0; Ri < 3; Ri++)
+    for (int Ri = 0; Ri < 3; Ri++)
     {
         ddRoutdWdW[Ri].bottomLeftCorner(3, 3) =
             dwpdw2.transpose() * ddRoutdWdW[Ri].bottomLeftCorner(3, 3) * dwpdw;

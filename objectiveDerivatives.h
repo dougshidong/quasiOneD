@@ -4,12 +4,12 @@
 #include<vector>
 
 Eigen::VectorXd evaldIcdW(
-    std::vector <double> W,
-    std::vector <double> dx);
+    std::vector<double> W,
+    std::vector<double> dx);
 
-SparseMatrix <double> evaldIcdWdW(
-    std::vector <double> W,
-    std::vector <double> dx);
+SparseMatrix<double> evaldIcdWdW(
+    std::vector<double> W,
+    std::vector<double> dx);
 
 Eigen::VectorXd evaldIcdS();
 Eigen::MatrixXd evalddIcdSdS();

@@ -13,23 +13,23 @@
 
 using namespace Eigen;
 MatrixXd evaldWdDes(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> S,
-    std::vector <double> W,
-    std::vector <double> designVar)
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> S,
+    std::vector<double> W,
+    std::vector<double> designVar)
 {
     // DR   dR   dR DW           DW   -( dR ) ^ (-1) ( dR )
     // -- = -- + -- -- = 0  -->  -- =  ( -- )        ( -- )
     // DS   dS   dW DS           DS    ( dW )        ( dS )
 
     //Get Primitive Variables
-    std::vector <double> rho(nx), u(nx), e(nx);
-    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector<double> rho(nx), u(nx), e(nx);
+    std::vector<double> T(nx), p(nx), c(nx), Mach(nx);
     WtoP(W, rho, u, e, p, c, T);
 
     // Get Fluxes
-    std::vector <double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (nx + 1), 0);
     getFlux(Flux, W);
 
     // Evaluate dRdS
@@ -45,8 +45,8 @@ MatrixXd evaldWdDes(
     dRdDes = dRdS * dSdDes;
 
     // Evaluate dRdW
-    std::vector <double> dt(nx, 1);
-    SparseMatrix <double> dRdW;
+    std::vector<double> dt(nx, 1);
+    SparseMatrix<double> dRdW;
     dRdW = evaldRdW(W, dx, dt, S);
 
     // Solve DWDS
@@ -62,11 +62,11 @@ MatrixXd evaldWdDes(
 }
 
 VectorXd directDifferentiation(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> S,
-    std::vector <double> W,
-    std::vector <double> designVar)
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> S,
+    std::vector<double> W,
+    std::vector<double> designVar)
 {
     // Direct Differentiation
     // I = Ic(W, S)

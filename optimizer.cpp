@@ -20,28 +20,28 @@
 using namespace Eigen;
 
 MatrixXd finiteD2g(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> area,
-    std::vector <double> designVar,
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> area,
+    std::vector<double> designVar,
     double h);
-MatrixXd finiteD2(std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> area,
-    std::vector <double> designVar,
+MatrixXd finiteD2(std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> area,
+    std::vector<double> designVar,
     double h,
     double currentI);
 
 double stepBacktrackUncons(
     double alpha,
-    std::vector <double> &designVar,
+    std::vector<double> &designVar,
     VectorXd &searchD,
     VectorXd pk,
     VectorXd gradient,
     double currentI,
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> &W);
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> &W);
 
 MatrixXd BFGS(
     MatrixXd oldH,
@@ -123,17 +123,17 @@ void test_hessian(double currentI,
     return;
 }
 void design(
-    std::vector <double> x, std::vector <double> dx,
-    std::vector <double> area, std::vector <double> designVar)
+    std::vector<double> x, std::vector<double> dx,
+    std::vector<double> area, std::vector<double> designVar)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector<double> W(3 * nx, 0);
 
-    std::vector <double> normGradList;
-    std::vector <double> timeVec;
-    std::vector <double> Herror;
-    std::vector <double> svdvalues;
-    std::vector <double> svdvaluesreal;
-    std::vector <double> Hcond;
+    std::vector<double> normGradList;
+    std::vector<double> timeVec;
+    std::vector<double> Herror;
+    std::vector<double> svdvalues;
+    std::vector<double> svdvaluesreal;
+    std::vector<double> Hcond;
     MatrixXd H(nDesVar, nDesVar), H_BFGS(nDesVar, nDesVar), realH(nDesVar, nDesVar);
     double normGrad;
     double currentI;
@@ -171,7 +171,7 @@ void design(
     // Initialize B
     H.setIdentity();
     H = H * 1.0;
-    if(exactHessian == 1)
+    if (exactHessian == 1)
     {
         H = getAnalyticHessian(x, dx, W, area, designVar, hessianType);
 //      H = finiteD2(x, dx, area, designVar, h, currentI);
@@ -180,7 +180,7 @@ void design(
     }
 
     normGrad = 0;
-    for(int i = 0; i < nDesVar; i++)
+    for (int i = 0; i < nDesVar; i++)
         normGrad += pow(gradient[i], 2);
     normGrad = sqrt(normGrad);
     int iDesign = 0;
@@ -190,16 +190,16 @@ void design(
     {
         iDesign++ ;
 
-        if(printConv == 1)
+        if (printConv == 1)
         {
             std::cout<<"Iteration :"<<iDesign<<
                 "    GradientNorm: "<<normGrad<<std::endl;
             std::cout<<"Current Design:\n";
-            for(int i = 0; i < nDesVar; i++)
+            for (int i = 0; i < nDesVar; i++)
                 std::cout<<designVar[i]<<std::endl;
 
 //          std::cout<<"Current Shape:\n";
-//          for(int i = 0; i < nx + 1; i++)
+//          for (int i = 0; i < nx + 1; i++)
 //              std::cout<<area[i]<<std::endl;
         }
         std::cout<<"Current Fitness: "<<currentI<<std::endl;
@@ -208,11 +208,11 @@ void design(
 //      2  =  Quasi-Newton (BFGS)
 //      3  =  Newton
 //      4  =  Truncated Newton with Adjoint-Direct Matrix-Vector Product
-        if(descentType == 1)
+        if (descentType == 1)
         {
             //int expo = rand() % 5 + 1 - 3;
             //double averageerr = 0;
-            //for(int i = 0; i<nDesVar; i++){
+            //for (int i = 0; i<nDesVar; i++) {
             //    srand (time(NULL));
             //    double fMin = -2.0;
             //    double fMax = 2.0;
@@ -227,9 +227,9 @@ void design(
             //myfile.flush();
             pk =  -500*gradient;
         }
-        else if(descentType == 2)
+        else if (descentType == 2)
         {
-            if(iDesign > 1)
+            if (iDesign > 1)
             {
                 H_BFGS = BFGS(H, oldGrad, gradient, searchD);
                 H = H_BFGS;
@@ -243,7 +243,7 @@ void design(
 //          std::cout<<svd1.singularValues()<<std::endl;
 //          std::cout<<"svd2"<<std::endl;
 //          std::cout<<svd2.singularValues()<<std::endl;
-//          for(int i = 0; i < nDesVar; i++)
+//          for (int i = 0; i < nDesVar; i++)
 //          {
 //              svdvalues.push_back(svd1.singularValues()(i));
 //              svdvaluesreal.push_back(svd2.singularValues()(i));
@@ -276,7 +276,7 @@ void design(
 
             pk = -H * gradient;
         }
-        else if(descentType == 3)
+        else if (descentType == 3)
         {
             H = getAnalyticHessian(x, dx, W, area, designVar, hessianType);
             realH = getAnalyticHessian(x, dx, W, area, designVar, 2);
@@ -310,7 +310,7 @@ void design(
         gradient = getGradient(gradientType, currentI, x, dx, area, W, designVar, psi);
 
         normGrad = 0;
-        for(int i = 0; i < nDesVar; i++)
+        for (int i = 0; i < nDesVar; i++)
             normGrad += pow(gradient[i], 2);
         normGrad = sqrt(normGrad);
         normGradList.push_back(normGrad);
@@ -327,7 +327,7 @@ void design(
     std::cout<<gradient<<std::endl;
 
     std::cout<<std::endl<<"Final Design:"<<std::endl;
-    for(int i = 0; i < nDesVar; i++)
+    for (int i = 0; i < nDesVar; i++)
         std::cout<<designVar[i]<<std::endl;
 
     std::cout<<"Fitness: "<<evalFitness(dx, W)<<std::endl;
@@ -346,19 +346,19 @@ void design(
 
 double stepBacktrackUncons(
     double alpha,
-    std::vector <double> &designVar,
+    std::vector<double> &designVar,
     VectorXd &searchD,
     VectorXd pk,
     VectorXd gradient,
     double currentI,
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> &W)
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> &W)
 {
-//  std::vector <double> W(3 * nx, 0);
+//  std::vector<double> W(3 * nx, 0);
 
     double c1 = 1e-4;
-    std::vector <double> tempS(nx + 1);
+    std::vector<double> tempS(nx + 1);
     double newVal;
 
     double c_pk_grad = 0;
@@ -366,8 +366,8 @@ double stepBacktrackUncons(
 
     c_pk_grad = c1 * gradient.dot(pk);
 
-    std::vector <double> tempD(nDesVar);
-    for(int i = 0; i < nDesVar; i++)
+    std::vector<double> tempD(nDesVar);
+    for (int i = 0; i < nDesVar; i++)
     {
         tempD[i] = designVar[i] + alpha * pk[i];
     }
@@ -381,7 +381,7 @@ double stepBacktrackUncons(
         alpha = alpha * 0.5;
         std::cout<<"Alpha Reduction: "<<alpha<<std::endl;
 
-        for(int i = 0; i < nDesVar; i++)
+        for (int i = 0; i < nDesVar; i++)
             tempD[i] = designVar[i] + alpha * pk[i];
         tempS = evalS(tempD, x, dx, desParam);
         quasiOneD(x, tempS, W);
@@ -390,10 +390,10 @@ double stepBacktrackUncons(
         std::cout<<"currentI + alpha/2.0 * c_pk_grad: "<<
         currentI + alpha/ 2.0 * c_pk_grad<<std::endl;
     }
-    if(alpha < 1e-16) std::cout<<"Error. Can't find step size"<<std::endl;
+    if (alpha < 1e-16) std::cout<<"Error. Can't find step size"<<std::endl;
 
     designVar = tempD;
-    for(int i = 0; i < nDesVar; i++)
+    for (int i = 0; i < nDesVar; i++)
     {
         searchD[i] = alpha * pk[i];
     }
@@ -402,23 +402,23 @@ double stepBacktrackUncons(
 }
 
 MatrixXd finiteD2g(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> area,
-    std::vector <double> designVar,
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> area,
+    std::vector<double> designVar,
     double h)
 {
     MatrixXd Hessian(nDesVar, nDesVar);
-    std::vector <double> W(3 * nx, 0);
-    std::vector <double> tempS(nx + 1);
-    std::vector <double> tempD(nDesVar);
+    std::vector<double> W(3 * nx, 0);
+    std::vector<double> tempS(nx + 1);
+    std::vector<double> tempD(nDesVar);
     VectorXd gradp(nDesVar);
     VectorXd gradn(nDesVar);
     VectorXd psi(3 * nx);
 
     double currentI = -1;
     Hessian.setZero();
-    for(int i = 0; i < nDesVar; i++)
+    for (int i = 0; i < nDesVar; i++)
     {
         tempD = designVar;
         tempD[i] += h;
@@ -431,7 +431,7 @@ MatrixXd finiteD2g(
         tempS = evalS(tempD, x, dx, desParam);
         quasiOneD(x, tempS, W);
         gradn = getGradient(gradientType, currentI, x, dx, tempS, W, tempD, psi);
-        for(int j = 0; j < nDesVar; j++)
+        for (int j = 0; j < nDesVar; j++)
         {
             Hessian(i, j) += (gradp(j) - gradn(j)) / (2*h);
             Hessian(j, i) += (gradp(j) - gradn(j)) / (2*h);
@@ -443,22 +443,22 @@ MatrixXd finiteD2g(
 
 
 MatrixXd finiteD2(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> area,
-    std::vector <double> designVar,
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> area,
+    std::vector<double> designVar,
     double h,
     double currentI)
 {
-    std::vector <double> W(3 * nx, 0);
+    std::vector<double> W(3 * nx, 0);
     MatrixXd Hessian(nDesVar, nDesVar);
-    std::vector <double> tempS(nx + 1);
+    std::vector<double> tempS(nx + 1);
 
     double I, I1, I2, I3, I4, dhi, dhj;
 
-    std::vector <double> tempD(nDesVar);
+    std::vector<double> tempD(nDesVar);
 
-    if(currentI < 0 && gradientType != 3)
+    if (currentI < 0 && gradientType != 3)
     {
         quasiOneD(x, area, W);
         I = evalFitness(dx, W);
@@ -467,12 +467,12 @@ MatrixXd finiteD2(
     {
         I = currentI;
     }
-    for(int i = 0; i < nDesVar; i++)
-    for(int j = i; j < nDesVar; j++)
+    for (int i = 0; i < nDesVar; i++)
+    for (int j = i; j < nDesVar; j++)
     {
         dhi = designVar[i] * h;
         dhj = designVar[j] * h;
-        if(i == j) {
+        if (i == j) {
             tempD = designVar;
             tempD[i] += dhi;
             tempD[j] += dhj;
@@ -557,7 +557,7 @@ LLT<MatrixXd> checkPosDef(MatrixXd H) {
     LLT<MatrixXd> llt;
     VectorXcd eigval = H.eigenvalues();
     double shift = 1e-5;
-    if(eigval.real().minCoeff() < 0) {
+    if (eigval.real().minCoeff() < 0) {
         MatrixXd eye(H.rows(),H.rows());
         eye.setIdentity();
         std::cout<<"Matrix is not Positive Semi-Definite"<<std::endl;
@@ -602,7 +602,7 @@ VectorXd implicitSmoothing(VectorXd gradient, double epsilon)
     MatrixXd A(n, n);
     A.setZero();
 
-    for(int i = 0; i < n-1; i++) {
+    for (int i = 0; i < n-1; i++) {
         A(i  , i) = 1.0 + 2.0 * epsilon;
         A(i+1, i) = -epsilon;
         A(i, i+1) = -epsilon;
@@ -611,7 +611,7 @@ VectorXd implicitSmoothing(VectorXd gradient, double epsilon)
 
     LLT<MatrixXd> llt;
     llt.compute(A);
-    if(llt.info() != 0)
+    if (llt.info() != 0)
         std::cout<<"Factorization failed. Error: "<<llt.info()<<std::endl;
     VectorXd smoothGrad = llt.solve(gradient);
 

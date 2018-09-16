@@ -8,28 +8,28 @@
 using namespace Eigen;
 
 MatrixXd evaldSdDes(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> designVar)
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> designVar)
 {
     MatrixXd dSdDes(nx + 1, nDesVar);
-    if(desParam == 0) 
+    if (desParam == 0) 
     {
         dSdDes.setZero();
-        for(int Si = 1; Si < nx; Si++)
+        for (int Si = 1; Si < nx; Si++)
         {
             dSdDes(Si, Si - 1) = 1;
         }
     }
-    if(desParam == 1)
+    if (desParam == 1)
     {
         double d1 = designVar[0];
         double d2 = designVar[1];
         double d3 = designVar[2];
         double xh;
-        for(int i = 0; i < nx + 1; i++)
+        for (int i = 0; i < nx + 1; i++)
         {
-            if(i == 0 || i == nx)
+            if (i == 0 || i == nx)
             {
                 dSdDes(i, 0) = 0;
                 dSdDes(i, 1) = 0;
@@ -47,7 +47,7 @@ MatrixXd evaldSdDes(
             }
         }
     }
-    if(desParam == 2)
+    if (desParam == 2)
     {
         dSdDes = evalSplineDerivative(x, dx);
     }
@@ -55,32 +55,32 @@ MatrixXd evaldSdDes(
 }
 
 MatrixXd evalddSdDesdDes_FD(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> designVar,
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> designVar,
     int Si)
 {
     double pertdi, pertdj;
     double h = 1e-3;
-    std::vector <double> S(nx + 1);
-    std::vector <double> S1(nx+1), S2(nx+1), S3(nx+1), S4(nx+1);
-    std::vector <double> designVard(3);
+    std::vector<double> S(nx + 1);
+    std::vector<double> S1(nx+1), S2(nx+1), S3(nx+1), S4(nx+1);
+    std::vector<double> designVard(3);
     S = evalS(designVar, x, dx, 1);
 
     MatrixXd ddSdDesdDes(3,3);
-    for(int di = 0; di < 3; di++)
+    for (int di = 0; di < 3; di++)
     {
-        for(int dj = 0; dj < 3; dj++)
+        for (int dj = 0; dj < 3; dj++)
         {
             pertdi = designVar[di] * h;
             pertdj = designVar[dj] * h;
 
-            for(int m = 0; m<3; m++)
+            for (int m = 0; m<3; m++)
             {
                 designVard[m] = designVar[m];
             }
 
-            if(di != dj)
+            if (di != dj)
             {
                 // ddFluxdWdW1 = ddFlux(i)/dW(i-1)dW(i-1)
                 // R1
@@ -143,31 +143,31 @@ MatrixXd evalddSdDesdDes_FD(
 
 }
 std::vector <MatrixXd> evalddSdDesdDes(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> designVar)
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> designVar)
 {
     int nD = designVar.size();
     std::vector <MatrixXd> ddSdDesdDes(nx + 1);
     MatrixXd ddSidDesdDes(nD, nD);
     ddSidDesdDes.setZero();
-    if(desParam == 0 || desParam == 2)
+    if (desParam == 0 || desParam == 2)
     {
-        for(int Si = 0; Si < nx + 1; Si++)
+        for (int Si = 0; Si < nx + 1; Si++)
         {
             ddSdDesdDes[Si] = ddSidDesdDes;
         }
     }
-    if(desParam == 1)
+    if (desParam == 1)
     {
         double d1 = designVar[0];
         double d2 = designVar[1];
         double d3 = designVar[2];
         double xh;
         double xd2, spxd2, cpxd2 ;
-        for(int Si = 0; Si < nx + 1; Si++)
+        for (int Si = 0; Si < nx + 1; Si++)
         {
-            if(Si == 0 || Si == nx)
+            if (Si == 0 || Si == nx)
             {
                 ddSdDesdDes[Si] = Matrix3d::Zero();
             }

@@ -12,19 +12,19 @@
 using namespace Eigen;
 
 void HessianBC(
-    std::vector <double> W,
+    std::vector<double> W,
     std::vector <MatrixXd> &ddRindWdW,
     std::vector <MatrixXd> &ddRoutdWdW)
 {
     // First Derivatives Required for Second Derivatives
     Matrix3d dRidWi, dRidWd, dRodWd, dRodWo;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         ddRindWdW[Rk].setZero();
         ddRoutdWdW[Rk].setZero();
     }
 
-    std::vector <double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector<double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
     WtoP(W, rho, u, e, p, c, T);
 
 
@@ -34,40 +34,40 @@ void HessianBC(
 
 // Hessian of Residual at the Boundaries
 void HessianBC_FD(
-    std::vector <double> W,
+    std::vector<double> W,
     std::vector <MatrixXd> &ddRindWdW,
     std::vector <MatrixXd> &ddRoutdWdW)
 {
-    std::vector <double> Resi(3 * nx);
+    std::vector<double> Resi(3 * nx);
     double Resi0, Resi1, Resi2, Resi3, Resi4;
-    std::vector <double> Flux(3 * (nx + 1), 0);
-    std::vector <double> Wd(3 * nx, 0);
-    std::vector <double> Q(3 * nx, 0);
+    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Wd(3 * nx, 0);
+    std::vector<double> Q(3 * nx, 0);
     double h = 1e-3;
     double pertWi, pertWj;
     // Inlet
     int Ri = 0;
     int Rik;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         Rik = Ri * 3 + Rk;
 
-        for(int Wi = 0; Wi <= (Ri + 1) * 3 + 2; Wi++)
+        for (int Wi = 0; Wi <= (Ri + 1) * 3 + 2; Wi++)
         {
             pertWi = W[Wi] * h;
-            for(int Wj = 0; Wj <= (Ri + 1) * 3 + 2; Wj++)
+            for (int Wj = 0; Wj <= (Ri + 1) * 3 + 2; Wj++)
             {
                 pertWj = W[Wj] * h;
-                if(Wi != Wj)
+                if (Wi != Wj)
                 {
-                    for(int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * nx; m++)
                         Wd[m] = W[m];
                     // R1
                     Wd[Wi] = W[Wi] + pertWi;
                     Wd[Wj] = W[Wj] + pertWj;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi1 = Resi[Rik];
 
                     // R2
@@ -75,7 +75,7 @@ void HessianBC_FD(
                     Wd[Wj] = W[Wj] - pertWj;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi2 = Resi[Rik];
 
                     // R3
@@ -83,7 +83,7 @@ void HessianBC_FD(
                     Wd[Wj] = W[Wj] + pertWj;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi3 = Resi[Rik];
 
                     // R4
@@ -91,7 +91,7 @@ void HessianBC_FD(
                     Wd[Wj] = W[Wj] - pertWj;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi4 = Resi[Rik];
 
                     ddRindWdW[Rk](Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
@@ -102,39 +102,39 @@ void HessianBC_FD(
                 }
                 else
                 {
-                    for(int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * nx; m++)
                         Wd[m] = W[m];
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi0 = Resi[Rik];
 
                     // R1
                     Wd[Wi] = W[Wi] + 2.0 * pertWi;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi1 = Resi[Rik];
 
                     // R2
                     Wd[Wi] = W[Wi] + pertWi;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi2 = Resi[Rik];
 
                     // R3
                     Wd[Wi] = W[Wi] - pertWi;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi3 = Resi[Rik];
 
                     // R4
                     Wd[Wi] = W[Wi] - 2.0 * pertWi;
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3; m++) Wd[m] = W[m];
                     Resi4 = Resi[Rik];
 
                     ddRindWdW[Rk](Wi, Wj) = (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
@@ -148,26 +148,26 @@ void HessianBC_FD(
     }// Rk Loop
     // Outlet
     Ri = nx - 1;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         Rik = Ri * 3 + Rk;
 
-        for(int Wi = (Ri - 1) * 3; Wi <= Ri * 3 + 2; Wi++)
+        for (int Wi = (Ri - 1) * 3; Wi <= Ri * 3 + 2; Wi++)
         {
             pertWi = W[Wi] * h;
-            for(int Wj = (Ri - 1) * 3; Wj <= Ri * 3 + 2; Wj++)
+            for (int Wj = (Ri - 1) * 3; Wj <= Ri * 3 + 2; Wj++)
             {
                 pertWj = W[Wj] * h;
-                if(Wi != Wj)
+                if (Wi != Wj)
                 {
-                    for(int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * nx; m++)
                         Wd[m] = W[m];
                     // R1
                     Wd[Wi] = W[Wi] + pertWi;
                     Wd[Wj] = W[Wj] + pertWj;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi1 = Resi[Rik];
 
                     // R2
@@ -175,7 +175,7 @@ void HessianBC_FD(
                     Wd[Wj] = W[Wj] - pertWj;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi2 = Resi[Rik];
 
                     // R3
@@ -183,7 +183,7 @@ void HessianBC_FD(
                     Wd[Wj] = W[Wj] + pertWj;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi3 = Resi[Rik];
 
                     // R4
@@ -191,7 +191,7 @@ void HessianBC_FD(
                     Wd[Wj] = W[Wj] - pertWj;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi4 = Resi[Rik];
 
                     ddRoutdWdW[Rk](Wi - (Ri - 1) * 3, Wj - (Ri - 1) * 3)
@@ -202,39 +202,39 @@ void HessianBC_FD(
                 }
                 else
                 {
-                    for(int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * nx; m++)
                         Wd[m] = W[m];
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi0 = Resi[Rik];
 
                     // R1
                     Wd[Wi] = W[Wi] + 2.0 * pertWi;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi1 = Resi[Rik];
 
                     // R2
                     Wd[Wi] = W[Wi] + pertWi;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi2 = Resi[Rik];
 
                     // R3
                     Wd[Wi] = W[Wi] - pertWi;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi3 = Resi[Rik];
 
                     // R4
                     Wd[Wi] = W[Wi] - 2.0 * pertWi;
 
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
+                    for (int m = 0; m < 3; m++) Wd[3 * (nx - 1) + m] = W[3 * (nx - 1) + m];
                     Resi4 = Resi[Rik];
 
                     ddRoutdWdW[Rk](Wi - (Ri - 1) * 3, Wj - (Ri - 1) * 3) =
@@ -249,17 +249,17 @@ void HessianBC_FD(
     }// Rk Loop
 //  std::cout<<"FD ddRoutdWpdWp"<<std::endl;
 //  std::cout<<ddRoutdWdW[0]<<std::endl;
-//  if(Min > 1.0)
+//  if (Min > 1.0)
 //  {
-//      for(int Rk = 0; Rk < 3; Rk++)
+//      for (int Rk = 0; Rk < 3; Rk++)
 //      {
 //          // Supersonic Inlet
-//          for(int row = 0; row < 6; row++)
-//          for(int col = 0; col < 6; col++)
+//          for (int row = 0; row < 6; row++)
+//          for (int col = 0; col < 6; col++)
 //          {
 //              // ddRindWindWin
 //              ddRindWdW[Rk](row, col) = 0;
-//              //if(row == col)
+//              //if (row == col)
 //              //    ddRindWdW[Rk](row, col) = 1;
 //          }
 //      }
@@ -269,18 +269,18 @@ void HessianBC_FD(
 
 // Jacobian at the Boundaries
 void BCJac(
-    std::vector <double> W,
-    std::vector <double> dt,
-    std::vector <double> dx,
-    std::vector <double> &dBidWi,
-    std::vector <double> &dBidWd,
-    std::vector <double> &dBodWd,
-    std::vector <double> &dBodWo)
+    std::vector<double> W,
+    std::vector<double> dt,
+    std::vector<double> dx,
+    std::vector<double> &dBidWi,
+    std::vector<double> &dBidWd,
+    std::vector<double> &dBodWd,
+    std::vector<double> &dBodWo)
 {
-    std::vector <double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
-    std::vector <double> dbdwp(9, 0), dwpdw(9);
+    std::vector<double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector<double> dbdwp(9, 0), dwpdw(9);
 
-    for(int i = 0; i < 9; i++)
+    for (int i = 0; i < 9; i++)
     {
         dBidWi[i] = 0;
         dBidWd[i] = 0;
@@ -387,7 +387,7 @@ void BCJac(
     double dp1dt;
     double dp1dtdr1, dp1dtdu1, dp1dtdp1;
     double dp1dtdr2, dp1dtdu2, dp1dtdp2;
-    if(u1 < c1)
+    if (u1 < c1)
     {
         dp1dt = 0;
         dp1dtdr1 = 0;
@@ -510,9 +510,9 @@ void BCJac(
     // Get Transformation Matrix
     dWpdW(dwpdw, W, nx - 1);
 
-    for(int row = 0; row < 3; row++)
-    for(int col = 0; col < 3; col++)
-    for(int k = 0; k < 3; k++)
+    for (int row = 0; row < 3; row++)
+    for (int col = 0; col < 3; col++)
+    for (int k = 0; k < 3; k++)
         dBodWo[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
 
     dbdwp[0] = dr1dtdr2;
@@ -528,9 +528,9 @@ void BCJac(
     // Get Transformation Matrix
     dWpdW(dwpdw, W, nx - 2);
 
-    for(int row = 0; row < 3; row++)
-    for(int col = 0; col < 3; col++)
-    for(int k = 0; k < 3; k++)
+    for (int row = 0; row < 3; row++)
+    for (int col = 0; col < 3; col++)
+    for (int k = 0; k < 3; k++)
         dBodWd[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
 
 
@@ -538,7 +538,7 @@ void BCJac(
     // INLET JACOBIANS
     // *********************
     // Subsonic Inlet
-    if(u[0] < c[0])
+    if (u[0] < c[0])
     {
         // Values at time-step N
         i1 = 0;
@@ -723,9 +723,9 @@ void BCJac(
         // Get Transformation Matrix
         dWpdW(dwpdw, W, 0);
 
-        for(int row = 0; row < 3; row++)
-        for(int col = 0; col < 3; col++)
-        for(int k = 0; k < 3; k++)
+        for (int row = 0; row < 3; row++)
+        for (int col = 0; col < 3; col++)
+        for (int k = 0; k < 3; k++)
             dBidWi[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
 
         // Assign dR1/dWp2
@@ -742,40 +742,40 @@ void BCJac(
         // Get Transformation Matrix
         dWpdW(dwpdw, W, 1);
 
-        for(int row = 0; row < 3; row++)
-        for(int col = 0; col < 3; col++)
-        for(int k = 0; k < 3; k++)
+        for (int row = 0; row < 3; row++)
+        for (int col = 0; col < 3; col++)
+        for (int k = 0; k < 3; k++)
             dBidWd[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
     }
 
     // Supersonic Inlet
     else
     {
-        for(int i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++)
         {
             dBidWi[i] = 0;
             dBidWd[i] = 0;
-            if(i % 4 == 0)
+            if (i % 4 == 0)
                 dBidWi[i] = 1;
         }
     }
 }
 
 void HessianBCprim_FD(
-    std::vector <double> W,
+    std::vector<double> W,
     std::vector <MatrixXd> &ddRindWdW,
     std::vector <MatrixXd> &ddRoutdWdW)
 {
-    std::vector <double> Resi(3 * nx);
+    std::vector<double> Resi(3 * nx);
     double Resi0, Resi1, Resi2, Resi3, Resi4;
-    std::vector <double> Flux(3 * (nx + 1), 0);
-    std::vector <double> Wd(3 * nx, 0);
-    std::vector <double> Wp(3 * nx, 0);
-    std::vector <double> Wpd(3 * nx, 0);
-    std::vector <double> Q(3 * nx, 0);
+    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Wd(3 * nx, 0);
+    std::vector<double> Wp(3 * nx, 0);
+    std::vector<double> Wpd(3 * nx, 0);
+    std::vector<double> Q(3 * nx, 0);
     double h = 1e-4;
     double pertWi, pertWj;
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         Wp[i * 3 + 0] = W[i * 3 + 0];
         Wp[i * 3 + 1] = W[i * 3 + 1] / W[i * 3 + 0];
@@ -786,19 +786,19 @@ void HessianBCprim_FD(
     // Inlet
     int Ri = 0;
     int Rik;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         Rik = Ri * 3 + Rk;
 
-        for(int Wi = 0; Wi <= (Ri + 1) * 3 + 2; Wi++)
+        for (int Wi = 0; Wi <= (Ri + 1) * 3 + 2; Wi++)
         {
             pertWi = Wp[Wi] * h;
-            for(int Wj = 0; Wj <= (Ri + 1) * 3 + 2; Wj++)
+            for (int Wj = 0; Wj <= (Ri + 1) * 3 + 2; Wj++)
             {
                 pertWj = Wp[Wj] * h;
-                if(Wi != Wj)
+                if (Wi != Wj)
                 {
-                    for(int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * nx; m++)
                         Wpd[m] = Wp[m];
                     // R1
                     Wpd[Wi] = Wp[Wi] + pertWi;
@@ -807,7 +807,7 @@ void HessianBCprim_FD(
                     PtoW(Wd, Wpd);
 
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi1 = Resi[Rik];
 
                     // R2
@@ -816,7 +816,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi2 = Resi[Rik];
 
                     // R3
@@ -825,7 +825,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi3 = Resi[Rik];
 
                     // R4
@@ -834,7 +834,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi4 = Resi[Rik];
 
                     ddRindWdW[Rk](Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
@@ -845,12 +845,12 @@ void HessianBCprim_FD(
                 }
                 else
                 {
-                    for(int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * nx; m++)
                         Wpd[m] = Wp[m];
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi0 = Resi[Rik];
 
                     // R1
@@ -858,7 +858,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi1 = Resi[Rik];
 
                     // R2
@@ -866,7 +866,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi2 = Resi[Rik];
 
                     // R3
@@ -874,7 +874,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi3 = Resi[Rik];
 
                     // R4
@@ -882,7 +882,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     inletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3; m++) Wpd[m] = Wp[m];
                     Resi4 = Resi[Rik];
 
                     ddRindWdW[Rk](Wi, Wj) = (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
@@ -896,26 +896,26 @@ void HessianBCprim_FD(
     }// Rk Loop
     // Outlet
     Ri = nx - 1;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         Rik = Ri * 3 + Rk;
 
-        for(int Wi = (Ri - 1) * 3; Wi <= Ri * 3 + 2; Wi++)
+        for (int Wi = (Ri - 1) * 3; Wi <= Ri * 3 + 2; Wi++)
         {
             pertWi = Wp[Wi] * h;
-            for(int Wj = (Ri - 1) * 3; Wj <= Ri * 3 + 2; Wj++)
+            for (int Wj = (Ri - 1) * 3; Wj <= Ri * 3 + 2; Wj++)
             {
                 pertWj = Wp[Wj] * h;
-                if(Wi != Wj)
+                if (Wi != Wj)
                 {
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     // R1
                     Wpd[Wi] = Wp[Wi] + pertWi;
                     Wpd[Wj] = Wp[Wj] + pertWj;
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi1 = Resi[Rik];
 
                     // R2
@@ -924,7 +924,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi2 = Resi[Rik];
 
                     // R3
@@ -933,7 +933,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi3 = Resi[Rik];
 
                     // R4
@@ -942,7 +942,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi4 = Resi[Rik];
 
                     ddRoutdWdW[Rk](Wi - (Ri - 1) * 3, Wj - (Ri - 1) * 3)
@@ -953,11 +953,11 @@ void HessianBCprim_FD(
                 }
                 else
                 {
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi0 = Resi[Rik];
 
                     // R1
@@ -965,7 +965,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi1 = Resi[Rik];
 
                     // R2
@@ -973,7 +973,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi2 = Resi[Rik];
 
                     // R3
@@ -981,7 +981,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi3 = Resi[Rik];
 
                     // R4
@@ -989,7 +989,7 @@ void HessianBCprim_FD(
 
                     PtoW(Wd, Wpd);
                     outletBC(Wd, Resi, 1, 1);
-                    for(int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
+                    for (int m = 0; m < 3 * nx; m++) Wpd[m] = Wp[m];
                     Resi4 = Resi[Rik];
 
                     ddRoutdWdW[Rk](Wi - (Ri - 1) * 3, Wj - (Ri - 1) * 3) =
@@ -1004,17 +1004,17 @@ void HessianBCprim_FD(
     }// Rk Loop
 //  std::cout<<"FD ddRoutdWpdWp"<<std::endl;
 //  std::cout<<ddRoutdWdW[0]<<std::endl;
-//  if(Min > 1.0)
+//  if (Min > 1.0)
 //  {
-//      for(int Rk = 0; Rk < 3; Rk++)
+//      for (int Rk = 0; Rk < 3; Rk++)
 //      {
 //          // Supersonic Inlet
-//          for(int row = 0; row < 6; row++)
-//          for(int col = 0; col < 6; col++)
+//          for (int row = 0; row < 6; row++)
+//          for (int col = 0; col < 6; col++)
 //          {
 //              // ddRindWindWin
 //              ddRindWdW[Rk](row, col) = 0;
-//              //if(row == col)
+//              //if (row == col)
 //              //    ddRindWdW[Rk](row, col) = 1;
 //          }
 //      }

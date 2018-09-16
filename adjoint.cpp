@@ -21,24 +21,24 @@
 using namespace Eigen;
 
 VectorXd adjoint(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> area,
-    std::vector <double> W,
-    std::vector <double> designVar,
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> area,
+    std::vector<double> W,
+    std::vector<double> designVar,
     VectorXd &psi)
 {
     //Get Primitive Variables
-    std::vector <double> rho(nx), u(nx), e(nx);
-    std::vector <double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector<double> rho(nx), u(nx), e(nx);
+    std::vector<double> T(nx), p(nx), c(nx), Mach(nx);
     WtoP(W, rho, u, e, p, c, T);
 
     // Evalutate dt and d(dt)dW
-    std::vector <double> dt(nx, 1);
+    std::vector<double> dt(nx, 1);
 
     // Build A matrix
-    SparseMatrix <double> dRdWt, dRdW;
-    SparseMatrix <double> matAFD, matAFD2;
+    SparseMatrix<double> dRdWt, dRdW;
+    SparseMatrix<double> matAFD, matAFD2;
     dRdW = evaldRdW(W, dx, dt, area);
 //  matAFD2 = evaldRdW_FD(W, area, u[0]/c[0]);
     dRdWt = dRdW.transpose();
@@ -59,19 +59,19 @@ VectorXd adjoint(
     // 2 = Sparse Iterative BiCGSTAB
     //int eig_solv = 0;
     //int directSolve = 1;
-    //if(directSolve == 1)
+    //if (directSolve == 1)
     //{
     //    psi = solveSparseAXB(-dRdWt, bvec, eig_solv);
     //}
-    SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
+    SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver;
     slusolver.compute(-dRdWt);
-    if(slusolver.info() != 0)
+    if (slusolver.info() != 0)
         std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
     psi = slusolver.solve(bvec);
 //  psi = solveGMRES(-dRdWt, bvec);
 
     // If supersonic copy psi2 onto psi1 garbage
-    if(u[0] > c[0])
+    if (u[0] > c[0])
     {
         psi(0) = psi(3);
         psi(1) = psi(4);
@@ -88,7 +88,7 @@ VectorXd adjoint(
     dIcdS = evaldIcdS();
 
     // Get Fluxes
-    std::vector <double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (nx + 1), 0);
     getFlux(Flux, W);
 
     // Evaluate psi * dRdS
@@ -118,12 +118,12 @@ VectorXd adjoint(
     return grad;
 }
 
-VectorXd buildbMatrix(std::vector <double> dIcdW)
+VectorXd buildbMatrix(std::vector<double> dIcdW)
 {
     VectorXd matb(3 * nx);
 
-    for(int i = 0; i < nx; i++)
-    for(int k = 0; k < 3; k++)
+    for (int i = 0; i < nx; i++)
+    for (int k = 0; k < 3; k++)
         matb(i * 3 + k) = -dIcdW[i * 3 + k];
 
     return matb;
@@ -131,17 +131,17 @@ VectorXd buildbMatrix(std::vector <double> dIcdW)
 
 VectorXd evalpsidRdS(
     VectorXd psi,
-    std::vector <double> Flux,
-    std::vector <double> p)
+    std::vector<double> Flux,
+    std::vector<double> p)
 {
     VectorXd psidRdS(nx + 1);
     psidRdS.setZero();
-    for(int i = 2; i < nx - 1; i++)
-    for(int k = 0; k < 3; k++)
+    for (int i = 2; i < nx - 1; i++)
+    for (int k = 0; k < 3; k++)
     {
         psidRdS(i) += psi((i - 1) * 3 + k) * Flux[i * 3 + k];
         psidRdS(i) -= psi(i * 3 + k) * Flux[i * 3 + k];
-        if(k == 1)
+        if (k == 1)
         {
             psidRdS(i) -= psi((i - 1) * 3 + k) * p[i - 1];
             psidRdS(i) += psi(i * 3 + k) * p[i];
@@ -149,7 +149,7 @@ VectorXd evalpsidRdS(
     }
 
     // Evaluate psi * dRdS neat the Boundaries
-    for(int k = 0; k < 3; k++)
+    for (int k = 0; k < 3; k++)
     {
         // Cell 0 Inlet is not a function of the shape
 
@@ -161,7 +161,7 @@ VectorXd evalpsidRdS(
 
         // Cell nx Outlet is not a function of the shape
 
-        if(k == 1)
+        if (k == 1)
         {
             psidRdS(1) += psi(1 * 3 + k) * p[1];
             psidRdS(nx - 1) -= psi((nx - 2) * 3 + k) * p[nx - 1];
@@ -172,7 +172,7 @@ VectorXd evalpsidRdS(
 
 
 MatrixXd solveSparseAXB(
-    SparseMatrix <double> A,
+    SparseMatrix<double> A,
     MatrixXd B, int eig_solv)
 {
     MatrixXd X(A.rows(), B.cols());
@@ -195,30 +195,30 @@ MatrixXd solveSparseAXB(
 //  std::cout<<svdmax<< " / "<<svdmin<<std::endl;
 
     // Sparse LU
-    if(eig_solv == 0)
+    if (eig_solv == 0)
     {
-        SparseLU <SparseMatrix <double>, COLAMDOrdering< int > > slusolver;
+        SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver;
         slusolver.analyzePattern(A);
         slusolver.factorize(A);
 
-        if(slusolver.info() != 0)
+        if (slusolver.info() != 0)
             std::cout<<"Factorization failed. Error: "<<slusolver.info()<<std::endl;
 
         // Solve for X
         X = slusolver.solve(B);
     }
     // Dense LU full pivoting
-    if(eig_solv == 1)
+    if (eig_solv == 1)
     {
         // Full Pivoting LU Factorization
         X = matAdense.fullPivLu().solve(B);
     }
     // Iterative LU
-    if(eig_solv == 2)
+    if (eig_solv == 2)
     {
-        BiCGSTAB<SparseMatrix <double> > itsolver;
+        BiCGSTAB<SparseMatrix<double> > itsolver;
         itsolver.compute(A);
-        if(itsolver.info() == 0)
+        if (itsolver.info() == 0)
             std::cout<<"Iterative Factorization success"<<std::endl;
         else
             std::cout<<"Factorization failed. Error: "<<itsolver.info()<<std::endl;

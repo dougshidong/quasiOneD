@@ -6,15 +6,15 @@
 #include<Eigen/Core>
 
 MatrixXd evaldWdDes(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> S,
-    std::vector <double> W,
-    std::vector <double> designVar);
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> S,
+    std::vector<double> W,
+    std::vector<double> designVar);
 VectorXd directDifferentiation(
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> S,
-    std::vector <double> W,
-    std::vector <double> designVar);
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> S,
+    std::vector<double> W,
+    std::vector<double> designVar);
 #endif

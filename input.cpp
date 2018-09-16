@@ -18,7 +18,7 @@ void inputfile()
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
 	printf("asdasd %td %s \n",sizeof(buf), buf);
     filename = buf;
-    filename.erase(std::remove_if(filename.begin(), filename.end(), isspace), filename.end());
+    filename.erase(std::remove_if (filename.begin(), filename.end(), isspace), filename.end());
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), inputf) == NULL) {abort();} // Skip Line

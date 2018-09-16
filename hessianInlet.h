@@ -8,6 +8,6 @@
 using namespace Eigen;
 
 void HessianInlet(
-    std::vector <double> W,
+    std::vector<double> W,
     std::vector <MatrixXd> &ddRindWdW);
 #endif

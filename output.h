@@ -12,7 +12,7 @@ void outVec(std::string fn2, std::string ra, vec data)
     FILE *Results;
     std::string fn = "./Results/"+ filename + fn2;
     Results = fopen(fn.c_str(), ra.c_str());
-    for(int i = 0; i < (int)data.size(); i++)
+    for (int i = 0; i < (int)data.size(); i++)
     {
         fprintf(Results, "%1.15e\n", data[i]);
     }

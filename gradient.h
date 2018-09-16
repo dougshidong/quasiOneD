@@ -4,10 +4,10 @@
 #include <vector>
 VectorXd getGradient(int gType,
     double currentI,
-    std::vector <double> x,
-    std::vector <double> dx,
-    std::vector <double> area,
-    std::vector <double> W,
-    std::vector <double> designVar,
+    std::vector<double> x,
+    std::vector<double> dx,
+    std::vector<double> area,
+    std::vector<double> W,
+    std::vector<double> designVar,
     VectorXd &psi);
 #endif

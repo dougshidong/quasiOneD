@@ -8,7 +8,7 @@
 
 using namespace Eigen;
 
-MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
+MatrixXd solveGMRES(SparseMatrix<double> Ain, MatrixXd Bin)
 {
     Vec         x, b;
     Mat         A;
@@ -26,10 +26,10 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
 //  MatSetUp(A);
     MatCreateSeqAIJ(PETSC_COMM_SELF, m, n, 9, 0, &A);
 
-    for(int k = 0; k < Ain.outerSize(); ++k)
+    for (int k = 0; k < Ain.outerSize(); ++k)
     {
         // Iterate over inside
-        for(SparseMatrix<double>::InnerIterator it(Ain,k); it; ++it)
+        for (SparseMatrix<double>::InnerIterator it(Ain,k); it; ++it)
         {
             r = it.row();
             c = it.col();
@@ -66,10 +66,10 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
     VecSetSizes(b,PETSC_DECIDE, Bin.rows());
     VecSetFromOptions(b);
     VecDuplicate(b, &x);
-    for(int bcol = 0; bcol < Bin.cols(); bcol++)
+    for (int bcol = 0; bcol < Bin.cols(); bcol++)
     {
 
-        for(int brow = 0; brow < Bin.rows(); brow++)
+        for (int brow = 0; brow < Bin.rows(); brow++)
         {
             v = Bin(brow, bcol);
             VecSetValue(b, brow, v, INSERT_VALUES);
@@ -78,14 +78,14 @@ MatrixXd solveGMRES(SparseMatrix <double> Ain, MatrixXd Bin)
         KSPSolve(ksp,b,x);
 
 
-        for(PetscInt brow = 0; brow < Bin.rows(); brow++)
+        for (PetscInt brow = 0; brow < Bin.rows(); brow++)
         {
             values[brow] = -1.0;
             indices[brow] = brow;
         }
         VecGetValues(x, Bin.rows(), indices, values);
 
-        for(int brow = 0; brow < Bin.rows(); brow++)
+        for (int brow = 0; brow < Bin.rows(); brow++)
         {
             X(brow, bcol) = values[brow];
         }

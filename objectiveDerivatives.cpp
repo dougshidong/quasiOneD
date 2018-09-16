@@ -8,13 +8,13 @@
 using namespace Eigen;
 
 // dIc / dW
-VectorXd evaldIcdW(std::vector <double> W, std::vector <double> dx) {
+VectorXd evaldIcdW(std::vector<double> W, std::vector<double> dx) {
     VectorXd dIcdW(3 * nx);
 
-    std::vector <double> ptarget(nx, 0);
+    std::vector<double> ptarget(nx, 0);
     double dpdw[3], rho, u, p;
     ioTargetPressure(-1, ptarget);
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
@@ -32,17 +32,17 @@ VectorXd evaldIcdW(std::vector <double> W, std::vector <double> dx) {
 }
 
 // ddIc / dWdW
-SparseMatrix <double> evaldIcdWdW(std::vector <double> W, std::vector <double> dx) {
-    SparseMatrix <double> ddIcdWdW(3 * nx, 3 * nx);
+SparseMatrix<double> evaldIcdWdW(std::vector<double> W, std::vector<double> dx) {
+    SparseMatrix<double> ddIcdWdW(3 * nx, 3 * nx);
     Matrix3d ddIcdWdW_temp = Matrix3d::Zero();
     Matrix3d ddpdWdW = Matrix3d::Zero();
     Vector3d dpdW = Vector3d::Zero();
 
-    std::vector <double> ptarget(nx, 0);
+    std::vector<double> ptarget(nx, 0);
     double rho, u, p;
     double dxptin2;
     ioTargetPressure(-1, ptarget);
-    for(int Wi = 0; Wi < nx; Wi++)
+    for (int Wi = 0; Wi < nx; Wi++)
     {
         rho = W[Wi * 3 + 0];
         u = W[Wi * 3 + 1] / rho;
@@ -61,9 +61,9 @@ SparseMatrix <double> evaldIcdWdW(std::vector <double> W, std::vector <double> d
         ddIcdWdW_temp = dxptin2 * dpdW * dpdW.transpose()
                         + (dxptin2 * p - ptarget[Wi] * dx[Wi] / inlet_total_p) * ddpdWdW;
 
-        for(int ki = 0; ki < 3; ki++)
+        for (int ki = 0; ki < 3; ki++)
         {
-            for(int kj = 0; kj < 3; kj++)
+            for (int kj = 0; kj < 3; kj++)
             {
                 ddIcdWdW.insert(Wi*3+ki, Wi*3+kj) = ddIcdWdW_temp(ki, kj);
             }

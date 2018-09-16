@@ -8,23 +8,23 @@
 using namespace Eigen;
 
 void HessianInlet(
-    std::vector <double> W,
+    std::vector<double> W,
     std::vector <MatrixXd> &ddRindWdW)
 {
     // First Derivatives Required for Second Derivatives
     Matrix3d dRidWi, dRidWd;
-    for(int Rk = 0; Rk < 3; Rk++)
+    for (int Rk = 0; Rk < 3; Rk++)
     {
         ddRindWdW[Rk].setZero();
     }
 
-    std::vector <double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector<double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
     WtoP(W, rho, u, e, p, c, T);
 
     // ************************
     // SUBSONIC INLET HESSIAN
     // ************************
-    if(u[0] < c[0])
+    if (u[0] < c[0])
     {
         // Values at time-step N
         double i1, i2;
@@ -1149,11 +1149,11 @@ void HessianInlet(
         std::vector <Matrix3d> ddwpdwdwp = ddWpdWdWp(W, 0);
 
         MatrixXd temp(3, 3);
-        for(int Ri = 0; Ri < 3; Ri++)
+        for (int Ri = 0; Ri < 3; Ri++)
         {
             temp.setZero();
             temp += dwpdw.transpose() * ddRindWdW[Ri].topLeftCorner(3, 3);
-            for(int Wpi = 0; Wpi < 3; Wpi++)
+            for (int Wpi = 0; Wpi < 3; Wpi++)
             {
                 temp += dRidWi(Ri, Wpi) * ddwpdwdwp[Wpi];
             }
@@ -1164,11 +1164,11 @@ void HessianInlet(
         dwpdw = dWpdW(W, 1);
         ddwpdwdwp = ddWpdWdWp(W, 1);
 
-        for(int Ri = 0; Ri < 3; Ri++)
+        for (int Ri = 0; Ri < 3; Ri++)
         {
             temp.setZero();
             temp += dwpdw.transpose() * ddRindWdW[Ri].bottomRightCorner(3, 3);
-            for(int Wpi = 0; Wpi < 3; Wpi++)
+            for (int Wpi = 0; Wpi < 3; Wpi++)
             {
                 temp += dRidWd(Ri, Wpi) * ddwpdwdwp[Wpi];
             }
@@ -1179,12 +1179,12 @@ void HessianInlet(
         dwpdw = dWpdW(W, 0);
         MatrixXd dwpdw2 = dWpdW(W, 1);
 
-        for(int Ri = 0; Ri < 3; Ri++)
+        for (int Ri = 0; Ri < 3; Ri++)
         {
             ddRindWdW[Ri].topRightCorner(3, 3) =
                 dwpdw.transpose() * ddRindWdW[Ri].topRightCorner(3, 3) * dwpdw2;
         }
-        for(int Ri = 0; Ri < 3; Ri++)
+        for (int Ri = 0; Ri < 3; Ri++)
         {
             ddRindWdW[Ri].bottomLeftCorner(3, 3) =
                 dwpdw2.transpose() * ddRindWdW[Ri].bottomLeftCorner(3, 3) * dwpdw;
@@ -1194,7 +1194,7 @@ void HessianInlet(
     // Supersonic Inlet
     else
     {
-        for(int Ri = 0; Ri < 3; Ri++)
+        for (int Ri = 0; Ri < 3; Ri++)
         {
             ddRindWdW[Ri].setZero();
             ddRindWdW[Ri].setZero();

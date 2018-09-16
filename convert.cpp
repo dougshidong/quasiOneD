@@ -8,10 +8,10 @@
 
 // Get pressure
 void getp(
-    const std::vector <double> &W,
-    std::vector <double> &p)
+    const std::vector<double> &W,
+    std::vector<double> &p)
 {
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         p[i] = (gam - 1.0) * ( W[i * 3 + 2] - (pow(W[i * 3 + 1], 2.0) / W[i * 3 + 0]) / 2.0 );
     }
@@ -19,12 +19,12 @@ void getp(
 
 // Get primitive variables
 void WtoP(
-    const std::vector <double> &W,
-    std::vector <double> &rho,
-    std::vector <double> &u,
-    std::vector <double> &e)
+    const std::vector<double> &W,
+    std::vector<double> &rho,
+    std::vector<double> &u,
+    std::vector<double> &e)
 {
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -34,12 +34,12 @@ void WtoP(
 
 // Get other primitive variables
 void WtoP2(
-    const std::vector <double> &W,
-    std::vector <double> &rho,
-    std::vector <double> &u,
-    std::vector <double> &p)
+    const std::vector<double> &W,
+    std::vector<double> &rho,
+    std::vector<double> &u,
+    std::vector<double> &p)
 {
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -49,10 +49,10 @@ void WtoP2(
 
 // Given rho, u p, get W
 void PtoW(
-    std::vector <double> &W,
-    const std::vector <double> &Wp)
+    std::vector<double> &W,
+    const std::vector<double> &Wp)
 {
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         W[i * 3 + 0] = Wp[i * 3 + 0];
         W[i * 3 + 1] = Wp[i * 3 + 0] * Wp[i * 3 + 1];
@@ -63,15 +63,15 @@ void PtoW(
 
 // Get more primitive variables
 void WtoP(
-    const std::vector <double> &W,
-    std::vector <double> &rho,
-    std::vector <double> &u,
-    std::vector <double> &e,
-    std::vector <double> &p,
-    std::vector <double> &c,
-    std::vector <double> &T)
+    const std::vector<double> &W,
+    std::vector<double> &rho,
+    std::vector<double> &u,
+    std::vector<double> &e,
+    std::vector<double> &p,
+    std::vector<double> &c,
+    std::vector<double> &T)
 {
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -85,8 +85,8 @@ void WtoP(
 // W  = [rho, rho * u, e]
 // Wp = [rho, u, p]
 void dWpdW(
-    std::vector <double> &M,
-    const std::vector <double> &W,
+    std::vector<double> &M,
+    const std::vector<double> &W,
     int i)
 {
     double rho, u;
@@ -104,7 +104,7 @@ void dWpdW(
 }
 
 Eigen::MatrixXd dWpdW(
-    const std::vector <double> &W,
+    const std::vector<double> &W,
     int i)
 {
     Eigen::MatrixXd M(3, 3);
@@ -129,8 +129,8 @@ Eigen::MatrixXd dWpdW(
 // W  = [rho, rho * u, e]
 // Wp = [rho, u, p]
 void dWdWp(
-    std::vector <double> &M,
-    const std::vector <double> &W,
+    std::vector<double> &M,
+    const std::vector<double> &W,
     int i)
 {
     double rho, u;
@@ -148,11 +148,11 @@ void dWdWp(
 }
 // Get F
 void WtoF(
-    const std::vector <double> &W,
-    std::vector <double> &F)
+    const std::vector<double> &W,
+    std::vector<double> &F)
 {
     double w1, w2, w3;
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         w1 = W[i * 3 + 0];
         w2 = W[i * 3 + 1];
@@ -165,13 +165,13 @@ void WtoF(
 
 // get Q
 void WtoQ(
-    const std::vector <double> &W,
-    std::vector <double> &Q,
-    const std::vector <double> &S)
+    const std::vector<double> &W,
+    std::vector<double> &Q,
+    const std::vector<double> &S)
 {
-    std::vector <double> p(nx);
+    std::vector<double> p(nx);
     getp(W, p);
-    for(int i = 0; i < nx; i++)
+    for (int i = 0; i < nx; i++)
     {
         Q[i * 3 + 0] = 0;
         Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);

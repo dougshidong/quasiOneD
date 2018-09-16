@@ -18,17 +18,17 @@ int main(int argc,char **argv)
 {
     inputfile();
 
-    std::vector <double> x(nx), S(nx + 1);
-    std::vector <double> dx(nx);
-    std::vector <double> W(3 * nx, 0);
+    std::vector<double> x(nx), S(nx + 1);
+    std::vector<double> dx(nx);
+    std::vector<double> W(3 * nx, 0);
     feraiseexcept(FE_INVALID | FE_OVERFLOW);
 
     // Initialize Shape
-    std::vector <double> geom(3);
+    std::vector<double> geom(3);
 
     x = evalX(a_geom, b_geom);
     dx = evalDx(x);
-    if(opt == 0)
+    if (opt == 0)
     {
         geom[0] = h_geom;
         geom[1] = t1_geom;
@@ -36,7 +36,7 @@ int main(int argc,char **argv)
         S = evalS(geom, x, dx, 1);
         quasiOneD(x, S, W);
     }
-    if(opt == 1)
+    if (opt == 1)
     {
         std::cout<<"Creating Target Pressure"<<std::endl;
         geom[0] = h_tar;
@@ -47,7 +47,7 @@ int main(int argc,char **argv)
         outVec("TargetGeom.dat", "a", S);
 
         quasiOneD(x, S, W);
-        std::vector <double> pt(nx);
+        std::vector<double> pt(nx);
         getp(W, pt);
         ioTargetPressure(1, pt);
 
@@ -55,23 +55,23 @@ int main(int argc,char **argv)
         geom[1] = t1_geom;
         geom[2] = t2_geom;
         S = evalS(geom, x, dx, 1);
-        if(desParam == 0) nDesVar = nx - 1;
-        if(desParam == 1) nDesVar = 3;
-        if(desParam == 2) nDesVar = n_control_pts - 2; // Inlet and Outlet are constant
+        if (desParam == 0) nDesVar = nx - 1;
+        if (desParam == 1) nDesVar = 3;
+        if (desParam == 2) nDesVar = n_control_pts - 2; // Inlet and Outlet are constant
 
-        std::vector <double> desVar(nDesVar);
-        if(desParam == 0)
+        std::vector<double> desVar(nDesVar);
+        if (desParam == 0)
         {
-            for(int Si = 1; Si < nx; Si++)
+            for (int Si = 1; Si < nx; Si++)
             {
                 desVar[Si - 1] = S[Si];
             }
         }
-        if(desParam == 1) desVar = geom;
-        if(desParam == 2)
+        if (desParam == 1) desVar = geom;
+        if (desParam == 2)
         {
             geom = getCtlpts(x, dx, S); 
-            for(int iVar = 0; iVar < nDesVar; iVar++)
+            for (int iVar = 0; iVar < nDesVar; iVar++)
             {
                 desVar[iVar] = geom[iVar+1];
             }
