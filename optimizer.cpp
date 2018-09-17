@@ -60,18 +60,24 @@ void test_grad(int gradientType1, int gradientType2, double currentI,
 	std::vector<double> area, std::vector<double> W, 
 	std::vector<double> designVar, VectorXd psi)
 {
-	printf("Comparing GradientType1: %d and GradientType2: %d", gradientType1, gradientType2);
+	printf("Comparing Adjoint, Direct-Differentiation, and Central FD\n");
 	int n_des = designVar.size();
-    VectorXd gradient1(n_des);
-    VectorXd gradient2(n_des);
-    gradient1 = getGradient(gradientType1, currentI, x, dx, area, W, designVar, psi);
-    gradient2 = getGradient(gradientType2, currentI, x, dx, area, W, designVar, psi);
+    VectorXd adjoint_gradient(n_des);
+    VectorXd direct_gradient(n_des);
+    VectorXd finite_gradient(n_des);
+    adjoint_gradient = getGradient(1, currentI, x, dx, area, W, designVar, psi);
+    direct_gradient = getGradient(2, currentI, x, dx, area, W, designVar, psi);
+    finite_gradient = getGradient(-3, currentI, x, dx, area, W, designVar, psi);
 
-	printf("GradientType1: %d \t GradientType2: %d \t Relative Difference\n", gradientType1, gradientType2);
+	printf(" Adjoint                  Direct-Diff             Central FD              AD-DA                   AD-FD                   DA-FD\n");
 	for (int i = 0; i < n_des; i++) {
-		double g1 = gradient1[i];
-		double g2 = gradient2[i];
-		printf("%23.15e \t %23.15e \t %23.15e\n", g1, g2, (g1-g2)/(g1+1e-15));
+		double g1 = adjoint_gradient[i];
+		double g2 = direct_gradient[i];
+		double g3 = finite_gradient[i];
+		double r1 = (g1-g2)/(g1+1e-15);
+		double r2 = (g1-g3)/(g1+1e-15);
+		double r3 = (g2-g3)/(g2+1e-15);
+		printf("%23.15e %23.15e %23.15e %23.15e %23.15e %23.15e\n", g1, g2, g3, r1, r2, r3);
 	}
 	return;
 }
@@ -87,7 +93,7 @@ void test_hessian(double currentI,
     std::cout<<"DA: "<<directAdjoint<<std::endl;
 
     MatrixXd H;
-    for (int i = 2; i < 12; i++) {
+    for (int i = 3; i < 8; i++) {
         double h = pow(10,-i);
         std::cout<<"h = "<<h<<std::endl;
     std::cout.setstate(std::ios_base::failbit);
@@ -424,13 +430,13 @@ MatrixXd finiteD2g(
         tempD[i] += h;
         tempS = evalS(tempD, x, dx, desParam);
         quasiOneD(x, tempS, W);
-        gradp = getGradient(gradientType, currentI, x, dx, tempS, W, tempD, psi);
+        gradp = getGradient(1, currentI, x, dx, tempS, W, tempD, psi);
 
         tempD = designVar;
         tempD[i] -= h;
         tempS = evalS(tempD, x, dx, desParam);
         quasiOneD(x, tempS, W);
-        gradn = getGradient(gradientType, currentI, x, dx, tempS, W, tempD, psi);
+        gradn = getGradient(1, currentI, x, dx, tempS, W, tempD, psi);
         for (int j = 0; j < nDesVar; j++)
         {
             Hessian(i, j) += (gradp(j) - gradn(j)) / (2*h);
