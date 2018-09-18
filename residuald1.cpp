@@ -165,21 +165,21 @@ SparseMatrix<double> evaldRdW(
             }
         }
     }
-    if (Min > 1.0)
-    {
-        // Supersonic Inlet, don't solve for psi(0)
-        for (int row = 0; row < 3; row++)
-        for (int col = 0; col < 3; col++)
-        {
-            // R1, W0
-            Ri = 1;
-            Wi = 0;
-            rowi = Ri * 3 + row;
-            coli = Wi * 3 + col;
+    //if (Min > 1.0)
+    //{
+    //    // Supersonic Inlet, don't solve for psi(0)
+    //    for (int row = 0; row < 3; row++)
+    //    for (int col = 0; col < 3; col++)
+    //    {
+    //        // R1, W0
+    //        Ri = 1;
+    //        Wi = 0;
+    //        rowi = Ri * 3 + row;
+    //        coli = Wi * 3 + col;
 
-            dRdW.coeffRef(rowi, coli) = 0;
-        }
-    }
+    //        dRdW.coeffRef(rowi, coli) = 0;
+    //    }
+    //}
     return dRdW;
 }
 

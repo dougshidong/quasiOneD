@@ -9,6 +9,7 @@
 #include "flux.h"
 #include "residuald1.h"
 #include "parametrization.h"
+#include "objectiveDerivatives.h"
 
 
 using namespace Eigen;
