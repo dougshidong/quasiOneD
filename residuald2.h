@@ -4,19 +4,19 @@
 #include<vector>
 std::vector < Eigen::SparseMatrix<double> > evalddRdWdW(
     std::vector<double> W,
-    std::vector<double> S);
+    std::vector<double> area);
 
 std::vector < Eigen::SparseMatrix<double> > evalddRdWdW_FD(
     std::vector<double> W,
-    std::vector<double> S);
+    std::vector<double> area);
 
 std::vector < Eigen::SparseMatrix<double> > evalddRdWdS(
     std::vector<double> W,
-    std::vector<double> S);
+    std::vector<double> area);
 
 std::vector < Eigen::SparseMatrix<double> > evalddRdWdS_FD(
     std::vector<double> W,
-    std::vector<double> S);
+    std::vector<double> area);
 
 std::vector < Eigen::Matrix3d> ddWpdWdWp(
     std::vector<double> W,

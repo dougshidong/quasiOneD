@@ -7,7 +7,7 @@ Eigen::MatrixXd getAnalyticHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar,
     int method);
 #endif

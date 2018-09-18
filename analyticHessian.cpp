@@ -23,55 +23,55 @@ std::vector <MatrixXd> evalddWdDesdDes(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar);
 
 std::vector <MatrixXd> evalddWdDesdDes_FD(
     std::vector<double> x,
     std::vector<double> dx,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar);
 
 MatrixXd directAdjointHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar);
 MatrixXd adjointAdjointHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar);
 MatrixXd adjointDirectHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar);
 MatrixXd directDirectHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar);
 
 MatrixXd getAnalyticHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar,
     int method)
 {
     MatrixXd Hessian(nDesVar, nDesVar);
 
     switch(method) {
-        case 0: Hessian = directDirectHessian(x, dx, W, S, designVar);
-        case 1: Hessian = adjointDirectHessian(x, dx, W, S, designVar);
-        case 2: Hessian = adjointAdjointHessian(x, dx, W, S, designVar);
-        case 3: Hessian = directAdjointHessian(x, dx, W, S, designVar);
+        case 0: Hessian = directDirectHessian(x, dx, W, area, designVar);
+        case 1: Hessian = adjointDirectHessian(x, dx, W, area, designVar);
+        case 2: Hessian = adjointAdjointHessian(x, dx, W, area, designVar);
+        case 3: Hessian = directAdjointHessian(x, dx, W, area, designVar);
     }
 
     return Hessian;
@@ -81,33 +81,33 @@ MatrixXd directAdjointHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar)
 {
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, nDesVar);
+    MatrixXd dSdDes(n_elem + 1, nDesVar);
     dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate ddSdDesdDes
-    std::vector <MatrixXd> ddSdDesdDes(nx + 1); // by (nDes, nDes)
+    std::vector <MatrixXd> ddSdDesdDes(n_elem + 1); // by (nDes, nDes)
     ddSdDesdDes = evalddSdDesdDes(x, dx, designVar);
 
     // *************************************
     // Evaluate Objective Derivatives
     // *************************************
     // Evaluate dIcdW
-    VectorXd dIcdW(3 * nx);
+    VectorXd dIcdW(3 * n_elem);
     dIcdW = evaldIcdW(W, dx);
     // Evaluate ddIcdWdW
     SparseMatrix<double> ddIcdWdW;
     ddIcdWdW = evaldIcdWdW(W, dx);
     // Evaluate ddIcdWdDes
-    MatrixXd ddIcdWdDes(3 * nx, nDesVar);
+    MatrixXd ddIcdWdDes(3 * n_elem, nDesVar);
     ddIcdWdDes = evalddIcdWdS() * dSdDes;
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXd dIcdS(n_elem + 1);
     dIcdS = evaldIcdS();
     // Evaluate dIcdDes
     VectorXd dIcdDes(nDesVar);
@@ -119,34 +119,34 @@ MatrixXd directAdjointHessian(
     // Evaluate Residual Derivatives
     // *************************************
     //// Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    dRdS = evaldRdS(Flux, area, W);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S);
+    dRdW = evaldRdW(W, dx, dt, area);
     // Evaluate ddRdWdS
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);// by (3 * nx, nx + 1)
-    ddRdWdS = evalddRdWdS(W, S);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);// by (3 * n_elem, n_elem + 1)
+    ddRdWdS = evalddRdWdS(W, area);
     // Evaluate ddRdWdDes
-    std::vector <MatrixXd> ddRdWdDes(3 * nx);// by (3 * nx, nDesVar)
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    std::vector <MatrixXd> ddRdWdDes(3 * n_elem);// by (3 * n_elem, nDesVar)
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
        ddRdWdDes[Ri] = ddRdWdS[Ri] * dSdDes;
     }
     // Evaluate ddRdWdW
-    std::vector < SparseMatrix<double> > ddRdWdW(3 * nx);// by (3 * nx, 3 * nx)
-    ddRdWdW = evalddRdWdW(W, S);
+    std::vector < SparseMatrix<double> > ddRdWdW(3 * n_elem);// by (3 * n_elem, 3 * n_elem)
+    ddRdWdW = evalddRdWdW(W, area);
 
     // *************************************
     // Solve for Adjoint (1 Flow Eval)
     // *************************************
-    VectorXd psi(3 * nx);
+    VectorXd psi(3 * n_elem);
       SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
       slusolver1.compute(-dRdW.transpose());
       if (slusolver1.info() != 0)
@@ -157,7 +157,7 @@ MatrixXd directAdjointHessian(
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
-    MatrixXd dWdDes(3 * nx, nDesVar);
+    MatrixXd dWdDes(3 * n_elem, nDesVar);
     SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > factdrdw;
     factdrdw.compute(-dRdW);
     if (factdrdw.info() != 0)
@@ -172,7 +172,7 @@ MatrixXd directAdjointHessian(
         std::cout<<(-dRdW*dWdDes - dRdDes).norm()/dRdDes.norm()<<std::endl;
 
         // Direct Solution of dWdDes
-        MatrixXd realdWdDes(3*nx,nDesVar);
+        MatrixXd realdWdDes(3*n_elem,nDesVar);
         realdWdDes = factdrdw.solve(dRdDes);
 
         std::cout<<"Relative error of approximate dWdDes vs exact dWdDes:"<<std::endl;
@@ -192,11 +192,11 @@ MatrixXd directAdjointHessian(
     DDIcDDesDDes += dWdDes.transpose() * ddIcdWdDes;
     DDIcDDesDDes += (dWdDes.transpose() * ddIcdWdDes).transpose();
     DDIcDDesDDes += dWdDes.transpose() * ddIcdWdW * dWdDes;
-    for (int Si = 0; Si < nx + 1; Si++) {
+    for (int Si = 0; Si < n_elem + 1; Si++) {
         DDIcDDesDDes += dIcdS(Si) * ddSdDesdDes[Si];
         DDIcDDesDDes += psi.dot(dRdS.col(Si)) * ddSdDesdDes[Si];
     }
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
 //        DDIcDDesDDes += psi(Ri) * ddRdDesdDes; //ddRdDesdDes is 0
         DDIcDDesDDes += psi(Ri) * (dWdDes.transpose() * ddRdWdDes[Ri]);
         DDIcDDesDDes += (psi(Ri) * (dWdDes.transpose() * ddRdWdDes[Ri])).transpose();
@@ -209,33 +209,33 @@ MatrixXd adjointAdjointHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar)
 {
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, nDesVar);
+    MatrixXd dSdDes(n_elem + 1, nDesVar);
     dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate ddSdDesdDes
-    std::vector <MatrixXd> ddSdDesdDes(nx + 1); // by (nDes, nDes)
+    std::vector <MatrixXd> ddSdDesdDes(n_elem + 1); // by (nDes, nDes)
     ddSdDesdDes = evalddSdDesdDes(x, dx, designVar);
 
     // *************************************
     // Evaluate Objective Derivatives
     // *************************************
     // Evaluate dIcdW
-    VectorXd dIcdW(3 * nx);
+    VectorXd dIcdW(3 * n_elem);
     dIcdW = evaldIcdW(W, dx);
     // Evaluate ddIcdWdW
     SparseMatrix<double> ddIcdWdW;
     ddIcdWdW = evaldIcdWdW(W, dx);
     // Evaluate ddIcdWdDes
-    MatrixXd ddIcdWdDes(3 * nx, nDesVar);
+    MatrixXd ddIcdWdDes(3 * n_elem, nDesVar);
     ddIcdWdDes = evalddIcdWdS() * dSdDes;
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXd dIcdS(n_elem + 1);
     dIcdS = evaldIcdS();
     // Evaluate dIcdDes
     VectorXd dIcdDes(nDesVar);
@@ -247,29 +247,29 @@ MatrixXd adjointAdjointHessian(
     // Evaluate Residual Derivatives
     // *************************************
     //// Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    dRdS = evaldRdS(Flux, area, W);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S);
+    dRdW = evaldRdW(W, dx, dt, area);
     // Evaluate ddRdWdS
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);// by (3 * nx, nx + 1)
-    ddRdWdS = evalddRdWdS(W, S);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);// by (3 * n_elem, n_elem + 1)
+    ddRdWdS = evalddRdWdS(W, area);
     // Evaluate ddRdWdDes
-    std::vector <MatrixXd> ddRdWdDes(3 * nx);// by (3 * nx, nDesVar)
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    std::vector <MatrixXd> ddRdWdDes(3 * n_elem);// by (3 * n_elem, nDesVar)
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
        ddRdWdDes[Ri] = ddRdWdS[Ri] * dSdDes;
     }
     // Evaluate ddRdWdW
-    std::vector < SparseMatrix<double> > ddRdWdW(3 * nx);// by (3 * nx, 3 * nx)
-    ddRdWdW = evalddRdWdW(W, S);
+    std::vector < SparseMatrix<double> > ddRdWdW(3 * n_elem);// by (3 * n_elem, 3 * n_elem)
+    ddRdWdW = evalddRdWdW(W, area);
 
     // *************************************
     // Sparse LU of Jacobian Transpose dRdW
@@ -286,23 +286,23 @@ MatrixXd adjointAdjointHessian(
     // *************************************
     // Solve for Adjoint 1 psi(1 Flow Eval)
     // *************************************
-    VectorXd psi(3 * nx);
+    VectorXd psi(3 * n_elem);
     psi = slusolver1.solve(dIcdW);
 
     // *************************************
     // Solve for Adjoint 2 lambda (nDesVar Flow Eval)
     // *************************************
-    MatrixXd lambda(3 * nx, nDesVar);
+    MatrixXd lambda(3 * n_elem, nDesVar);
     lambda = slusolver2.solve(dRdDes);
 
     // *************************************
     // Solve for Adjoint 3 eta (nDesVar Flow Eval)
     // *************************************
-    MatrixXd eta(3 * nx, nDesVar);
-    MatrixXd RHS(3 * nx, nDesVar);
+    MatrixXd eta(3 * n_elem, nDesVar);
+    MatrixXd RHS(3 * n_elem, nDesVar);
 
     RHS = ddIcdWdDes + ddIcdWdW * lambda;
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
         RHS += psi(Ri) * ddRdWdDes[Ri];
         RHS += psi(Ri) * ddRdWdW[Ri] * lambda;
     }
@@ -316,11 +316,11 @@ MatrixXd adjointAdjointHessian(
     DDIcDDesDDes = ddIcdDesdDes
                    + lambda.transpose() * ddIcdWdDes
                    + eta.transpose() * dRdDes;
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
 //      DDIcDDesDDes += psi(Ri) * ddRdDesdDes[Ri];
         DDIcDDesDDes += psi(Ri) * (lambda.transpose() * ddRdWdDes[Ri]);
     }
-    for (int Si = 0; Si < nx + 1; Si++) {
+    for (int Si = 0; Si < n_elem + 1; Si++) {
         DDIcDDesDDes += dIcdS(Si) * ddSdDesdDes[Si];
         DDIcDDesDDes += psi.dot(dRdS.col(Si)) * ddSdDesdDes[Si];
     }
@@ -332,33 +332,33 @@ MatrixXd adjointDirectHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar)
 {
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, nDesVar);
+    MatrixXd dSdDes(n_elem + 1, nDesVar);
     dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate ddSdDesdDes
-    std::vector <MatrixXd> ddSdDesdDes(nx + 1); // by (nDes, nDes)
+    std::vector <MatrixXd> ddSdDesdDes(n_elem + 1); // by (nDes, nDes)
     ddSdDesdDes = evalddSdDesdDes(x, dx, designVar);
 
     // *************************************
     // Evaluate Objective Derivatives
     // *************************************
     // Evaluate dIcdW
-    VectorXd dIcdW(3 * nx);
+    VectorXd dIcdW(3 * n_elem);
     dIcdW = evaldIcdW(W, dx);
     // Evaluate ddIcdWdW
     SparseMatrix<double> ddIcdWdW;
     ddIcdWdW = evaldIcdWdW(W, dx);
     // Evaluate ddIcdWdDes
-    MatrixXd ddIcdWdDes(3 * nx, nDesVar);
+    MatrixXd ddIcdWdDes(3 * n_elem, nDesVar);
     ddIcdWdDes = evalddIcdWdS() * dSdDes;
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXd dIcdS(n_elem + 1);
     dIcdS = evaldIcdS();
     // Evaluate dIcdDes
     VectorXd dIcdDes(nDesVar);
@@ -370,29 +370,29 @@ MatrixXd adjointDirectHessian(
     // Evaluate Residual Derivatives
     // *************************************
     //// Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    dRdS = evaldRdS(Flux, area, W);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S);
+    dRdW = evaldRdW(W, dx, dt, area);
     // Evaluate ddRdWdS
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);// by (3 * nx, nx + 1)
-    ddRdWdS = evalddRdWdS(W, S);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);// by (3 * n_elem, n_elem + 1)
+    ddRdWdS = evalddRdWdS(W, area);
     // Evaluate ddRdWdDes
-    std::vector <MatrixXd> ddRdWdDes(3 * nx);// by (3 * nx, nDesVar)
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    std::vector <MatrixXd> ddRdWdDes(3 * n_elem);// by (3 * n_elem, nDesVar)
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
        ddRdWdDes[Ri] = ddRdWdS[Ri] * dSdDes;
     }
     // Evaluate ddRdWdW
-    std::vector < SparseMatrix<double> > ddRdWdW(3 * nx);// by (3 * nx, 3 * nx)
-    ddRdWdW = evalddRdWdW(W, S);
+    std::vector < SparseMatrix<double> > ddRdWdW(3 * n_elem);// by (3 * n_elem, 3 * n_elem)
+    ddRdWdW = evalddRdWdW(W, area);
 
     // *************************************
     // Sparse LU of Jacobian Transpose dRdW.transpose()
@@ -404,7 +404,7 @@ MatrixXd adjointDirectHessian(
     // *************************************
     // Solve for Adjoint (1 Flow Eval)
     // *************************************
-    VectorXd psi(3 * nx);
+    VectorXd psi(3 * n_elem);
     psi = slusolver1.solve(dIcdW);
 
     // *************************************
@@ -414,16 +414,16 @@ MatrixXd adjointDirectHessian(
     slusolver2.compute(-dRdW);
     if (slusolver2.info() != 0)
         std::cout<<"Factorization failed. Error: "<<slusolver2.info()<<std::endl;
-    MatrixXd dWdDes(3 * nx, nDesVar);
+    MatrixXd dWdDes(3 * n_elem, nDesVar);
     dWdDes = slusolver2.solve(dRdDes);
 
     // *************************************
     // Solve for dpsidDes (nDesVar Flow Eval)
     // *************************************
-    MatrixXd RHS(3 * nx, nDesVar);
-    MatrixXd dpsidDes(3 * nx, nDesVar);
+    MatrixXd RHS(3 * n_elem, nDesVar);
+    MatrixXd dpsidDes(3 * n_elem, nDesVar);
     RHS = ddIcdWdDes + ddIcdWdW * dWdDes;
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
         RHS += psi(Ri) * ddRdWdDes[Ri];
         RHS += psi(Ri) * ddRdWdW[Ri] * dWdDes;
     }
@@ -438,10 +438,10 @@ MatrixXd adjointDirectHessian(
                    + dWdDes.transpose() * ddIcdWdDes
                    + dRdDes.transpose() * dpsidDes;
 
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
         DDIcDDesDDes += psi(Ri) * (dWdDes.transpose() * ddRdWdDes[Ri]).transpose();
     }
-    for (int Si = 0; Si < nx + 1; Si++) {
+    for (int Si = 0; Si < n_elem + 1; Si++) {
         DDIcDDesDDes += dIcdS(Si) * ddSdDesdDes[Si];
         DDIcDDesDDes += psi.dot(dRdS.col(Si)) * ddSdDesdDes[Si];
     }
@@ -452,33 +452,33 @@ MatrixXd directDirectHessian(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar)
 {
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, nDesVar);
+    MatrixXd dSdDes(n_elem + 1, nDesVar);
     dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate ddSdDesdDes
-    std::vector <MatrixXd> ddSdDesdDes(nx + 1); // by (nDes, nDes)
+    std::vector <MatrixXd> ddSdDesdDes(n_elem + 1); // by (nDes, nDes)
     ddSdDesdDes = evalddSdDesdDes(x, dx, designVar);
 
     // *************************************
     // Evaluate Objective Derivatives
     // *************************************
     // Evaluate dIcdW
-    VectorXd dIcdW(3 * nx);
+    VectorXd dIcdW(3 * n_elem);
     dIcdW = evaldIcdW(W, dx);
     // Evaluate ddIcdWdW
     SparseMatrix<double> ddIcdWdW;
     ddIcdWdW = evaldIcdWdW(W, dx);
     // Evaluate ddIcdWdDes
-    MatrixXd ddIcdWdDes(3 * nx, nDesVar);
+    MatrixXd ddIcdWdDes(3 * n_elem, nDesVar);
     ddIcdWdDes = evalddIcdWdS() * dSdDes;
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXd dIcdS(n_elem + 1);
     dIcdS = evaldIcdS();
     // Evaluate dIcdDes
     VectorXd dIcdDes(nDesVar);
@@ -490,35 +490,35 @@ MatrixXd directDirectHessian(
     // Evaluate Residual Derivatives
     // *************************************
     //// Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    dRdS = evaldRdS(Flux, area, W);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S);
+    dRdW = evaldRdW(W, dx, dt, area);
     // Evaluate ddRdWdS
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);// by (3 * nx, nx + 1)
-    ddRdWdS = evalddRdWdS(W, S);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);// by (3 * n_elem, n_elem + 1)
+    ddRdWdS = evalddRdWdS(W, area);
     // Evaluate ddRdWdDes
-    std::vector <MatrixXd> ddRdWdDes(3 * nx);// by (3 * nx, nDesVar)
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    std::vector <MatrixXd> ddRdWdDes(3 * n_elem);// by (3 * n_elem, nDesVar)
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
        ddRdWdDes[Ri] = ddRdWdS[Ri] * dSdDes;
     }
     // Evaluate ddRdWdW
-    std::vector < SparseMatrix<double> > ddRdWdW(3 * nx);// by (3 * nx, 3 * nx)
-    ddRdWdW = evalddRdWdW(W, S);
+    std::vector < SparseMatrix<double> > ddRdWdW(3 * n_elem);// by (3 * n_elem, 3 * n_elem)
+    ddRdWdW = evalddRdWdW(W, area);
 
     // *************************************
     // Evaluate dWdDes (nDesVar Flow Eval)
     // *************************************
     double errdwddes = -1.0;
-    MatrixXd dWdDes(3 * nx, nDesVar);
+    MatrixXd dWdDes(3 * n_elem, nDesVar);
     SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > factdrdw;
     factdrdw.compute(-dRdW);
     if (factdrdw.info() != 0)
@@ -536,7 +536,7 @@ MatrixXd directDirectHessian(
         std::cout<<(-dRdW*dWdDes - dRdDes).norm()/dRdDes.norm()<<std::endl;
 
         // Direct Solution of dWdDes
-        MatrixXd realdWdDes(3*nx,nDesVar);
+        MatrixXd realdWdDes(3*n_elem,nDesVar);
         realdWdDes = factdrdw.solve(dRdDes);
 
         std::cout<<"Relative error of approximate dWdDes vs exact dWdDes:"<<std::endl;
@@ -546,34 +546,34 @@ MatrixXd directDirectHessian(
     // *************************************
     // Evaluate ddWdDesdDes (nDesVar * (nDesVar+1) / 2 Flow Eval)
     // *************************************
-    std::vector <MatrixXd> ddWdDesdDes(3 * nx);
+    std::vector <MatrixXd> ddWdDesdDes(3 * n_elem);
     MatrixXd dummy(nDesVar, nDesVar);
     dummy.setZero();
-    for (int Wi = 0; Wi < 3 * nx; Wi++) {
+    for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
         ddWdDesdDes[Wi] = dummy;
     }
 
     if (exactHessian >= -1) {
-        VectorXd ddWdDesidDesj(3 * nx);
-        VectorXd RHS(3 * nx);
+        VectorXd ddWdDesidDesj(3 * n_elem);
+        VectorXd RHS(3 * n_elem);
         for (int di = 0; di < nDesVar; di++) {
             for (int dj = di; dj < nDesVar; dj++) {
                 // Evaluate RHS
                 RHS.setZero();
-                for (int Ri = 0; Ri < 3 * nx; Ri++) {
+                for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
                     RHS[Ri] += dWdDes.col(dj).transpose() * ddRdWdS[Ri] * dSdDes.col(di);
                     RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdS[Ri] * dSdDes.col(dj);
                     RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdW[Ri] * dWdDes.col(dj);
                 }
 
-                for (int Si = 0; Si < nx + 1; Si++) {
+                for (int Si = 0; Si < n_elem + 1; Si++) {
                     RHS += dRdS.col(Si) * ddSdDesdDes[Si](di, dj);
                 }
 
                 // Solve
                 ddWdDesidDesj = factdrdw.solve(RHS);
 
-                for (int Wi = 0; Wi < 3 * nx; Wi++) {
+                for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
                     ddWdDesdDes[Wi](di, dj) = ddWdDesidDesj[Wi];
                     if (di != dj) {
                         ddWdDesdDes[Wi](dj, di) = ddWdDesdDes[Wi](di, dj);
@@ -598,10 +598,10 @@ MatrixXd directDirectHessian(
                    + dWdDes.transpose() * ddIcdWdDes
                    + (dWdDes.transpose() * ddIcdWdDes).transpose()
                    + dWdDes.transpose() * ddIcdWdW * dWdDes;
-    for (int Si = 0; Si < nx + 1; Si++) {
+    for (int Si = 0; Si < n_elem + 1; Si++) {
         DDIcDDesDDes += dIcdS(Si) * ddSdDesdDes[Si];
     }
-    for (int Wi = 0; Wi < 3 * nx; Wi++) {
+    for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
         DDIcDDesDDes += dIcdW(Wi) * ddWdDesdDes[Wi];
     }
 
@@ -622,23 +622,23 @@ MatrixXd directDirectHessian(
 std::vector <MatrixXd> evalddWdDesdDes_FD(
     std::vector<double> x,
     std::vector<double> dx,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar)
 {
-    std::vector<double> W(3 * nx, 0);
-    VectorXd W0(3 * nx),
-             W1(3 * nx),
-             W2(3 * nx),
-             W3(3 * nx),
-             W4(3 * nx);
+    std::vector<double> W(3 * n_elem, 0);
+    VectorXd W0(3 * n_elem),
+             W1(3 * n_elem),
+             W2(3 * n_elem),
+             W3(3 * n_elem),
+             W4(3 * n_elem);
 
-    std::vector <MatrixXd> dwddesddes(3 * nx);
+    std::vector <MatrixXd> dwddesddes(3 * n_elem);
     MatrixXd dummy(nDesVar, nDesVar);
-    for (int Wi = 0; Wi < 3 * nx; Wi++) {
+    for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
         dwddesddes[Wi] = dummy;
     }
 
-    std::vector<double> tempS(nx + 1);
+    std::vector<double> tempS(n_elem + 1);
 
     double dhi, dhj;
 
@@ -646,8 +646,8 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
 
     double h = 1e-3;
 
-    quasiOneD(x, S, W);
-    for (int Wi = 0; Wi<3*nx; Wi++)
+    quasiOneD(x, area, W);
+    for (int Wi = 0; Wi<3*n_elem; Wi++)
         W0[Wi] = W[Wi];
 
     for (int i = 0; i < nDesVar; i++) {
@@ -661,7 +661,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W1[Wi] = W[Wi];
                 }
 
@@ -669,7 +669,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] += dhi;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W2[Wi] = W[Wi];
                 }
 
@@ -677,7 +677,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[i] -= dhi;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W3[Wi] = W[Wi];
                 }
 
@@ -686,11 +686,11 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W4[Wi] = W[Wi];
                 }
 
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     dwddesddes[Wi](i, j) =
                     (-W1[Wi] + 16*W2[Wi] - 30*W0[Wi] + 16*W3[Wi] - W4[Wi]) / (12 * dhi * dhj);
                 }
@@ -702,7 +702,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W1[Wi] = W[Wi];
                 }
 
@@ -711,7 +711,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W2[Wi] = W[Wi];
                 }
 
@@ -720,7 +720,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[j] += dhj;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W3[Wi] = W[Wi];
                 }
 
@@ -729,11 +729,11 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 tempD[j] -= dhj;
                 tempS = evalS(tempD, x, dx, desParam);
                 quasiOneD(x, tempS, W);
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W4[Wi] = W[Wi];
                 }
 
-                for (int Wi = 0; Wi<3*nx; Wi++) {
+                for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     dwddesddes[Wi](i, j) = (W1[Wi] - W2[Wi] - W3[Wi] + W4[Wi]) / (4 * dhi * dhj);
                     dwddesddes[Wi](j, i) = dwddesddes[Wi](i, j);
                 }
@@ -748,48 +748,48 @@ std::vector <MatrixXd> evalddWdDesdDes(
     std::vector<double> x,
     std::vector<double> dx,
     std::vector<double> W,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> designVar)
 {
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, nDesVar);
+    MatrixXd dSdDes(n_elem + 1, nDesVar);
     dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate ddSdDesdDes
-    std::vector <MatrixXd> ddSdDesdDes(nx + 1); // by (nDes, nDes)
+    std::vector <MatrixXd> ddSdDesdDes(n_elem + 1); // by (nDes, nDes)
     ddSdDesdDes = evalddSdDesdDes(x, dx, designVar);
     // *************************************
     // Evaluate Residual Derivatives
     // *************************************
     // Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    dRdS = evaldRdS(Flux, area, W);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S);
+    dRdW = evaldRdW(W, dx, dt, area);
     // Evaluate ddRdWdS
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);// by (3 * nx, nx + 1)
-    ddRdWdS = evalddRdWdS(W, S);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);// by (3 * n_elem, n_elem + 1)
+    ddRdWdS = evalddRdWdS(W, area);
     // Evaluate ddRdWdDes
-    std::vector <MatrixXd> ddRdWdDes(3 * nx);// by (3 * nx, nDesVar)
-    for (int Ri = 0; Ri < 3 * nx; Ri++) {
+    std::vector <MatrixXd> ddRdWdDes(3 * n_elem);// by (3 * n_elem, nDesVar)
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
         ddRdWdDes[Ri] = ddRdWdS[Ri] * dSdDes;
     }
     // Evaluate ddRdWdW
-    std::vector < SparseMatrix<double> > ddRdWdW(3 * nx);// by (3 * nx, 3 * nx)
-    ddRdWdW = evalddRdWdW(W, S);
+    std::vector < SparseMatrix<double> > ddRdWdW(3 * n_elem);// by (3 * n_elem, 3 * n_elem)
+    ddRdWdW = evalddRdWdW(W, area);
 
     // Solve dWdDes
-    MatrixXd dWdDes(3 * nx, nDesVar);
+    MatrixXd dWdDes(3 * n_elem, nDesVar);
     // Sparse LU
     SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver;
     slusolver.analyzePattern(-dRdW);
@@ -800,11 +800,11 @@ std::vector <MatrixXd> evalddWdDesdDes(
     dWdDes = slusolver.solve(dRdDes);
 
     // Evaluate ddWdDesdDes
-    std::vector <MatrixXd> ddWdDesdDes(3 * nx);
+    std::vector <MatrixXd> ddWdDesdDes(3 * n_elem);
     MatrixXd dummy(nDesVar, nDesVar);
-    VectorXd ddWdDesidDesj(3 * nx);
-    VectorXd RHS(3 * nx);
-    for (int Wi = 0; Wi < 3 * nx; Wi++) {
+    VectorXd ddWdDesidDesj(3 * n_elem);
+    VectorXd RHS(3 * n_elem);
+    for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
         ddWdDesdDes[Wi] = dummy;
     }
 
@@ -812,20 +812,20 @@ std::vector <MatrixXd> evalddWdDesdDes(
         for (int dj = di; dj < nDesVar; dj++) {
             // Evaluate RHS
             RHS.setZero();
-            for (int Ri = 0; Ri < 3 * nx; Ri++) {
+            for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
                 RHS[Ri] += dWdDes.col(dj).transpose() * ddRdWdS[Ri] * dSdDes.col(di);
                 RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdS[Ri] * dSdDes.col(dj);
                 RHS[Ri] += dWdDes.col(di).transpose() * ddRdWdW[Ri] * dWdDes.col(dj);
             }
 
-            for (int Si = 0; Si < nx + 1; Si++) {
+            for (int Si = 0; Si < n_elem + 1; Si++) {
                 RHS += dRdS.col(Si) * ddSdDesdDes[Si](di, dj);
             }
 
             // Solve
             ddWdDesidDesj = slusolver.solve(RHS);
 
-            for (int Wi = 0; Wi < 3 * nx; Wi++) {
+            for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
                 ddWdDesdDes[Wi](di, dj) = ddWdDesidDesj[Wi];
                 if (di != dj)
                 {
@@ -835,9 +835,9 @@ std::vector <MatrixXd> evalddWdDesdDes(
         }
     }
 
-//  std::vector <MatrixXd> ddWdDesdDes_FD = evalddWdDesdDes_FD(x, dx, S, designVar);
+//  std::vector <MatrixXd> ddWdDesdDes_FD = evalddWdDesdDes_FD(x, dx, area, designVar);
 //  std::cout<<"Comparing AN and FD ddWdDesdDes"<<std::endl;
-//  for (int Wi = 0; Wi < 3 * nx; Wi++) {
+//  for (int Wi = 0; Wi < 3 * n_elem; Wi++) {
 //      if (std::abs(ddWdDesdDes[Wi].norm()>1e-12))
 //      {
 //          std::cout<<"Wi "<<Wi<<" diff: "<<

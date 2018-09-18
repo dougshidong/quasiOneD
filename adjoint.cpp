@@ -32,17 +32,17 @@ VectorXd adjoint(
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, nDesVar);
+    MatrixXd dSdDes(n_elem + 1, nDesVar);
     dSdDes = evaldSdDes(x, dx, designVar);
 
     // *************************************
     // Evaluate Objective Derivatives
     // *************************************
     // Evaluate dIcdW
-    VectorXd dIcdW(3 * nx);
+    VectorXd dIcdW(3 * n_elem);
     dIcdW = evaldIcdW(W, dx);
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXd dIcdS(n_elem + 1);
     dIcdS = evaldIcdS();
     // Evaluate dIcdDes
     VectorXd dIcdDes(nDesVar);
@@ -52,23 +52,23 @@ VectorXd adjoint(
     // Evaluate Residual Derivatives
     // *************************************
     //// Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
     dRdS = evaldRdS(Flux, area, W);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
     dRdW = evaldRdW(W, dx, dt, area);
 
     // *************************************
     // Solve for Adjoint (1 Flow Eval)
     // *************************************
-    //VectorXd psi(3 * nx);
+    //VectorXd psi(3 * n_elem);
     SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
     slusolver1.compute(-dRdW.transpose());
     if (slusolver1.info() != 0)
@@ -112,8 +112,8 @@ MatrixXd solveSparseAXB(
     // Dense LU full pivoting
     if (eig_solv == 1)
     {
-		MatrixXd matAdense(3 * nx, 3 * nx);
-		MatrixXd eye(3 * nx, 3 * nx);
+		MatrixXd matAdense(3 * n_elem, 3 * n_elem);
+		MatrixXd eye(3 * n_elem, 3 * n_elem);
 		eye.setIdentity();
 		matAdense = A * eye;
 

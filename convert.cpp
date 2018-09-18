@@ -11,7 +11,7 @@ void getp(
     const std::vector<double> &W,
     std::vector<double> &p)
 {
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         p[i] = (gam - 1.0) * ( W[i * 3 + 2] - (pow(W[i * 3 + 1], 2.0) / W[i * 3 + 0]) / 2.0 );
     }
@@ -24,7 +24,7 @@ void WtoP(
     std::vector<double> &u,
     std::vector<double> &e)
 {
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -39,7 +39,7 @@ void WtoP2(
     std::vector<double> &u,
     std::vector<double> &p)
 {
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -52,7 +52,7 @@ void PtoW(
     std::vector<double> &W,
     const std::vector<double> &Wp)
 {
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         W[i * 3 + 0] = Wp[i * 3 + 0];
         W[i * 3 + 1] = Wp[i * 3 + 0] * Wp[i * 3 + 1];
@@ -71,7 +71,7 @@ void WtoP(
     std::vector<double> &c,
     std::vector<double> &T)
 {
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -152,7 +152,7 @@ void WtoF(
     std::vector<double> &F)
 {
     double w1, w2, w3;
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         w1 = W[i * 3 + 0];
         w2 = W[i * 3 + 1];
@@ -167,14 +167,14 @@ void WtoF(
 void WtoQ(
     const std::vector<double> &W,
     std::vector<double> &Q,
-    const std::vector<double> &S)
+    const std::vector<double> &area)
 {
-    std::vector<double> p(nx);
+    std::vector<double> p(n_elem);
     getp(W, p);
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         Q[i * 3 + 0] = 0;
-        Q[i * 3 + 1] = p[i] * (S[i + 1] - S[i]);
+        Q[i * 3 + 1] = p[i] * (area[i + 1] - area[i]);
         Q[i * 3 + 2] = 0;
     }
 }

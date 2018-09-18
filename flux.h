@@ -7,7 +7,7 @@ void getFlux(
     std::vector<double> &Flux,
     const std::vector<double> &W);
 
-void initializeFlux(int nx);
+void initializeFlux(int n_elem);
 
 void Flux_Scalar(
     std::vector<double> &Flux,

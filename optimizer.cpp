@@ -132,7 +132,7 @@ void design(
     std::vector<double> x, std::vector<double> dx,
     std::vector<double> area, std::vector<double> designVar)
 {
-    std::vector<double> W(3 * nx, 0);
+    std::vector<double> W(3 * n_elem, 0);
 
     std::vector<double> normGradList;
     std::vector<double> timeVec;
@@ -160,7 +160,7 @@ void design(
     quasiOneD(x, area, W);
     currentI = evalFitness(dx, W);
 
-    VectorXd psi(3 * nx);
+    VectorXd psi(3 * n_elem);
 
     VectorXd gradient(nDesVar);
     VectorXd oldGrad(nDesVar); //BFGS
@@ -205,7 +205,7 @@ void design(
                 std::cout<<designVar[i]<<std::endl;
 
 //          std::cout<<"Current Shape:\n";
-//          for (int i = 0; i < nx + 1; i++)
+//          for (int i = 0; i < n_elem + 1; i++)
 //              std::cout<<area[i]<<std::endl;
         }
         std::cout<<"Current Fitness: "<<currentI<<std::endl;
@@ -361,10 +361,10 @@ double stepBacktrackUncons(
     std::vector<double> dx,
     std::vector<double> &W)
 {
-//  std::vector<double> W(3 * nx, 0);
+//  std::vector<double> W(3 * n_elem, 0);
 
     double c1 = 1e-4;
-    std::vector<double> tempS(nx + 1);
+    std::vector<double> tempS(n_elem + 1);
     double newVal;
 
     double c_pk_grad = 0;
@@ -415,12 +415,12 @@ MatrixXd finiteD2g(
     double h)
 {
     MatrixXd Hessian(nDesVar, nDesVar);
-    std::vector<double> W(3 * nx, 0);
-    std::vector<double> tempS(nx + 1);
+    std::vector<double> W(3 * n_elem, 0);
+    std::vector<double> tempS(n_elem + 1);
     std::vector<double> tempD(nDesVar);
     VectorXd gradp(nDesVar);
     VectorXd gradn(nDesVar);
-    VectorXd psi(3 * nx);
+    VectorXd psi(3 * n_elem);
 
     double currentI = -1;
     Hessian.setZero();
@@ -456,9 +456,9 @@ MatrixXd finiteD2(
     double h,
     double currentI)
 {
-    std::vector<double> W(3 * nx, 0);
+    std::vector<double> W(3 * n_elem, 0);
     MatrixXd Hessian(nDesVar, nDesVar);
-    std::vector<double> tempS(nx + 1);
+    std::vector<double> tempS(n_elem + 1);
 
     double I, I1, I2, I3, I4, dhi, dhj;
 

@@ -16,7 +16,7 @@ using namespace Eigen;
 MatrixXd evaldWdDes(
     std::vector<double> x,
     std::vector<double> dx,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> W,
     std::vector<double> designVar)
 {
@@ -25,33 +25,33 @@ MatrixXd evaldWdDes(
     // DS   dS   dW DS           DS    ( dW )        ( dS )
 
     //Get Primitive Variables
-    std::vector<double> rho(nx), u(nx), e(nx);
-    std::vector<double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector<double> rho(n_elem), u(n_elem), e(n_elem);
+    std::vector<double> T(n_elem), p(n_elem), c(n_elem), Mach(n_elem);
     WtoP(W, rho, u, e, p, c, T);
 
     // Get Fluxes
-    std::vector<double> Flux(3 * (nx + 1), 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
     getFlux(Flux, W);
 
     // Evaluate dRdS
-    MatrixXd dRdS(3 * nx, nx + 1);
-    dRdS = evaldRdS(Flux, S, W);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    dRdS = evaldRdS(Flux, area, W);
 
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, designVar.size());
+    MatrixXd dSdDes(n_elem + 1, designVar.size());
     dSdDes = evaldSdDes(x, dx, designVar);
 
     //Evaluate dRdDes
-    MatrixXd dRdDes(3 * nx, nDesVar);
+    MatrixXd dRdDes(3 * n_elem, nDesVar);
     dRdDes = dRdS * dSdDes;
 
     // Evaluate dRdW
-    std::vector<double> dt(nx, 1);
+    std::vector<double> dt(n_elem, 1);
     SparseMatrix<double> dRdW;
-    dRdW = evaldRdW(W, dx, dt, S);
+    dRdW = evaldRdW(W, dx, dt, area);
 
     // Solve DWDS
-    MatrixXd dWdDes(3 * nx, nDesVar);
+    MatrixXd dWdDes(3 * n_elem, nDesVar);
     // Solver type eig_solv
     // 0 = Sparse LU
     // 1 = Dense LU Full Piv
@@ -65,33 +65,33 @@ MatrixXd evaldWdDes(
 VectorXd directDifferentiation(
     std::vector<double> x,
     std::vector<double> dx,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> W,
     std::vector<double> designVar)
 {
     // Direct Differentiation
-    // I = Ic(W, S)
-    // R = R(W, S) = 0 @ SS
-    // W = W(W0, S)
+    // I = Ic(W, area)
+    // R = R(W, area) = 0 @ SS
+    // W = W(W0, area)
     // DI   dIc   dIc DW
     // -- = --- + --- --
     // DS   dS    dW  DS
     //
     // Evaluate dIcdW
-    VectorXd dIcdW(3 * nx);
+    VectorXd dIcdW(3 * n_elem);
     dIcdW = evaldIcdW(W, dx);
     // Evaluate dSdDes
-    MatrixXd dSdDes(nx + 1, designVar.size());
+    MatrixXd dSdDes(n_elem + 1, designVar.size());
     dSdDes = evaldSdDes(x, dx, designVar);
     // Evaluate dIcdS
-    VectorXd dIcdS(nx + 1);
+    VectorXd dIcdS(n_elem + 1);
     dIcdS.setZero();
     VectorXd dIcdDes(nDesVar);
     dIcdDes = dIcdS.transpose() * dSdDes;
 
     // Evaluate dWdDes
-    MatrixXd dWdDes(3 * nx, nDesVar);
-    dWdDes = evaldWdDes(x, dx, S, W, designVar);
+    MatrixXd dWdDes(3 * n_elem, nDesVar);
+    dWdDes = evaldWdDes(x, dx, area, W, designVar);
     // Evaluate dIcdDes
     VectorXd dIdDes(nDesVar);
     dIdDes = (dIcdDes.transpose() + dIcdW.transpose() * dWdDes);

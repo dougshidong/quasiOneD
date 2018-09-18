@@ -3,7 +3,7 @@
 
 #include<vector>
 
-void initializeTimeStep(int nx);
+void initializeTimeStep(int n_elem);
 
 void stepInTime(
     const std::vector<double> &area,

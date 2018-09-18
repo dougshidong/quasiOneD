@@ -29,29 +29,29 @@ std::vector<double> Ap_list, An_list;
 std::vector<double> Wavg;
 std::vector<double> FluxSW, FluxMSW;
 std::vector<double> p;
-void initializeFlux(int nx)
+void initializeFlux(int n_elem)
 {
     if (FluxScheme == 0)
     {
-        u.resize(nx);
-        c.resize(nx);
-        F.resize(3 * nx);
+        u.resize(n_elem);
+        c.resize(n_elem);
+        F.resize(3 * n_elem);
     }
     if (FluxScheme == 1 || FluxScheme == 2 || FluxScheme == 3)
     {
-        Ap_list.resize(nx * 3 * 3);
-        An_list.resize(nx * 3 * 3);
-        Wavg.resize(3 * nx);
+        Ap_list.resize(n_elem * 3 * 3);
+        An_list.resize(n_elem * 3 * 3);
+        Wavg.resize(3 * n_elem);
     }
     if (FluxScheme == 3)
     {
-        FluxSW.resize(3 * (nx + 1));
-        FluxMSW.resize(3 * (nx + 1));
-        p.resize(nx);
+        FluxSW.resize(3 * (n_elem + 1));
+        FluxMSW.resize(3 * (n_elem + 1));
+        p.resize(n_elem);
     }
     if (FluxScheme == 4)
     {
-        F.resize(3 * nx);
+        F.resize(3 * n_elem);
     }
 }
 
@@ -67,14 +67,14 @@ void Flux_Scalar(
     // Get Convective Variables
     WtoF(W, F);
 
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho = W[i * 3 + 0];
         e = W[i * 3 + 2];
         u[i] = W[i * 3 + 1] / rho;
         c[i] = sqrt( gam / rho * (gam - 1) * ( e - rho * u[i] * u[i] / 2.0 ) );
     }
-    for (int i = 1; i < nx; i++)
+    for (int i = 1; i < n_elem; i++)
     {
         avgu = ( u[i - 1] + u[i] ) / 2.0;
         avgc = ( c[i - 1] + c[i] ) / 2.0;
@@ -124,7 +124,7 @@ void Flux_Jacobian(
     double beta = 0.4;//gam-1;
     double rho, u, e, c;
 
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++)
@@ -217,7 +217,7 @@ void Flux_SW(
 
     Flux_Jacobian(Ap_list, An_list, W);
 
-    for (int i = 1; i < nx; i++)
+    for (int i = 1; i < n_elem; i++)
     {
         Flux[i * 3 + 0] = 0;
         Flux[i * 3 + 1] = 0;
@@ -239,20 +239,20 @@ void Flux_MSW(
     const std::vector<double> &W)
 {
 
-    for (int i = 0; i < nx - 1; i++)
+    for (int i = 0; i < n_elem - 1; i++)
     {
         for (int k = 0; k < 3; k++)
         {
             Wavg[i * 3 + k] = (W[i * 3 + k] + W[(i+1) * 3 + k]) / 2.0;
         }
     }
-    Wavg[(nx-1)*3 + 0] = 1;
-    Wavg[(nx-1)*3 + 1] = 1;
-    Wavg[(nx-1)*3 + 2] = 1;
+    Wavg[(n_elem-1)*3 + 0] = 1;
+    Wavg[(n_elem-1)*3 + 1] = 1;
+    Wavg[(n_elem-1)*3 + 2] = 1;
 
     Flux_Jacobian(Ap_list, An_list, Wavg);
 
-    for (int i = 1; i < nx; i++)
+    for (int i = 1; i < n_elem; i++)
     {
         Flux[i * 3 + 0] = 0;
         Flux[i * 3 + 1] = 0;
@@ -275,12 +275,12 @@ void Flux_CMSW(
     Flux_SW(FluxSW, W);
     Flux_MSW(FluxMSW, W);
 
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         p[i] = (gam - 1.0) * ( W[i * 3 + 2] - (pow(W[i * 3 + 1], 2.0) / W[i * 3 + 0]) / 2.0 );
     }
 
-    for (int i = 0; i < nx - 1; i++)
+    for (int i = 0; i < n_elem - 1; i++)
     {
         for (int k = 0; k < 3; k++)
         {
@@ -288,7 +288,7 @@ void Flux_CMSW(
         }
     }
 
-    for (int i = 1; i < nx; i++)
+    for (int i = 1; i < n_elem; i++)
     {
         for (int k = 0; k < 3; k++)
         {
@@ -334,7 +334,7 @@ void Flux_Roe(
         }
     }
     int i1, i2;
-    for (int i = 0; i < nx - 1; i++)
+    for (int i = 0; i < n_elem - 1; i++)
     {
         for (int row = 0; row < 3; row++)
         {

@@ -93,7 +93,7 @@ std::vector<double> eval_spline(std::vector<double> control_pts, std::vector<dou
 }
 
 MatrixXd eval_dArea_dControl(std::vector<double> x, std::vector<double> dx) {
-    MatrixXd dArea_dControl(nx + 1, nDesVar);
+    MatrixXd dArea_dControl(n_elem + 1, nDesVar);
 
     // Get Knot Vector
     int n_knots = n_control_pts + spline_degree + 1;
@@ -101,7 +101,7 @@ MatrixXd eval_dArea_dControl(std::vector<double> x, std::vector<double> dx) {
     knots = get_knots(n_knots);
 
     dArea_dControl.setZero();
-    for (int i = 0; i < nx + 1; i++) {
+    for (int i = 0; i < n_elem + 1; i++) {
         for (int j = 1; j < n_control_pts - 1; j++) {// Not including the inlet/outlet 
             dArea_dControl(i, j - 1) += eval_bij(x[i], j, spline_degree, knots);
         }
@@ -134,7 +134,7 @@ std::vector<double> fit_bspline_to_area(std::vector<double> x, std::vector<doubl
         control_pts[j] = control_pts_solution(j);
     }
     control_pts[0] = area[0];
-    control_pts[n_control_pts - 1] = area[nx];
+    control_pts[n_control_pts - 1] = area[n_elem];
 
     return control_pts;
 }

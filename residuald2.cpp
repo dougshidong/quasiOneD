@@ -31,21 +31,21 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
     std::vector<double> W,
     std::vector<double> area)
 {
-    std::vector <SparseMatrix<double> > ddRdWdW_FD(3 * nx);
+    std::vector <SparseMatrix<double> > ddRdWdW_FD(3 * n_elem);
 
-    SparseMatrix<double> ddRidWdW_FD(3 * nx, 3 * nx);
-    for (int Ri = 0; Ri < 3 * nx; Ri++)
+    SparseMatrix<double> ddRidWdW_FD(3 * n_elem, 3 * n_elem);
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++)
         ddRdWdW_FD[Ri] = ddRidWdW_FD;
 
     double Resi0, Resi1, Resi2, Resi3, Resi4;
-    std::vector<double> Resitemp(3 * nx, 0);
-    std::vector<double> Flux(3 * (nx + 1), 0);
-    std::vector<double> Wd(3 * nx, 0);
-    std::vector<double> Q(3 * nx, 0);
+    std::vector<double> Resitemp(3 * n_elem, 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
+    std::vector<double> Wd(3 * n_elem, 0);
+    std::vector<double> Q(3 * n_elem, 0);
     double h = 1e-3;
     double pertWi, pertWj;
     int Rik, Rikp;
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
         for (int k = 0; k < 3; k++)
         {
@@ -60,7 +60,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     pertWj = W[Wj] * h;
                     if (Wi != Wj)
                     {
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         // R1
                         Wd[Wi] = W[Wi] + pertWi;
@@ -109,7 +109,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     }
                     else
                     {
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
 
                         WtoQ(Wd, Q, area);
@@ -175,7 +175,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     pertWj = W[Wj] * h;
                     if (Wi != Wj)
                     {
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         // R1
                         Wd[Wi] = W[Wi] + pertWi;
@@ -185,7 +185,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         Resi1 = Resitemp[Rik];
 
                         // R2
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] + pertWi;
                         Wd[Wj] = W[Wj] - pertWj;
@@ -194,7 +194,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         Resi2 = Resitemp[Rik];
 
                         // R3
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] - pertWi;
                         Wd[Wj] = W[Wj] + pertWj;
@@ -203,7 +203,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         Resi3 = Resitemp[Rik];
 
                         // R4
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] - pertWi;
                         Wd[Wj] = W[Wj] - pertWj;
@@ -213,19 +213,19 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
                                                      / (4 * pertWi * pertWj);
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                     }
                     else
                     {
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
 
                         inletBC(Wd, Resitemp, 1, 1);
                         Resi0 = Resitemp[Rik];
 
                         // R1
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] + 2.0 * pertWi;
 
@@ -233,7 +233,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         Resi1 = Resitemp[Rik];
 
                         // R2
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] + pertWi;
 
@@ -241,7 +241,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         Resi2 = Resitemp[Rik];
 
                         // R3
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] - pertWi;
 
@@ -249,7 +249,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         Resi3 = Resitemp[Rik];
 
                         // R4
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                         Wd[Wi] = W[Wi] - 2.0 * pertWi;
 
@@ -260,7 +260,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                             (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
                             / (12 * pertWi * pertWj);
                         // Reset Wd
-                        for (int m = 0; m < 3 * nx; m++)
+                        for (int m = 0; m < 3 * n_elem; m++)
                             Wd[m] = W[m];
                     }
                 }// Wj Loop
@@ -268,7 +268,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
         }// k Loop
     }// Ri Loop
     //Outlet
-    int Ri = nx-1;
+    int Ri = n_elem-1;
     for (int Rk = 0; Rk < 3; Rk++)
     {
         Rik = Ri * 3 + Rk;
@@ -282,7 +282,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                 pertWj = W[Wj] * h;
                 if (Wi != Wj)
                 {
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     // R1
                     Wd[Wi] = W[Wi] + pertWi;
                     Wd[Wj] = W[Wj] + pertWj;
@@ -291,7 +291,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     Resi1 = Resitemp[Rik];
 
                     // R2
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] + pertWi;
                     Wd[Wj] = W[Wj] - pertWj;
 
@@ -299,7 +299,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     Resi2 = Resitemp[Rik];
 
                     // R3
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] - pertWi;
                     Wd[Wj] = W[Wj] + pertWj;
 
@@ -307,7 +307,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     Resi3 = Resitemp[Rik];
 
                     // R4
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] - pertWi;
                     Wd[Wj] = W[Wj] - pertWj;
 
@@ -316,38 +316,38 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
 
                     ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
                                                  / (4 * pertWi * pertWj);
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                 }
                 else
                 {
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
 
                     outletBC(Wd, Resitemp, 1, 1);
                     Resi0 = Resitemp[Rik];
 
                     // R1
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] + 2.0 * pertWi;
 
                     outletBC(Wd, Resitemp, 1, 1);
                     Resi1 = Resitemp[Rik];
 
                     // R2
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] + pertWi;
 
                     outletBC(Wd, Resitemp, 1, 1);
                     Resi2 = Resitemp[Rik];
 
                     // R3
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] - pertWi;
 
                     outletBC(Wd, Resitemp, 1, 1);
                     Resi3 = Resitemp[Rik];
 
                     // R4
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                     Wd[Wi] = W[Wi] - 2.0 * pertWi;
 
                     outletBC(Wd, Resitemp, 1, 1);
@@ -357,7 +357,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         (-Resi1 + 16*Resi2 - 30*Resi0 + 16*Resi3 - Resi4)
                         / (12 * pertWi * pertWj);
                     // Reset Wd
-                    for (int m = 0; m < 3 * nx; m++) Wd[m] = W[m];
+                    for (int m = 0; m < 3 * n_elem; m++) Wd[m] = W[m];
                 } // If not diagonal
             }// Wj Loop
         }// Wi Loop
@@ -370,10 +370,10 @@ std::vector < SparseMatrix<double> > evalddRdWdW(
     std::vector<double> W,
     std::vector<double> area)
 {
-    std::vector <SparseMatrix<double> > ddRdWdW(3 * nx);
-    SparseMatrix<double> dummySMat(3 * nx, 3 * nx);
+    std::vector <SparseMatrix<double> > ddRdWdW(3 * n_elem);
+    SparseMatrix<double> dummySMat(3 * n_elem, 3 * n_elem);
 
-    for (int Ri = 0; Ri < nx; Ri++)
+    for (int Ri = 0; Ri < n_elem; Ri++)
     {
         for (int Rk = 0; Rk < 3; Rk++)
         {
@@ -444,9 +444,9 @@ std::vector < SparseMatrix<double> > evalddRdWdW(
           // Inlet
           ddRdWdW[Rk].insert(row, col) = -ddRindWdW[Rk](row, col);
           // Outlet
-          int rowi = (nx - 2) * 3 + row;
-          int coli = (nx - 2) * 3 + col;
-          ddRdWdW[(nx - 1) * 3 + Rk].insert(rowi, coli) = -ddRoutdWdW[Rk](row, col);
+          int rowi = (n_elem - 2) * 3 + row;
+          int coli = (n_elem - 2) * 3 + col;
+          ddRdWdW[(n_elem - 1) * 3 + Rk].insert(rowi, coli) = -ddRoutdWdW[Rk](row, col);
         }
       }
     }
@@ -460,18 +460,18 @@ std::vector < SparseMatrix<double> > evalddRdWdW(
     // ddFluxdWdW2 = Flux(i) / W(i  , i  )
     // ddFluxdWdW3 = Flux(i) / W(i-1, i  )
     // ddFluxdWdW4 = TRANSPOSE(ddFluxdWdW3)
-    std::vector <MatrixXd> ddFluxdWdW1(3 * (nx + 1)),
-                           ddFluxdWdW2(3 * (nx + 1)),
-                           ddFluxdWdW3(3 * (nx + 1));
+    std::vector <MatrixXd> ddFluxdWdW1(3 * (n_elem + 1)),
+                           ddFluxdWdW2(3 * (n_elem + 1)),
+                           ddFluxdWdW3(3 * (n_elem + 1));
     evalddFluxdWdW(ddFluxdWdW1, ddFluxdWdW2, ddFluxdWdW3, W);
 
     // Evaluate ddQdWdW
-    std::vector <MatrixXd> ddQdWdW(3 * nx);
+    std::vector <MatrixXd> ddQdWdW(3 * n_elem);
     ddQdWdW = evalddQdWdW(W);
 
     int Rik, Rikp;
     int Wi1, Wi2;
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
         for (int Rk = 0; Rk < 3; Rk++)
         {
@@ -586,21 +586,21 @@ std::vector <SparseMatrix<double> > evalddRdWdS_FD(
     std::vector<double> W,
     std::vector<double> area)
 {
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);
 
-    SparseMatrix<double> ddRidWdS(3 * nx, nx + 1);
-    for (int Ri = 0; Ri < 3 * nx; Ri++)
+    SparseMatrix<double> ddRidWdS(3 * n_elem, n_elem + 1);
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++)
         ddRdWdS[Ri] = ddRidWdS;
 
     double Resi1, Resi2, Resi3, Resi4;
-    std::vector<double> Flux(3 * (nx + 1), 0);
-    std::vector<double> Wd(3 * nx, 0);
-    std::vector<double> Sd(nx + 1, 0);
-    std::vector<double> Q(3 * nx, 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
+    std::vector<double> Wd(3 * n_elem, 0);
+    std::vector<double> Sd(n_elem + 1, 0);
+    std::vector<double> Q(3 * n_elem, 0);
     double h = 1e-4;
     double pertW, pertS;
     int Rik, Rikp;
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
         for (int k = 0; k < 3; k++)
         {
@@ -613,9 +613,9 @@ std::vector <SparseMatrix<double> > evalddRdWdS_FD(
                 for (int Si = Ri; Si <= Ri+1; Si++)
                 {
                     pertS = area[Si] * h;
-                    for (int m = 0; m < 3 * nx; m++)
+                    for (int m = 0; m < 3 * n_elem; m++)
                         Wd[m] = W[m];
-                    for (int m = 0; m < nx + 1; m++)
+                    for (int m = 0; m < n_elem + 1; m++)
                         Sd[m] = area[m];
                     // R1
                     Wd[Wi] = W[Wi];
@@ -682,23 +682,23 @@ std::vector <SparseMatrix<double> > evalddRdWdS(
     std::vector<double> area)
 {
     // Allocate ddRdWdS Sparse Matrix
-    std::vector <SparseMatrix<double> > ddRdWdS(3 * nx);
-    SparseMatrix<double> ddRidWdS(3 * nx, nx + 1);
+    std::vector <SparseMatrix<double> > ddRdWdS(3 * n_elem);
+    SparseMatrix<double> ddRidWdS(3 * n_elem, n_elem + 1);
     ddRidWdS.reserve(9 * 2); // 9 State Variables and 2 Areas affect the Residual
-    for (int Ri = 0; Ri < 3 * nx; Ri++)
+    for (int Ri = 0; Ri < 3 * n_elem; Ri++)
         ddRdWdS[Ri] = ddRidWdS;
 
     // Get Jacobians and Fluxes
-    std::vector<double> Ap(nx * 3 * 3, 0), An(nx * 3 * 3, 0);
+    std::vector<double> Ap(n_elem * 3 * 3, 0), An(n_elem * 3 * 3, 0);
     if (FluxScheme == 0) ScalarJac(W, Ap, An);
     // Evaluate dpdW
-    std::vector<double> dpdW(3 * nx, 0);
+    std::vector<double> dpdW(3 * n_elem, 0);
     dpdW = evaldpdW(W, area);
 
     int Wi, Si;
     int Rik, Wik;
     double val;
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
     for (int Rk = 0; Rk < 3; Rk++)
     {
@@ -754,16 +754,16 @@ std::vector <SparseMatrix<double> > evalddRdWdS(
 
 std::vector <MatrixXd> evalddQdWdW(std::vector<double> W)
 {
-    std::vector <MatrixXd> ddQdWdW(3 * nx);
+    std::vector <MatrixXd> ddQdWdW(3 * n_elem);
     MatrixXd ddQidWdW(3, 3);
     ddQidWdW.setZero();
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         ddQdWdW[i * 3 + 0] = ddQidWdW;
         ddQdWdW[i * 3 + 2] = ddQidWdW;
     }
     double rho, u;
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
@@ -856,17 +856,17 @@ void evalddScalarFluxdWdW_FD(
     double pertWi, pertWj;
     double Flux0, Flux1, Flux2, Flux3, Flux4;
     double h = 1e-3;
-    std::vector<double> Flux(3 * (nx + 1), 0);
-    std::vector<double> Wd(3 * nx, 0);
-    std::vector<double> Q(3 * nx, 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
+    std::vector<double> Wd(3 * n_elem, 0);
+    std::vector<double> Q(3 * n_elem, 0);
 
     MatrixXd dummy(3,3);
     dummy.setZero();
-    for (int k = 0; k < 3 * (nx + 1); k++)
+    for (int k = 0; k < 3 * (n_elem + 1); k++)
     {
         ddFluxdWdW1[k] = dummy;
     }
-    for (int Fluxi = 1; Fluxi < nx; Fluxi++)
+    for (int Fluxi = 1; Fluxi < n_elem; Fluxi++)
     {
         Wi1 = Fluxi + ii;
         Wi2 = Fluxi + jj;
@@ -881,7 +881,7 @@ void evalddScalarFluxdWdW_FD(
                 pertWi = W[Wi] * h;
                 pertWj = W[Wj] * h;
 
-                for (int m = 0; m < 3 * nx; m++)
+                for (int m = 0; m < 3 * n_elem; m++)
                 {
                     Wd[m] = W[m];
                 }
@@ -982,17 +982,17 @@ void evalddScalarFluxdWdW(
     std::vector <MatrixXd> &ddFluxdWdW3,
     std::vector<double> W)
 {
-    std::vector<double> rho(nx), u(nx), e(nx);
-    std::vector<double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector<double> rho(n_elem), u(n_elem), e(n_elem);
+    std::vector<double> T(n_elem), p(n_elem), c(n_elem), Mach(n_elem);
     WtoP(W, rho, u, e, p, c, T);
 
-    std::vector <MatrixXd> ddFdWdW(3 * nx);
+    std::vector <MatrixXd> ddFdWdW(3 * n_elem);
     std::vector <MatrixXd> ddFidWdW(3);
 
-    std::vector <Vector3d> dlambdadW(nx);
+    std::vector <Vector3d> dlambdadW(n_elem);
 
-    std::vector <MatrixXd> ddlambdadWdW(nx);
-    for (int Wi = 0; Wi < nx; Wi++)
+    std::vector <MatrixXd> ddlambdadWdW(n_elem);
+    for (int Wi = 0; Wi < n_elem; Wi++)
     {
         // Evaluate Convective Hessian
         ddFidWdW = evalddFdWdW(rho[Wi], u[Wi], p[Wi]);
@@ -1009,7 +1009,7 @@ void evalddScalarFluxdWdW(
 
     int Fluxkim, Fluxki;
     MatrixXd ddFluxidWdW(3, 3);
-    for (int Fluxi = 1; Fluxi < nx; Fluxi++)
+    for (int Fluxi = 1; Fluxi < n_elem; Fluxi++)
     {
         for (int Fluxk = 0; Fluxk < 3; Fluxk++)
         {

@@ -41,8 +41,8 @@ SparseMatrix<double> evaldRdW(
     std::vector<double> dt,
     std::vector<double> area)
 {
-    SparseMatrix<double> dRdW(3 * nx, 3 * nx);
-    dRdW.reserve(27 * (nx - 2) + 27 * 4);
+    SparseMatrix<double> dRdW(3 * n_elem, 3 * n_elem);
+    dRdW.reserve(27 * (n_elem - 2) + 27 * 4);
     double rhoin = W[0];
     double uin = W[1] / rhoin;
     double ein = W[2];
@@ -53,7 +53,7 @@ SparseMatrix<double> evaldRdW(
     int k, rowi, coli;
     double val;
     // Get Jacobians and Fluxes
-    std::vector<double> Ap(nx * 3 * 3, 0), An(nx * 3 * 3, 0);
+    std::vector<double> Ap(n_elem * 3 * 3, 0), An(n_elem * 3 * 3, 0);
     if (FluxScheme == 0) ScalarJac(W, Ap, An);
 	else abort();
     // Get Boundary Jacobians
@@ -62,7 +62,7 @@ SparseMatrix<double> evaldRdW(
     if (StepScheme < 3)  BCJac(W, dt, dx, dBidWi, dBidWd, dBodWd, dBodWo);
 	else abort();
     // Evaluate dpdW
-    std::vector<double> dpdW(3 * nx, 0);
+    std::vector<double> dpdW(3 * n_elem, 0);
     dpdW = evaldpdW(W, area);
     // Input 4 lines where BC Jacobians occur
     // psi(1), psi(2), psi(n-1), psi(n)
@@ -92,9 +92,9 @@ SparseMatrix<double> evaldRdW(
             dRdW.insert(rowi, coli) = val;
 
             // d(outlet)/d(outlet)
-            // R = nx - 1, W = nx - 1
-            Ri = nx - 1;
-            Wi = nx - 1;
+            // R = n_elem - 1, W = n_elem - 1
+            Ri = n_elem - 1;
+            Wi = n_elem - 1;
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
 
@@ -102,9 +102,9 @@ SparseMatrix<double> evaldRdW(
             dRdW.insert(rowi, coli) = val;
 
             // d(outlet)/d(domain)
-            // R = nx - 1, W = nx - 2
-            Ri = nx - 1;
-            Wi = nx - 2;
+            // R = n_elem - 1, W = n_elem - 2
+            Ri = n_elem - 1;
+            Wi = n_elem - 2;
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
 
@@ -112,7 +112,7 @@ SparseMatrix<double> evaldRdW(
             dRdW.insert(rowi, coli) = val;
         }
     }
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
         Wi = Ri - 1;
         if (Wi >= 0)
@@ -130,7 +130,7 @@ SparseMatrix<double> evaldRdW(
         }
 
         Wi = Ri;
-        if (Wi >= 0 && Wi <= nx - 1)
+        if (Wi >= 0 && Wi <= n_elem - 1)
         {
             for (int row = 0; row < 3; row++)
             for (int col = 0; col < 3; col++)
@@ -151,7 +151,7 @@ SparseMatrix<double> evaldRdW(
         }
 
         Wi = Ri + 1;
-        if (Wi <= nx - 1)
+        if (Wi <= n_elem - 1)
         {
             for (int row = 0; row < 3; row++)
             for (int col = 0; col < 3; col++)
@@ -187,7 +187,7 @@ SparseMatrix<double> evaldRdW_FD(
     std::vector<double> W,
     std::vector<double> area)
 {
-    SparseMatrix<double> dRdW(3 * nx, 3 * nx);
+    SparseMatrix<double> dRdW(3 * n_elem, 3 * n_elem);
     double rhoin = W[0];
     double uin = W[1] / rhoin;
     double ein = W[2];
@@ -196,9 +196,9 @@ SparseMatrix<double> evaldRdW_FD(
     double Min = uin/cin;
     int Ri, Wi;
     int rowi, coli;
-    std::vector<double> Wd(3 * nx, 0), Q(3 * nx, 0);
-    std::vector<double> Flux(3 * (nx + 1), 0);
-    std::vector<double> Resi1(3 * nx, 0), Resi2(3 * nx, 0);
+    std::vector<double> Wd(3 * n_elem, 0), Q(3 * n_elem, 0);
+    std::vector<double> Flux(3 * (n_elem + 1), 0);
+    std::vector<double> Resi1(3 * n_elem, 0), Resi2(3 * n_elem, 0);
     std::vector<double> dRdW_block(9, 0), dRdWp(9, 0);
     WtoQ(W, Q, area);
     getFlux(Flux, W);
@@ -206,14 +206,14 @@ SparseMatrix<double> evaldRdW_FD(
     double pert;
 
     // DR/DW
-    for (int Ri = 0; Ri < nx; Ri++) // LOOP OVER R
+    for (int Ri = 0; Ri < n_elem; Ri++) // LOOP OVER R
     {
-        for (int Wi = 0; Wi < nx; Wi++) // LOOP OVER W
+        for (int Wi = 0; Wi < n_elem; Wi++) // LOOP OVER W
         {
             double h = 1e-5;
             for (int statei = 0; statei < 3; statei++) // LOOP OVER STATEI
             {
-                for (int i = 0; i < 3 * nx; i++)
+                for (int i = 0; i < 3 * n_elem; i++)
                     Wd[i] = W[i];
 
                 pert = W[Wi * 3 + statei] * h;
@@ -223,7 +223,7 @@ SparseMatrix<double> evaldRdW_FD(
                 // Inlet
                 if (Ri == 0) inletBC(Wd, Resi1, 1.0, 1.0);
                 // Outlet
-                else if (Ri == nx - 1) outletBC(Wd, Resi1, 1.0, 1.0);
+                else if (Ri == n_elem - 1) outletBC(Wd, Resi1, 1.0, 1.0);
                 // Domain
                 else
                 {
@@ -238,7 +238,7 @@ SparseMatrix<double> evaldRdW_FD(
                     }
                 }
 
-                for (int i = 0; i < 3 * nx; i++)
+                for (int i = 0; i < 3 * n_elem; i++)
                     Wd[i] = W[i];
 
                 Wd[Wi * 3 + statei] = W[Wi * 3 + statei] - pert;
@@ -246,7 +246,7 @@ SparseMatrix<double> evaldRdW_FD(
                 // Inlet
                 if (Ri == 0) inletBC(Wd, Resi2, 1.0, 1.0);
                 // Outlet
-                else if (Ri == nx - 1) outletBC(Wd, Resi2, 1.0, 1.0);
+                else if (Ri == n_elem - 1) outletBC(Wd, Resi2, 1.0, 1.0);
                 // Domain
                 else
                 {
@@ -325,12 +325,12 @@ void StegerJac(
 
     double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 
-    std::vector<double> rho(nx), u(nx), p(nx), c(nx);
-    std::vector<double> Ap_list1(nx * 3 * 3, 0), An_list1(nx * 3 * 3, 0);
+    std::vector<double> rho(n_elem), u(n_elem), p(n_elem), c(n_elem);
+    std::vector<double> Ap_list1(n_elem * 3 * 3, 0), An_list1(n_elem * 3 * 3, 0);
 
     double beta = gam - 1;
 
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
@@ -339,7 +339,7 @@ void StegerJac(
     }
 
 
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++)
@@ -421,7 +421,7 @@ void StegerJac(
 
     }
 
-    for (int i = 1; i < nx; i++)
+    for (int i = 1; i < n_elem; i++)
     {
         for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++)
@@ -492,8 +492,8 @@ void ScalarJac(
     std::vector<double> &Ap_list,
     std::vector<double> &An_list)
 {
-    std::vector<double> rho(nx), u(nx), e(nx);
-    std::vector<double> T(nx), p(nx), c(nx), Mach(nx);
+    std::vector<double> rho(n_elem), u(n_elem), e(n_elem);
+    std::vector<double> T(n_elem), p(n_elem), c(n_elem), Mach(n_elem);
     WtoP(W, rho, u, e, p, c, T);
 
     int vec_pos, k;
@@ -503,7 +503,7 @@ void ScalarJac(
     std::vector<double> dlambdaPdW(3, 0);
     std::vector<double> dlambdaNdW(3, 0);
     // A+
-    for (int i = 0; i < nx - 1; i++)
+    for (int i = 0; i < n_elem - 1; i++)
     {
         // dF/dW
         JacobianCenter(J, u[i], c[i]);
@@ -528,7 +528,7 @@ void ScalarJac(
     }
 
     // A-
-    for (int i = 1; i < nx; i++)
+    for (int i = 1; i < n_elem; i++)
     {
         // dF/dW
         JacobianCenter(J, u[i], c[i]);
@@ -558,8 +558,8 @@ std::vector<double> evaldQdW(
     std::vector<double> area)
 {
     double dpdw[3], rho, u, dS;
-    std::vector<double> dQdW(3 * nx);
-    for (int i = 0; i < nx; i++)
+    std::vector<double> dQdW(3 * n_elem);
+    for (int i = 0; i < n_elem; i++)
     {
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
@@ -581,9 +581,9 @@ std::vector<double> evaldpdW(
     std::vector<double> W,
     std::vector<double> area)
 {
-    std::vector<double> dpdW(3 * nx);
+    std::vector<double> dpdW(3 * n_elem);
     double rho, u;
-    for (int i = 0; i < nx; i++)
+    for (int i = 0; i < n_elem; i++)
     {
         rho = W[i * 3 + 0];
         u = W[i * 3 + 1] / rho;
@@ -601,13 +601,13 @@ MatrixXd evaldRdS(
     std::vector<double> area,
     std::vector<double> W)
 {
-    MatrixXd dRdS(3 * nx, nx + 1);
-    std::vector<double> Q(3 * nx, 0), p(nx);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    std::vector<double> Q(3 * n_elem, 0), p(n_elem);
     WtoQ(W, Q, area);
     getp(W, p);
     int Si, kR, kS;
     dRdS.setZero();
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
         for (int k = 0; k < 3; k++)
         {
@@ -632,19 +632,19 @@ MatrixXd evaldRdS_FD(
     std::vector<double> area,
     std::vector<double> W)
 {
-    MatrixXd dRdS(3 * nx, nx + 1);
+    MatrixXd dRdS(3 * n_elem, n_elem + 1);
     dRdS.setZero();
-    std::vector<double> Resi0(3 * nx, 0), Resi1(3 * nx, 0), Resi2(3 * nx, 0);
-    std::vector<double> Sd(nx + 1, 0);
-    std::vector<double> Q(3 * nx, 0);
+    std::vector<double> Resi0(3 * n_elem, 0), Resi1(3 * n_elem, 0), Resi2(3 * n_elem, 0);
+    std::vector<double> Sd(n_elem + 1, 0);
+    std::vector<double> Q(3 * n_elem, 0);
     double h = 0.000000001;
     double pert;
     int ki, kip;
-    for (int Ri = 1; Ri < nx - 1; Ri++)
+    for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
-        for (int Si = 0; Si < nx + 1; Si++)
+        for (int Si = 0; Si < n_elem + 1; Si++)
         {
-            for (int m = 0; m < nx + 1; m++)
+            for (int m = 0; m < n_elem + 1; m++)
                 Sd[m] = area[m];
 
             pert = area[Si] * h;
@@ -659,7 +659,7 @@ MatrixXd evaldRdS_FD(
                 Resi1[ki] = Flux[kip] * Sd[Ri + 1] - Flux[ki] * Sd[Ri] - Q[ki];
             }
 
-            for (int m = 0; m < nx + 1; m++)
+            for (int m = 0; m < n_elem + 1; m++)
                 Sd[m] = area[m];
 
             Sd[Si] = area[Si] - pert;

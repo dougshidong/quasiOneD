@@ -3,9 +3,11 @@
 
 #include<vector>
 
+double isenP(double pt, double M);
+double isenT(double Tt, double M);
 double quasiOneD(
     std::vector<double> x,
-    std::vector<double> S,
+    std::vector<double> area,
     std::vector<double> &W);
 void inletBC(
     std::vector<double> &W,

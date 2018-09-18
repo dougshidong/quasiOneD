@@ -9,7 +9,7 @@ extern const double PI;
 
 extern std::string filename;
 
-extern int nx;
+extern int n_elem;
 extern double a_geom, b_geom;
 extern double h_geom, t1_geom, t2_geom;
 

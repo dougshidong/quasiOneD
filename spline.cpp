@@ -21,9 +21,9 @@ std::vector<double> evalSpline(
     knots = getKnots(nknots);
 
     // Define Area at i+1/2
-    std::vector<double> area(nx + 1, 0);
+    std::vector<double> area(n_elem + 1, 0);
     double xh;
-    for (int Si = 1; Si < nx; Si++)
+    for (int Si = 1; Si < n_elem; Si++)
     {
         xh = x[Si] - dx[Si] / 2.0;
         for (int ictl = 0; ictl < n_control_pts; ictl++)
@@ -32,7 +32,7 @@ std::vector<double> evalSpline(
         }
     }
     area[0] = 1;
-    area[nx] = 1;
+    area[n_elem] = 1;
 
     return area;
 }
@@ -41,7 +41,7 @@ MatrixXd evalSplineDerivative(
     std::vector<double> x,
     std::vector<double> dx)
 {
-    MatrixXd dSdCtl(nx + 1, nDesVar);
+    MatrixXd dSdCtl(n_elem + 1, nDesVar);
     dSdCtl.setZero();
 
     // Get Knot Vector
@@ -51,7 +51,7 @@ MatrixXd evalSplineDerivative(
 
     // Define Area at i+1/2
     double xh;
-    for (int Si = 0; Si < nx + 1; Si++)
+    for (int Si = 0; Si < n_elem + 1; Si++)
     {
         xh = x[Si] - dx[Si] / 2.0;
         for (int ictl = 1; ictl < n_control_pts - 1; ictl++) // Not including the inlet/outlet
@@ -72,14 +72,14 @@ std::vector<double> getCtlpts(
     std::vector<double> knots(nknots);
     knots = getKnots(nknots);
 
-    VectorXd ctl_eig(n_control_pts), s_eig(nx + 1);
-    MatrixXd A(nx + 1, n_control_pts);
+    VectorXd ctl_eig(n_control_pts), s_eig(n_elem + 1);
+    MatrixXd A(n_elem + 1, n_control_pts);
     A.setZero();
     
     double xh;
-    for (int Si = 0; Si < nx + 1; Si++)
+    for (int Si = 0; Si < n_elem + 1; Si++)
     {
-        if (Si < nx) xh = x[Si] - dx[Si] / 2.0;
+        if (Si < n_elem) xh = x[Si] - dx[Si] / 2.0;
         else xh = b_geom;
         s_eig(Si) = area[Si];
         for (int ictl = 0; ictl < n_control_pts; ictl++)
@@ -95,7 +95,7 @@ std::vector<double> getCtlpts(
         ctlpts[ictl] = ctl_eig(ictl);
     }
     ctlpts[0] = area[0];
-    ctlpts[n_control_pts - 1] = area[nx];
+    ctlpts[n_control_pts - 1] = area[n_elem];
 
     return ctlpts;
 }

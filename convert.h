@@ -54,5 +54,5 @@ void WtoF(
 void WtoQ(
     const std::vector<double> &W,
     std::vector<double> &Q,
-    const std::vector<double> &S);
+    const std::vector<double> &area);
 #endif

@@ -24,7 +24,7 @@ MACHIN      TTIN        PPTIN       PEXIT
 *******************************************
 DESIGN OPTIMIZATION PARAMETERS
 OPT         DESPARAM    FITFUN
-1           2           1
+0           2           1
 OPTALG      GRADALG     HESSALG     EXACHES      HTOL 
 2           1           3           0            1.0e-6
 TN_NCG

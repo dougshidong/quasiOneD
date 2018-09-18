@@ -18,7 +18,7 @@ void HessianInlet(
         ddRindWdW[Rk].setZero();
     }
 
-    std::vector<double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector<double> rho(n_elem), u(n_elem), e(n_elem), p(n_elem), c(n_elem), T(n_elem);
     WtoP(W, rho, u, e, p, c, T);
 
     // ************************

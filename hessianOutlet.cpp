@@ -18,7 +18,7 @@ void HessianOutlet(
         ddRoutdWdW[Rk].setZero();
     }
 
-    std::vector<double> rho(nx), u(nx), e(nx), p(nx), c(nx), T(nx);
+    std::vector<double> rho(n_elem), u(n_elem), e(n_elem), p(n_elem), c(n_elem), T(n_elem);
     WtoP(W, rho, u, e, p, c, T);
 
     // ************************
@@ -27,8 +27,8 @@ void HessianOutlet(
 
     double i1, i2;
     double r1, r2, p1, p2, u1, u2, c1, c2;
-    i1 = nx - 1;
-    i2 = nx - 2;
+    i1 = n_elem - 1;
+    i2 = n_elem - 2;
     r1 = rho[i1];
     r2 = rho[i2];
     p1 = p[i1];
@@ -1344,8 +1344,8 @@ void HessianOutlet(
 
 
     // Get Transformation Matrices
-    MatrixXd dwpdw = dWpdW(W, nx - 2);
-    std::vector <Matrix3d> ddwpdwdwp = ddWpdWdWp(W, nx - 2);
+    MatrixXd dwpdw = dWpdW(W, n_elem - 2);
+    std::vector <Matrix3d> ddwpdwdwp = ddWpdWdWp(W, n_elem - 2);
 
     MatrixXd temp(3, 3);
     for (int Ri = 0; Ri < 3; Ri++)
@@ -1360,8 +1360,8 @@ void HessianOutlet(
     }
 
     // Get Transformation Matrices
-    dwpdw = dWpdW(W, nx - 1);
-    ddwpdwdwp = ddWpdWdWp(W, nx - 1);
+    dwpdw = dWpdW(W, n_elem - 1);
+    ddwpdwdwp = ddWpdWdWp(W, n_elem - 1);
 
     for (int Ri = 0; Ri < 3; Ri++)
     {
@@ -1375,8 +1375,8 @@ void HessianOutlet(
     }
 
     // Get Transformation Matrices
-    dwpdw = dWpdW(W, nx - 1);
-    MatrixXd dwpdw2 = dWpdW(W, nx - 2);
+    dwpdw = dWpdW(W, n_elem - 1);
+    MatrixXd dwpdw2 = dWpdW(W, n_elem - 2);
 
     for (int Ri = 0; Ri < 3; Ri++)
     {

@@ -16,19 +16,19 @@ double isenT(double Tt, double M);
 void inletBC(std::vector<double> &W, std::vector<double> &Resi, double dt0, double dx0);
 void outletBC(std::vector<double> &W, std::vector<double> &Resi, double dt0, double dx0);
 
-double quasiOneD(std::vector<double> x, std::vector<double> S, std::vector<double> &W) {
-    std::vector<double> dx(nx);
-    for (int i = 1; i < nx - 1; i++) {
+double quasiOneD(std::vector<double> x, std::vector<double> area, std::vector<double> &W) {
+    std::vector<double> dx(n_elem);
+    for (int i = 1; i < n_elem - 1; i++) {
         dx[i] =  (x[i] - x[i - 1])/2  +  (x[i + 1] - x[i])/2 ;
     }
     dx[0] = x[1] - x[0];
-    dx[nx-1] = x[x.size() - 1] - x[x.size() - 2];
+    dx[n_elem-1] = x[x.size() - 1] - x[x.size() - 2];
 
-    std::vector<double> rho(nx), u(nx), e(nx);
-    std::vector<double> p(nx), c(nx);
-    std::vector<double> Resi(3 * nx, 0);
+    std::vector<double> rho(n_elem), u(n_elem), e(n_elem);
+    std::vector<double> p(n_elem), c(n_elem);
+    std::vector<double> Resi(3 * n_elem, 0);
 
-    std::vector<double> dt(nx);
+    std::vector<double> dt(n_elem);
 
     std::vector <int> itV(maxIt/printIt);
     std::vector<double> normV(maxIt/printIt);
@@ -48,7 +48,7 @@ double quasiOneD(std::vector<double> x, std::vector<double> S, std::vector<doubl
     e[0] = rho[0] * (Cv * inlet_T + 0.5 * pow(u[0], 2));
 
     // Flow Properties Initialization
-    for (int i = 1; i < nx; i++) {
+    for (int i = 1; i < n_elem; i++) {
         p[i] = outlet_p;
         rho[i] = p[i] / (R * inlet_T);
         c[i] = sqrt(gam * p[i] / rho[i]);
@@ -57,14 +57,14 @@ double quasiOneD(std::vector<double> x, std::vector<double> S, std::vector<doubl
     }
 
     // State Vectors Initialization
-    for (int i = 0; i < nx; i++) {
+    for (int i = 0; i < n_elem; i++) {
         W[i * 3 + 0] = rho[i];
         W[i * 3 + 1] = rho[i] * u[i];
         W[i * 3 + 2] = e[i];
     }
 
-    initializeTimeStep(nx); // Initiliaze Vector Sizes in timestep.cpp
-    initializeFlux(nx); // Initiliaze Vector Sizes in flux.cpp
+    initializeTimeStep(n_elem); // Initiliaze Vector Sizes in timestep.cpp
+    initializeFlux(n_elem); // Initiliaze Vector Sizes in flux.cpp
 
     clock_t tic = clock();
     clock_t toc;
@@ -74,20 +74,20 @@ double quasiOneD(std::vector<double> x, std::vector<double> S, std::vector<doubl
         iterations++;
 
         // Calculate Time Step
-        for (int i = 0; i < nx; i++) {
+        for (int i = 0; i < n_elem; i++) {
             dt[i] = (CFL * dx[i]) / fabs(u[i] + c[i]);
 		}
 
         // Step in Time
-        stepInTime(S, dx, dt, Resi, W);
+        stepInTime(area, dx, dt, Resi, W);
 
         inletBC(W, Resi, dt[0], dx[0]);
 
-        outletBC(W, Resi, dt[nx - 1], dx[nx - 1]);
+        outletBC(W, Resi, dt[n_elem - 1], dx[n_elem - 1]);
 
         // Calculating the norm of the density residual
         normR = 0;
-        for (int i = 0; i < nx; i++)
+        for (int i = 0; i < n_elem; i++)
             normR = normR + pow(Resi[i * 3 + 0], 2);
         normR = sqrt(normR);
 
@@ -108,13 +108,13 @@ double quasiOneD(std::vector<double> x, std::vector<double> S, std::vector<doubl
     if (printW == 1) {
         for (int k = 0; k < 3; k++) {
             std::cout<<"W"<<k + 1<<std::endl;
-            for (int i = 0; i < nx; i++) {
+            for (int i = 0; i < n_elem; i++) {
                 std::cout<<W[i * 3 + k]<<std::endl;
             }
         }
     }
     // Update flow properties
-    for (int i = 0; i < nx ; i++) {
+    for (int i = 0; i < n_elem ; i++) {
         rho[i] = W[i * 3 + 0];
         u[i] = W[i * 3 + 1] / rho[i];
         e[i] = W[i * 3 + 2];
@@ -124,9 +124,9 @@ double quasiOneD(std::vector<double> x, std::vector<double> S, std::vector<doubl
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<normR<<std::endl;
 
     outVec("Geom.dat", "w", x);
-    outVec("Geom.dat", "a", S);
-    std::vector<double> pn(nx);
-    for (int i = 0; i < nx; i++) pn[i] = p[i]/inlet_total_p;
+    outVec("Geom.dat", "a", area);
+    std::vector<double> pn(n_elem);
+    for (int i = 0; i < n_elem; i++) pn[i] = p[i]/inlet_total_p;
     outVec("Flow.dat", "w", pn);
     outVec("Flow.dat", "a", rho);
 	int nItPrint = iterations/printIt;
@@ -209,9 +209,9 @@ void outletBC(
     double rho[2], u[2], e[2], p[2], c[2];
 
     for (int i = 0; i < 2; i++) {
-        rho[i] = W[(i + (nx - 2)) * 3 + 0];
-        u[i] = W[(i + (nx - 2)) * 3 + 1] / rho[i];
-        e[i] = W[(i + (nx - 2)) * 3 + 2];
+        rho[i] = W[(i + (n_elem - 2)) * 3 + 0];
+        u[i] = W[(i + (n_elem - 2)) * 3 + 1] / rho[i];
+        e[i] = W[(i + (n_elem - 2)) * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
     }
@@ -247,11 +247,11 @@ void outletBC(
     T = p[1] / (rho[1] * R);
     e[1] = rho[1] * (Cv * T + 0.5 * pow(u[1], 2));
 
-    Resi[(nx - 1) * 3 + 0] = (W[(nx - 1) * 3 + 0] - rho[1]) / dtdx;
-    Resi[(nx - 1) * 3 + 1] = (W[(nx - 1) * 3 + 1] - rho[1] * u[1]) / dtdx;
-    Resi[(nx - 1) * 3 + 2] = (W[(nx - 1) * 3 + 2] - e[1]) / dtdx;
+    Resi[(n_elem - 1) * 3 + 0] = (W[(n_elem - 1) * 3 + 0] - rho[1]) / dtdx;
+    Resi[(n_elem - 1) * 3 + 1] = (W[(n_elem - 1) * 3 + 1] - rho[1] * u[1]) / dtdx;
+    Resi[(n_elem - 1) * 3 + 2] = (W[(n_elem - 1) * 3 + 2] - e[1]) / dtdx;
 
-    W[(nx - 1) * 3 + 0] = rho[1];
-    W[(nx - 1) * 3 + 1] = rho[1] * u[1];
-    W[(nx - 1) * 3 + 2] = e[1];
+    W[(n_elem - 1) * 3 + 0] = rho[1];
+    W[(n_elem - 1) * 3 + 1] = rho[1] * u[1];
+    W[(n_elem - 1) * 3 + 2] = e[1];
 }

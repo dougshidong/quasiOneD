@@ -6,7 +6,7 @@ const double PI = atan(1.0) * 4.0;
 
 std::string filename;
 
-int nx;
+int n_elem;
 double a_geom, b_geom;
 double h_geom, t1_geom, t2_geom;
 

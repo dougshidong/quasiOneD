@@ -9,7 +9,7 @@ std::vector<double> calcVolume(
 
 std::vector<double> evalX(double a, double b);
 
-std::vector<double> evalDx(std::vector<double> x);
+std::vector<double> eval_dx(std::vector<double> x);
 
 std::vector<double> evalS(
     std::vector<double> geom,

@@ -48,8 +48,8 @@ VectorXd finiteD(
     double currentI)
 {
     VectorXd grad(nDesVar);
-    std::vector<double> W(3 * nx, 0);
-    std::vector<double> tempS(nx + 1);
+    std::vector<double> W(3 * n_elem, 0);
+    std::vector<double> tempS(n_elem + 1);
 
     double I0, I1, I2, dh;
 
