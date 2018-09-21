@@ -69,6 +69,7 @@ void optimizer(
 	int n_elem = flo_opts.n_elem;
 	int n_dvar = opt_opts.n_design_variables;
 	struct Flow_data flow_data;
+	flow_data.dt.resize(n_elem);
 	flow_data.W.resize(3*n_elem);
 	flow_data.W_stage.resize(3*n_elem);
 	flow_data.fluxes.resize(3*(n_elem+1)); // At the faces
@@ -79,7 +80,7 @@ void optimizer(
 
     std::vector<double> area = evalS(current_design, x, dx);
 
-    std::vector<double> normGradList, timeVec, Herror, svdvalues, svdvaluesreal, Hcond;
+    std::vector<double> gradient_norm_list, timeVec, Herror, svdvalues, svdvaluesreal, Hcond;
     MatrixXd H(n_dvar, n_dvar),
 	         H_BFGS(n_dvar, n_dvar),
 			 realH(n_dvar, n_dvar);
@@ -118,18 +119,18 @@ void optimizer(
     //    H = invertHessian(H);
     //}
 
-    double normGrad = 0;
+    double gradient_norm = 0;
     for (int i = 0; i < n_dvar; i++)
-        normGrad += pow(gradient[i], 2);
-    normGrad = sqrt(normGrad);
+        gradient_norm += pow(gradient[i], 2);
+    gradient_norm = sqrt(gradient_norm);
     int it_design = 0;
 
     // Design Loop
-    while(normGrad > opt_opts.opt_tol && it_design < opt_opts.opt_maxit)
+    while(gradient_norm > opt_opts.opt_tol && it_design < opt_opts.opt_maxit)
     {
         it_design++ ;
 
-		printf("Iteration: %d, Cost Function %23.14e Gradient Norm: %23.14e \n", it_design, current_cost, normGrad);
+		printf("Iteration: %d, Cost Function %23.14e Gradient Norm: %23.14e \n", it_design, current_cost, gradient_norm);
 		//std::cout<<"Current Design:\n";
 		//for (int i = 0; i < n_dvar; i++) {
 		//	std::cout<<designVar[i]<<std::endl;
@@ -153,7 +154,7 @@ void optimizer(
             //    averageerr += fabs(expo)/n_dvar;
             //    //pk(i) =  -gradient(i);
             //}
-            //myfile << it_design << "\t" << current_cost <<"\t"<< normGrad << "\t" << averageerr << "\n";
+            //myfile << it_design << "\t" << current_cost <<"\t"<< gradient_norm << "\t" << averageerr << "\n";
             //myfile.flush();
             pk =  -500*gradient;
         } else if (opt_opts.descent_type == 2) {
@@ -176,10 +177,13 @@ void optimizer(
             //pk = -H * gradient;
         }
 
-        std::cout<<"gradient:\n"<<std::endl;
-        std::cout<<-gradient<<std::endl;
-        std::cout<<"pk:\n"<<std::endl;
-        std::cout<<pk<<std::endl;
+		printf("%-15s %-15s\n", "Gradient","Search Direction");
+		int step = 1;
+		if(n_dvar/8>=1) step = n_dvar/8;
+		if(step!=1) printf("Only printing 1 out of %d variables\n", step);
+		for (int i=0; i<n_dvar; i+=step) {
+			printf("%15.5e %15.5e\n", gradient[i], pk[i]);
+		}
 
         double initial_alpha = 1.0;
 		current_cost = linesearch_backtrack_unconstrained(
@@ -189,11 +193,11 @@ void optimizer(
         oldGrad = gradient;
 		gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
-        normGrad = 0;
+        gradient_norm = 0;
         for (int i = 0; i < n_dvar; i++)
-            normGrad += pow(gradient[i], 2);
-        normGrad = sqrt(normGrad);
-        normGradList.push_back(normGrad);
+            gradient_norm += pow(gradient[i], 2);
+        gradient_norm = sqrt(gradient_norm);
+        gradient_norm_list.push_back(gradient_norm);
 
 		clock_t toc = clock();
         double elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
@@ -214,7 +218,7 @@ void optimizer(
     double final_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
     std::cout<<"Fitness: "<<final_cost<<std::endl;
 
-    outVec(constants.case_name, "OptConv.dat", "w", normGradList);
+    outVec(constants.case_name, "OptConv.dat", "w", gradient_norm_list);
     outVec(constants.case_name, "OptTime.dat", "w", timeVec);
     outVec(constants.case_name, "HessianErr.dat", "w", Herror);
     outVec(constants.case_name, "HessianCond.dat", "w", Hcond);
@@ -328,6 +332,11 @@ MatrixXd BFGS(
 
     dg = currentg - oldg;
     dx = searchD;
+
+	if(dx.dot(dg) < 0) {
+		printf("Negative curvature. Not updating BFGS");
+		return oldH;
+	}
 
     a = ((dx.transpose() * dg + dg.transpose() * oldH * dg)(0) * (dx * dx.transpose()))
          / ((dx.transpose() * dg)(0) * (dx.transpose() * dg)(0));

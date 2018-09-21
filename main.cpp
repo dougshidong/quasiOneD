@@ -8,6 +8,7 @@
 #include "quasiOneD.h"
 #include "convert.h"
 #include "optimizer.h"
+#include "oneshot.h"
 #include"petsc.h"
 #include"petscsys.h"
 
@@ -46,6 +47,7 @@ int main(int argc,char **argv)
 
 		struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 		struct Flow_data flow_data;
+		flow_data.dt.resize(n_elem);
 		flow_data.W.resize(3*n_elem);
 		flow_data.W_stage.resize(3*n_elem);
 		flow_data.fluxes.resize(3*n_elem);
@@ -54,6 +56,7 @@ int main(int argc,char **argv)
     }
     else if (input_data->optimization_options->perform_design == 1) {
 		struct Flow_data flow_data;
+		flow_data.dt.resize(n_elem);
 		flow_data.W.resize(3*n_elem);
 		flow_data.W_stage.resize(3*n_elem);
 		flow_data.fluxes.resize(3*n_elem);
@@ -91,6 +94,47 @@ int main(int argc,char **argv)
         PetscInitialize(&argc, &argv, (char*)0,help);
 		optimizer(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
         PetscFinalize();
+
+        //area = evalS(*initial_design, x, dx);
+        //quasiOneD(x, area, flow_options, &flow_data);
+    } else if (input_data->optimization_options->perform_design == 2) {
+		struct Flow_data flow_data;
+		flow_data.dt.resize(n_elem);
+		flow_data.W.resize(3*n_elem);
+		flow_data.W_stage.resize(3*n_elem);
+		flow_data.fluxes.resize(3*n_elem);
+		flow_data.residual.resize(3*n_elem);
+
+		const struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
+
+		// Target design with sine parametrization
+		printf("Creating target pressure...\n");
+        area = evalS(*(input_data->optimization_options->target_design), x, dx);
+        quasiOneD(x, area, flow_options, &flow_data);
+
+		input_data->optimization_options->target_pressure.resize(n_elem);
+		get_all_p(flow_options.gam, flow_data.W, input_data->optimization_options->target_pressure);
+
+		const struct Optimization_options opt_options = *(input_data->optimization_options); // Make a copy
+
+		// Initial design with sine parametrization
+		struct Design *initial_design = opt_options.initial_design;
+		initial_design->design_variables.resize(initial_design->n_design_variables);
+        area = evalS(*initial_design, x, dx);
+
+		// Fit a B-Spline through the sine-parametrized area
+		// Note the control points contain end-points which are not part of the design variables
+		int n_control_pts = initial_design->n_design_variables+2;
+		std::vector<double> control_points =
+			fit_bspline(x, dx, area, n_control_pts, initial_design->spline_degree);
+		for (int i=0; i<initial_design->n_design_variables; i++) {
+			initial_design->design_variables[i] = control_points[i+1];
+		}
+		// Re-evaluate the are based on the B-spline-parametrization
+		initial_design->parametrization = 2;
+
+		oneshot_dwdx(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
+		//oneshot(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
 
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);

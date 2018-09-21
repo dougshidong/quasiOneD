@@ -404,8 +404,8 @@ std::vector<double> evaldlambdadW(
 	const double e)
 {
     std::vector<double> dlambdadWp(3), dlambdadW(3);
-    const double p = (gam - 1) * ( e - rho_u*rho_u/rho / 2 );
-    const double c = sqrt( gam * p / rho );
+    const double p = get_p(gam, rho, rho_u, e);//(gam - 1) * ( e - rho_u*rho_u/rho / 2 );
+    const double c = get_c(gam, rho, rho_u, e);//sqrt( gam * p / rho );
 
     // dlambda/dWp
     const double dlambdadr = -c / (4.0 * rho);

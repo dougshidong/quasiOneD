@@ -15,7 +15,6 @@ void stepInTime(
 	const struct Flow_options &flow_options,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const std::vector<double> &dt,
     struct Flow_data* const flow_data);
 
 #endif

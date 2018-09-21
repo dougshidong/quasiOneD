@@ -9,18 +9,19 @@
 #include "convert.h"
 //#include "petscGMRES.h"
 //#include "residuald1.h"
+#include "boundary_conditions.h"
 
 int ki, kip;
 
 // Domain Residual R = FS_i+1/2 - FS_i-1/2 - Qi
 void getDomainResi( 
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
 	const std::vector<double> &area,
 	const std::vector<double> &W,
 	std::vector<double> &fluxes,
 	std::vector<double> &residual)
 {
-	getFlux(flow_options, W, fluxes);
+	getFlux(flo_opts, W, fluxes);
 	int n_elem = W.size()/3;
     for (int k = 0; k < 3; k++) {
         for (int i = 1; i < n_elem - 1; i++) {
@@ -29,7 +30,7 @@ void getDomainResi(
             residual[ki] = fluxes[kip] * area[i + 1] - fluxes[ki] * area[i];
 
 			if (k==1) { // Source Term
-				double p = get_p(flow_options.gam, W[i*3+0], W[i*3+1], W[i*3+2]);
+				double p = get_p(flo_opts.gam, W[i*3+0], W[i*3+1], W[i*3+2]);
 				residual[ki] -= p * (area[i + 1] - area[i]);
 			}
         }
@@ -37,17 +38,15 @@ void getDomainResi(
 }
 
 void EulerExplicitStep(
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const std::vector<double> &dt,
     struct Flow_data* const flow_data);
 
 void jamesonrk(
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const std::vector<double> &dt,
     struct Flow_data* const flow_data);
 
 //void eulerImplicit(
@@ -63,41 +62,51 @@ void jamesonrk(
 //    Flow_data &flow_data);
 
 void stepInTime(
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const std::vector<double> &dt,
     struct Flow_data* const flow_data)
 {
-    if (flow_options.time_scheme == 0) {
-        EulerExplicitStep(flow_options, area, dx, dt, flow_data);
-    } else if (flow_options.time_scheme == 1) {
+	// Calculate Time Step
+	int n_elem = flo_opts.n_elem;
+	for (int i = 0; i < n_elem; i++) {
+		double u = flow_data->W[i*3+1] / flow_data->W[i*3+0];
+		double c = get_c(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
+		flow_data->dt[i] = (flo_opts.CFL * dx[i]) / fabs(u + c);
+	}
+    if (flo_opts.time_scheme == 0) {
+        EulerExplicitStep(flo_opts, area, dx, flow_data);
+    } else if (flo_opts.time_scheme == 1) {
         abort();//rk4(area, dx, dt, flow_data);
-    } else if (flow_options.time_scheme == 2) {
-        jamesonrk(flow_options, area, dx, dt, flow_data);
-    } else if (flow_options.time_scheme == 3) {
+    } else if (flo_opts.time_scheme == 2) {
+        jamesonrk(flo_opts, area, dx, flow_data);
+    } else if (flo_opts.time_scheme == 3) {
         abort();//eulerImplicit(area, dx, dt, flow_data);
-    } else if (flow_options.time_scheme == 4) {
+    } else if (flo_opts.time_scheme == 4) {
         abort();//crankNicolson(area, dx, dt, flow_data);
     }
+
+	const int first_cell = 0;
+	const int last_cell = n_elem-1;
+	inletBC(flo_opts, flow_data->dt[first_cell], dx[first_cell], flow_data);
+	outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
 }
 
 
 // Euler Explicit
 void EulerExplicitStep(
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const std::vector<double> &dt,
     struct Flow_data* const flow_data)
 {
-    getDomainResi(flow_options, area, flow_data->W, flow_data->fluxes, flow_data->residual);
+    getDomainResi(flo_opts, area, flow_data->W, flow_data->fluxes, flow_data->residual);
 
-	int n_elem = flow_options.n_elem;
+	int n_elem = flo_opts.n_elem;
     for (int k = 0; k < 3; k++){
 		for (int i = 1; i < n_elem - 1; i++) {
 			ki = i * 3 + k;
-			flow_data->W[ki] = flow_data->W[ki] - (dt[i] / dx[i]) * flow_data->residual[ki];
+			flow_data->W[ki] = flow_data->W[ki] - (flow_data->dt[i] / dx[i]) * flow_data->residual[ki];
 		}
 	}
     return;
@@ -106,13 +115,12 @@ void EulerExplicitStep(
 
 // Jameson's 4th order Runge - Kutta Stepping Scheme
 void jamesonrk(
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const std::vector<double> &dt,
     struct Flow_data* const flow_data)
 {
-	int n_elem = flow_options.n_elem;
+	int n_elem = flo_opts.n_elem;
     // Initialize First Stage
     for (int k = 0; k < 3; k++) {
         for (int i = 0; i < n_elem; i++) {
@@ -123,14 +131,14 @@ void jamesonrk(
     // 1-4 Stage
     for (int r = 1; r < 5; r++) {
         // Calculate Residuals
-		getDomainResi(flow_options, area, flow_data->W_stage, flow_data->fluxes, flow_data->residual);
+		getDomainResi(flo_opts, area, flow_data->W_stage, flow_data->fluxes, flow_data->residual);
         // Step in RK time
         for (int k = 0; k < 3; k++)
         {
             for (int i = 1; i < n_elem - 1; i++)
             {
                 ki = i * 3 + k;
-                flow_data->W_stage[ki] = flow_data->W[ki] - (dt[i] / (5 - r)) * flow_data->residual[ki] / dx[i];
+                flow_data->W_stage[ki] = flow_data->W[ki] - (flow_data->dt[i] / (5 - r)) * flow_data->residual[ki] / dx[i];
             }
             flow_data->W_stage[0 * 3 + k] = flow_data->W[0 * 3 + k];
             flow_data->W_stage[(n_elem - 1) * 3 + k] = flow_data->W[(n_elem - 1) * 3 + k];
@@ -142,7 +150,7 @@ void jamesonrk(
         for (int i = 1; i < n_elem - 1; i++)
         {
             ki = i * 3 + k;
-            flow_data->residual[ki] = (flow_data->W_stage[ki] - flow_data->W[ki]) * dx[i] / dt[i];
+            flow_data->residual[ki] = (flow_data->W_stage[ki] - flow_data->W[ki]) * dx[i] / flow_data->dt[i];
             flow_data->W[ki] = flow_data->W_stage[ki];
         }
     }

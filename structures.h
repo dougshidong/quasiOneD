@@ -5,6 +5,7 @@
 #include <vector>
 
 struct Flow_data {
+	std::vector<double> dt;
 	std::vector<double> W;
 	std::vector<double> W_stage;
 	std::vector<double> fluxes;

@@ -8,11 +8,14 @@
 //inline double get_c(const double rho, const double rho_u, const double e);
 // Get pressure
 inline double get_p(const double gamma, const double rho, const double rho_u, const double e) {
-	return (gamma - 1.0) * ( e - (pow(rho_u, 2.0) / rho) / 2.0 );
-}
+	return (gamma - 1.0) * ( e - (pow(rho_u, 2.0) / rho+1e-14) / 2.0 );
+};
 inline double get_c(const double gamma, const double rho, const double rho_u, const double e) {
-	return sqrt( gamma / rho * get_p(gamma, rho, rho_u, e) );
-}
+	double a =  gamma / rho * get_p(gamma, rho, rho_u, e);
+	if(a<0.0) abort();
+	return sqrt(a);
+	//return sqrt( gamma / rho * get_p(gamma, rho, rho_u, e) );
+};
 void get_all_p(
 	const double gam,
     std::vector<double> const &W,
