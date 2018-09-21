@@ -1,6 +1,10 @@
 #ifndef fitness_h
 #define fitness_h
 #include <vector>
-double evalFitness(std::vector<double> dx, std::vector<double> W);
-void ioTargetPressure(int io, std::vector<double> &p);
+#include "structures.h"
+double evalFitness(
+    const std::vector<double> &dx,
+	const struct Flow_options &flow_options,
+    const std::vector<double> &W,
+	const struct Optimization_options &opt_options);
 #endif

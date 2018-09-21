@@ -1,17 +1,32 @@
+#include "structures.h"
 #include <iostream>
 #include <math.h>
 #include <vector>
-#include "globals.h"
 #include "spline.h"
 
 std::vector<double> sinParam(
-    std::vector<double> geom,
+    const double h, const double t1, const double t2,
     std::vector<double> x,
-    std::vector<double> dx);
+    std::vector<double> dx)
+{
+	const double PI = atan(1.0) * 4.0;
+	int n_elem = x.size();
+    std::vector<double> area(n_elem + 1);
+    // Define Area
+    for (int i = 1; i < n_elem; i++) {
+        double xh = x[i] - dx[i] / 2.0;
+        area[i] = 1 - h * pow(sin(PI * pow(xh, t1)), t2);
+    }
+
+    area[0] = 1;
+    area[n_elem] = 1;
+
+    return area;
+}
 
 
 // Evaluate X
-std::vector<double> evalX(double a, double b) {
+std::vector<double> uniform_x(double a, double b, int n_elem) {
     std::vector<double> x(n_elem);
     double dxConst = (b - a)/n_elem;
 
@@ -24,6 +39,7 @@ std::vector<double> evalX(double a, double b) {
 //  Evaluate dx
 
 std::vector<double> eval_dx(std::vector<double> x) {
+	int n_elem = x.size();
     std::vector<double> dx(n_elem);
 
     dx[0] = x[1] - x[0];
@@ -36,55 +52,28 @@ std::vector<double> eval_dx(std::vector<double> x) {
 }
 
 std::vector<double> evalS(
-    std::vector<double> geom,
-    std::vector<double> x,
-    std::vector<double> dx,
-    int param)
+	const struct Design &design,
+    const std::vector<double> &x,
+    const std::vector<double> &dx)
 {
+	int n_elem = x.size();
     std::vector<double> area(n_elem + 1);
-    if (param == 0) {
-        area[0] = 1.0;
-        area[n_elem] = 1.0;
-        for (int Si = 1; Si < n_elem; Si++)
-        {
-            area[Si] = geom[Si - 1];
-        }
+    if (design.parametrization == 0) {
+		abort();
     }
-    else if (param == 1)
-    {
-        area = sinParam(geom, x, dx);\
+    else if (design.parametrization == 1) {
+        area = sinParam(design.h, design.t1, design.t2, x, dx);\
     }
-    else if (param == 2)
-    {
-        std::vector<double> control_pts(n_control_pts);
-        for (int ictl = 1; ictl < n_control_pts - 1; ictl++)
-        {
-            control_pts[ictl] = geom[ictl - 1];
-        }
-        control_pts[0] = 1;
-        control_pts[n_control_pts - 1] = 1;
-        area = evalSpline(control_pts, x, dx);
-    }
-    return area;
-}
+    else if (design.parametrization == 2) {
+		int n_control_pts = design.n_design_variables + 2;
+		int spline_degree = design.spline_degree;
+        std::vector<double> control_points;
+		control_points.push_back(1); // Clamped
+		control_points.insert(control_points.end(), design.design_variables.begin(), design.design_variables.end());
+		control_points.push_back(1); // Clamped
 
-std::vector<double> sinParam(
-    std::vector<double> geom,
-    std::vector<double> x,
-    std::vector<double> dx)
-{
-    std::vector<double> area(n_elem + 1);
-    double xh;
-    // Define Area
-    for (int i = 1; i < n_elem; i++)
-    {
-        xh = x[i] - dx[i] / 2.0;
-        area[i] = 1 - geom[0] * pow(sin(PI * pow(xh, geom[1])), geom[2]);
+        area = evalSpline(n_control_pts, spline_degree, control_points, x, dx);
     }
-
-    area[0] = 1;
-    area[n_elem] = 1;
-
     return area;
 }
 

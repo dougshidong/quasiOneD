@@ -3,14 +3,17 @@
 
 #include<vector>
 #include<Eigen/Sparse>
+#include"structures.h"
 
 using namespace Eigen;
 
 SparseMatrix<double> evaldRdW(
-    std::vector<double> W,
-    std::vector<double> dx,
-    std::vector<double> dt,
-    std::vector<double> area);
+    const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data);
+MatrixXd evaldRdS(
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data);
 
 SparseMatrix<double> evaldRdW_FD(
     std::vector<double> W,
@@ -34,11 +37,6 @@ void ScalarJac(
 std::vector<double> evaldpdW(
     std::vector<double> W,
     std::vector<double> area);
-
-MatrixXd evaldRdS(
-    std::vector<double> Flux,
-    std::vector<double> area,
-    std::vector<double> W);
 
 MatrixXd evaldRdS_FD(
     std::vector<double> Flux,

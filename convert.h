@@ -4,24 +4,37 @@
 #include<vector>
 #include<Eigen/Core>
 
-void getp(
-    const std::vector<double> &W,
+//inline double get_p(const double rho, const double rho_u, const double e);
+//inline double get_c(const double rho, const double rho_u, const double e);
+// Get pressure
+inline double get_p(const double gamma, const double rho, const double rho_u, const double e) {
+	return (gamma - 1.0) * ( e - (pow(rho_u, 2.0) / rho) / 2.0 );
+}
+inline double get_c(const double gamma, const double rho, const double rho_u, const double e) {
+	return sqrt( gamma / rho * get_p(gamma, rho, rho_u, e) );
+}
+void get_all_p(
+	const double gam,
+    std::vector<double> const &W,
     std::vector<double> &p);
 
 void WtoP(
-    const std::vector<double> &W,
+	const double gam,
+	const double R,
+    std::vector<double> const &W,
     std::vector<double> &rho,
     std::vector<double> &u,
     std::vector<double> &e);
 
 void WtoP2(
-    const std::vector<double> &W,
+	const double gam,
+    std::vector<double> const &W,
     std::vector<double> &rho,
     std::vector<double> &u,
     std::vector<double> &p);
 
 void WtoP(
-    const std::vector<double> &W,
+    std::vector<double> const &W,
     std::vector<double> &rho,
     std::vector<double> &e,
     std::vector<double> &u,
@@ -30,29 +43,35 @@ void WtoP(
     std::vector<double> &T);
 
 void PtoW(
+	const double gam,
     std::vector<double> &W,
-    const std::vector<double> &Wp);
+    std::vector<double> const &Wp);
 
-void dWpdW(
-    std::vector<double> &M,
-    const std::vector<double> &W,
-    int k);
+void eval_dWpdW(
+	const double gam,
+	const double rho,
+	const double rho_u,
+    std::vector<double>* const dWpdW_vec);
 
-Eigen::MatrixXd dWpdW(
-    const std::vector<double> &W,
+Eigen::MatrixXd eval_dWpdW(
+	const double gam,
+    std::vector<double> const &W,
     int i);
 
 void dWdWp(
+	const double gam,
     std::vector<double> &M,
-    const std::vector<double> &W,
+    std::vector<double> const &W,
     int k);
 
 void WtoF(
-    const std::vector<double> &W,
+	const double gam,
+    std::vector<double> const &W,
     std::vector<double> &F);
 
 void WtoQ(
-    const std::vector<double> &W,
+	const double gam,
+    std::vector<double> const &W,
     std::vector<double> &Q,
-    const std::vector<double> &area);
+    std::vector<double> const &area);
 #endif

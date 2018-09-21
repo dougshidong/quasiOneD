@@ -2,20 +2,24 @@
 #define QUASIONED_H
 
 #include<vector>
+#include"structures.h"
 
 double isenP(double pt, double M);
 double isenT(double Tt, double M);
 double quasiOneD(
-    std::vector<double> x,
-    std::vector<double> area,
-    std::vector<double> &W);
+    const std::vector<double> &x,
+    const std::vector<double> &area,
+	const Flow_options &flow_options,
+    struct Flow_data* const flow_data);
 void inletBC(
-    std::vector<double> &W,
-    std::vector<double> &Resi,
-    double dt0, double dx0);
+    const Flow_options &flow_options,
+    const double dt0,
+	const double dx0,
+    struct Flow_data* const flow_data);
 void outletBC(
-    std::vector<double> &W,
-    std::vector<double> &Resi,
-    double dt0, double dx0);
+    const Flow_options &flow_options,
+    const double dt0,
+	const double dx0,
+    struct Flow_data* const flow_data);
 
 #endif

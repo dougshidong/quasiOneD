@@ -1,3 +1,4 @@
+#include "structures.h"
 #include<iostream>
 #include<fstream>
 #include<math.h>
@@ -8,46 +9,47 @@
 #include"quasiOneD.h"
 #include"fitness.h"
 #include"grid.h"
-#include"adjoint.h"
-#include"directDifferentiation.h"
-#include"globals.h"
 #include"gradient.h"
-#include"analyticHessian.h"
+//#include"analyticHessian.h"
 #include"output.h"
 #include<time.h>
 #include<stdlib.h>     /* srand, rand */
 
 using namespace Eigen;
 
-MatrixXd finiteD2g(
-    std::vector<double> x,
-    std::vector<double> dx,
-    std::vector<double> area,
-    std::vector<double> designVar,
-    double h);
-MatrixXd finiteD2(std::vector<double> x,
-    std::vector<double> dx,
-    std::vector<double> area,
-    std::vector<double> designVar,
-    double h,
-    double currentI);
+void test_grad(
+	const std::vector<double> &x,
+	const std::vector<double> &dx, 
+	const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data,
+	const struct Optimization_options &opt_opts,
+	const struct Design &design);
+void test_hessian(
+	double current_cost,
+	std::vector<double> x, std::vector<double> dx, 
+	std::vector<double> area,
+	Flow_data flow_data,
+	std::vector<double> designVar);
 
-double stepBacktrackUncons(
-    double alpha,
-    std::vector<double> &designVar,
-    VectorXd &searchD,
-    VectorXd pk,
-    VectorXd gradient,
-    double currentI,
-    std::vector<double> x,
-    std::vector<double> dx,
-    std::vector<double> &W);
+double linesearch_backtrack_unconstrained(
+    const double initial_alpha,
+    const std::vector<double> x,
+    const std::vector<double> dx,
+    const VectorXd &pk,
+    const VectorXd &gradient,
+    const double current_cost,
+	const struct Flow_options &flo_opts,
+	const struct Optimization_options &opt_opts,
+    VectorXd* const searchD,
+    struct Flow_data* const flow_data,
+    struct Design* const current_design);
 
 MatrixXd BFGS(
-    MatrixXd oldH,
-    VectorXd oldg,
-    VectorXd currentg,
-    VectorXd searchD);
+    const MatrixXd &oldH,
+    const VectorXd &oldg,
+    const VectorXd &currentg,
+    const VectorXd &searchD);
 
 double checkCond(MatrixXd H);
 MatrixXd invertHessian(MatrixXd H);
@@ -55,170 +57,92 @@ LLT<MatrixXd> checkPosDef(MatrixXd H);
 
 VectorXd implicitSmoothing(VectorXd gradient, double epsilon);
 
-void test_grad(int gradientType1, int gradientType2, double currentI, 
-	std::vector<double> x, std::vector<double> dx, 
-	std::vector<double> area, std::vector<double> W, 
-	std::vector<double> designVar, VectorXd psi)
+
+void optimizer(
+	const struct Constants &constants,
+    const std::vector<double> &x,
+	const std::vector<double> &dx,
+	const struct Flow_options &flo_opts,
+	const struct Optimization_options &opt_opts,
+	const struct Design &initial_design)
 {
-	printf("Comparing Adjoint, Direct-Differentiation, and Central FD\n");
-	int n_des = designVar.size();
-    VectorXd adjoint_gradient(n_des);
-    VectorXd direct_gradient(n_des);
-    VectorXd finite_gradient(n_des);
-    adjoint_gradient = getGradient(1, currentI, x, dx, area, W, designVar, psi);
-    direct_gradient = getGradient(2, currentI, x, dx, area, W, designVar, psi);
-    finite_gradient = getGradient(-3, currentI, x, dx, area, W, designVar, psi);
+	int n_elem = flo_opts.n_elem;
+	int n_dvar = opt_opts.n_design_variables;
+	struct Flow_data flow_data;
+	flow_data.W.resize(3*n_elem);
+	flow_data.W_stage.resize(3*n_elem);
+	flow_data.fluxes.resize(3*(n_elem+1)); // At the faces
+	flow_data.residual.resize(3*n_elem);
 
-	printf(" Adjoint                  Direct-Diff             Central FD              AD-DA                   AD-FD                   DA-FD\n");
-	for (int i = 0; i < n_des; i++) {
-		double g1 = adjoint_gradient[i];
-		double g2 = direct_gradient[i];
-		double g3 = finite_gradient[i];
-		double r1 = (g1-g2)/(g1+1e-15);
-		double r2 = (g1-g3)/(g1+1e-15);
-		double r3 = (g2-g3)/(g2+1e-15);
-		printf("%23.15e %23.15e %23.15e %23.15e %23.15e %23.15e\n", g1, g2, g3, r1, r2, r3);
-	}
-	return;
-}
+	struct Design current_design = initial_design;
+	current_design.design_variables = initial_design.design_variables;
 
-void test_hessian(double currentI,
-	std::vector<double> x, std::vector<double> dx, 
-	std::vector<double> area, std::vector<double> W, 
-	std::vector<double> designVar)
-{
-    exactHessian = 1; // Calculate exact Hessian to compare with BFGS
-    MatrixXd directAdjoint = getAnalyticHessian(x, dx, W, area, designVar, 3);
-    double err;
-    std::cout<<"DA: "<<directAdjoint<<std::endl;
+    std::vector<double> area = evalS(current_design, x, dx);
 
-    MatrixXd H;
-    for (int i = 3; i < 8; i++) {
-        double h = pow(10,-i);
-        std::cout<<"h = "<<h<<std::endl;
-    std::cout.setstate(std::ios_base::failbit);
-        MatrixXd H = finiteD2g(x, dx, area, designVar, h);
-    std::cout.clear();
-        err = (directAdjoint - H).norm()/directAdjoint.norm();
-        std::cout<<"DA - FDg: "<<err<<std::endl;
-        //std::cout<<std::setprecision(15)<<H<<std::endl;
+    std::vector<double> normGradList, timeVec, Herror, svdvalues, svdvaluesreal, Hcond;
+    MatrixXd H(n_dvar, n_dvar),
+	         H_BFGS(n_dvar, n_dvar),
+			 realH(n_dvar, n_dvar);
 
-    std::cout.setstate(std::ios_base::failbit);
-        H = finiteD2(x, dx, area, designVar, h, currentI);
-    std::cout.clear();
-        err = (directAdjoint - H).norm()/directAdjoint.norm();
-        std::cout<<"DA - FD: "<<err<<std::endl;
-        //std::cout<<std::setprecision(15)<<H<<std::endl;
-    }
-
-    H= getAnalyticHessian(x, dx, W, area, designVar, 1);
-    err = (directAdjoint - H).norm()/directAdjoint.norm();
-    std::cout<<"DA - AD: "<<err<<std::endl;
-    //std::cout<<std::setprecision(15)<<H<<std::endl;
-
-    H= getAnalyticHessian(x, dx, W, area, designVar, 2);
-    err = (directAdjoint - H).norm()/directAdjoint.norm();
-    std::cout<<"DA - AA: "<<err<<std::endl;
-    //std::cout<<std::setprecision(15)<<H<<std::endl;
-
-
-    H= getAnalyticHessian(x, dx, W, area, designVar, 0);
-    err = (directAdjoint - H).norm()/directAdjoint.norm();
-    std::cout<<"DA - DD: "<<err<<std::endl;
-    //std::cout<<std::setprecision(15)<<H<<std::endl;
-    return;
-}
-void design(
-    std::vector<double> x, std::vector<double> dx,
-    std::vector<double> area, std::vector<double> designVar)
-{
-    std::vector<double> W(3 * n_elem, 0);
-
-    std::vector<double> normGradList;
-    std::vector<double> timeVec;
-    std::vector<double> Herror;
-    std::vector<double> svdvalues;
-    std::vector<double> svdvaluesreal;
-    std::vector<double> Hcond;
-    MatrixXd H(nDesVar, nDesVar), H_BFGS(nDesVar, nDesVar), realH(nDesVar, nDesVar);
-    double normGrad;
-    double currentI;
-    double alpha;
-
-    int printConv = 1;
-
-    VectorXd pk(nDesVar), searchD(nDesVar);
+    VectorXd pk(n_dvar), searchD(n_dvar);
 
     clock_t tic = clock();
-    clock_t toc;
-    double elapsed;
 
     std::ofstream myfile;
     myfile.open("convergence.dat");
     myfile << " Iteration \t Cost Function \t Gradient Norm \t Average Error \n";
 
-    quasiOneD(x, area, W);
-    currentI = evalFitness(dx, W);
+	quasiOneD(x, area, flo_opts, &flow_data);
+    double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
 
     VectorXd psi(3 * n_elem);
 
-    VectorXd gradient(nDesVar);
-    VectorXd oldGrad(nDesVar); //BFGS
-    gradient = getGradient(gradientType, currentI, x, dx, area, W, designVar, psi);
+    VectorXd gradient(n_dvar);
+    VectorXd oldGrad(n_dvar); //BFGS
+    gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
 	bool testingGradient = true;
-	//#testingGradient = false;
+	testingGradient = false;
 	if (testingGradient) {
-		test_grad(gradientType, -3, currentI, x, dx, area, W, designVar, psi);
-        test_hessian(currentI, x, dx, area, W, designVar);
+		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
+        //test_hessian(current_cost, x, dx, area, flow_data, designVar);
 		exit(0);
 	}
 
     // Initialize B
     H.setIdentity();
     H = H * 1.0;
-    if (exactHessian == 1)
-    {
-        H = getAnalyticHessian(x, dx, W, area, designVar, hessianType);
-//      H = finiteD2(x, dx, area, designVar, h, currentI);
-        checkCond(H);
-        H = invertHessian(H);
-    }
+    //if (opt_opts.exact_hessian != 0) {
+    //    H = getAnalyticHessian(x, dx, flow_data.W, area, designVar, hessian_type);
+    //    checkCond(H);
+    //    H = invertHessian(H);
+    //}
 
-    normGrad = 0;
-    for (int i = 0; i < nDesVar; i++)
+    double normGrad = 0;
+    for (int i = 0; i < n_dvar; i++)
         normGrad += pow(gradient[i], 2);
     normGrad = sqrt(normGrad);
-    int iDesign = 0;
+    int it_design = 0;
 
     // Design Loop
-    while(normGrad > gradConv && iDesign < maxDesign)
+    while(normGrad > opt_opts.opt_tol && it_design < opt_opts.opt_maxit)
     {
-        iDesign++ ;
+        it_design++ ;
 
-        if (printConv == 1)
-        {
-            std::cout<<"Iteration :"<<iDesign<<
-                "    GradientNorm: "<<normGrad<<std::endl;
-            std::cout<<"Current Design:\n";
-            for (int i = 0; i < nDesVar; i++)
-                std::cout<<designVar[i]<<std::endl;
-
-//          std::cout<<"Current Shape:\n";
-//          for (int i = 0; i < n_elem + 1; i++)
-//              std::cout<<area[i]<<std::endl;
-        }
-        std::cout<<"Current Fitness: "<<currentI<<std::endl;
+		printf("Iteration: %d, Cost Function %23.14e Gradient Norm: %23.14e \n", it_design, current_cost, normGrad);
+		//std::cout<<"Current Design:\n";
+		//for (int i = 0; i < n_dvar; i++) {
+		//	std::cout<<designVar[i]<<std::endl;
+		//}
 
 //      1  =  Steepest Descent
 //      2  =  Quasi-Newton (BFGS)
 //      3  =  Newton
 //      4  =  Truncated Newton with Adjoint-Direct Matrix-Vector Product
-        if (descentType == 1)
-        {
+        if (opt_opts.descent_type == 1) {
             //int expo = rand() % 5 + 1 - 3;
             //double averageerr = 0;
-            //for (int i = 0; i<nDesVar; i++) {
+            //for (int i = 0; i<n_dvar; i++) {
             //    srand (time(NULL));
             //    double fMin = -2.0;
             //    double fMax = 2.0;
@@ -226,322 +150,135 @@ void design(
             //    expo =  fMin + expo * (fMax - fMin);
             //    expo =  0.0;
             //    pk(i) =  -10*gradient(i)*pow(10,expo);
-            //    averageerr += fabs(expo)/nDesVar;
+            //    averageerr += fabs(expo)/n_dvar;
             //    //pk(i) =  -gradient(i);
             //}
-            //myfile << iDesign << "\t" << currentI <<"\t"<< normGrad << "\t" << averageerr << "\n";
+            //myfile << it_design << "\t" << current_cost <<"\t"<< normGrad << "\t" << averageerr << "\n";
             //myfile.flush();
             pk =  -500*gradient;
-        }
-        else if (descentType == 2)
-        {
-            if (iDesign > 1)
-            {
+        } else if (opt_opts.descent_type == 2) {
+            if (it_design > 1) {
                 H_BFGS = BFGS(H, oldGrad, gradient, searchD);
                 H = H_BFGS;
             }
-
-//          realH = getAnalyticHessian(x, dx, W, area, designVar, 2);
-//          JacobiSVD<MatrixXd> svd1(H.inverse(), ComputeFullU | ComputeFullV);
-//          JacobiSVD<MatrixXd> svd2(realH, ComputeFullU | ComputeFullV);
-
-//          std::cout<<"svd1"<<std::endl;
-//          std::cout<<svd1.singularValues()<<std::endl;
-//          std::cout<<"svd2"<<std::endl;
-//          std::cout<<svd2.singularValues()<<std::endl;
-//          for (int i = 0; i < nDesVar; i++)
-//          {
-//              svdvalues.push_back(svd1.singularValues()(i));
-//              svdvaluesreal.push_back(svd2.singularValues()(i));
-//          }
-//
-//          std::cout<<"svd singular values error"<<std::endl;
-//          std::cout<<
-//              (svd1.singularValues()-svd2.singularValues()).norm()
-//              /svd2.singularValues().norm()<<std::endl;
-
-//          std::cout<<"svd singular vectors error"<<std::endl;
-//          std::cout<<
-//              (svd1.matrixV()-svd2.matrixV()).norm()
-//              /svd2.matrixV().norm()<<std::endl;
-            // Eigenvalues are not returned in ascending order.
-//          std::cout<<"eig1"<<std::endl;
-//          std::cout<<H.inverse().eigenvalues()<<std::endl;
-//          std::cout<<"eig2"<<std::endl;
-//          std::cout<<realH.eigenvalues()<<std::endl;
-//          std::cout<<"Eig error"<<std::endl;
-//          std::cout<<
-//              (H.inverse().eigenvalues()-realH.eigenvalues()).norm()
-//              /realH.eigenvalues().norm()<<std::endl;
-
-//          realH = realH.inverse();
-//          Hcond.push_back(checkCond(realH.inverse()));
-//          double err = (realH - H).norm()/realH.norm();
-//          std::cout<<"Hessian error: "<<err<<std::endl;
-//          Herror.push_back(err);
-
             pk = -H * gradient;
+        } else if (opt_opts.descent_type == 3) {
+            //H = getAnalyticHessian(x, dx, flow_data.W, area, designVar, hessian_type);
+            //realH = getAnalyticHessian(x, dx, flow_data.W, area, designVar, 2);
+            //double err = (realH - H).norm()/realH.norm();
+            //std::cout<<"Hessian error: "<<err<<std::endl;
+            //Herror.push_back(err);
+
+            //checkCond(H);
+            //H = invertHessian(H);
+            //Hcond.push_back(checkCond(realH.inverse()));
+
+            //pk = -H * gradient;
         }
-        else if (descentType == 3)
-        {
-            H = getAnalyticHessian(x, dx, W, area, designVar, hessianType);
-            realH = getAnalyticHessian(x, dx, W, area, designVar, 2);
-            double err = (realH - H).norm()/realH.norm();
-            std::cout<<"Hessian error: "<<err<<std::endl;
-            Herror.push_back(err);
-
-            checkCond(H);
-            H = invertHessian(H);
-            Hcond.push_back(checkCond(realH.inverse()));
-
-            pk = -H * gradient;
-        }
-//        std::cout<<realH<<std::endl;
-        
-//      std::cout<<"pk before smoothing:\n"<<std::endl;
-//      std::cout<<pk<<std::endl;
-
-//      pk = implicitSmoothing(pk, 0.5);
-        alpha = 1.0;
 
         std::cout<<"gradient:\n"<<std::endl;
         std::cout<<-gradient<<std::endl;
         std::cout<<"pk:\n"<<std::endl;
         std::cout<<pk<<std::endl;
 
-        currentI = stepBacktrackUncons(alpha, designVar, searchD, pk, gradient, currentI, x, dx, W);
+        double initial_alpha = 1.0;
+		current_cost = linesearch_backtrack_unconstrained(
+			initial_alpha, x, dx, pk, gradient, current_cost, flo_opts, opt_opts, &searchD, &flow_data, &current_design);
 
-        area = evalS(designVar, x, dx, desParam);
+		area = evalS(current_design, x, dx);
         oldGrad = gradient;
-        gradient = getGradient(gradientType, currentI, x, dx, area, W, designVar, psi);
+		gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
         normGrad = 0;
-        for (int i = 0; i < nDesVar; i++)
+        for (int i = 0; i < n_dvar; i++)
             normGrad += pow(gradient[i], 2);
         normGrad = sqrt(normGrad);
         normGradList.push_back(normGrad);
 
-        toc = clock();
-        elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+		clock_t toc = clock();
+        double elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
         timeVec.push_back(elapsed);
         std::cout<<"Time: "<<elapsed<<std::endl;
 
-        std::cout<<"End of Design Iteration: "<<iDesign<<std::endl<<std::endl<<std::endl;
+        std::cout<<"End of Design Iteration: "<<it_design<<std::endl<<std::endl<<std::endl;
     }
 
     std::cout<<"Final Gradient:"<<std::endl;
     std::cout<<gradient<<std::endl;
 
     std::cout<<std::endl<<"Final Design:"<<std::endl;
-    for (int i = 0; i < nDesVar; i++)
-        std::cout<<designVar[i]<<std::endl;
+    for (int i = 0; i < n_dvar; i++)
+        std::cout<<current_design.design_variables[i]<<std::endl;
 
-    std::cout<<"Fitness: "<<evalFitness(dx, W)<<std::endl;
 
-    outVec("OptConv.dat", "w", normGradList);
-    outVec("OptTime.dat", "w", timeVec);
-    outVec("HessianErr.dat", "w", Herror);
-    outVec("HessianCond.dat", "w", Hcond);
-    outVec("svd.dat", "w", svdvalues);
-    outVec("svdreal.dat", "w", svdvaluesreal);
+    double final_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
+    std::cout<<"Fitness: "<<final_cost<<std::endl;
+
+    outVec(constants.case_name, "OptConv.dat", "w", normGradList);
+    outVec(constants.case_name, "OptTime.dat", "w", timeVec);
+    outVec(constants.case_name, "HessianErr.dat", "w", Herror);
+    outVec(constants.case_name, "HessianCond.dat", "w", Hcond);
+    outVec(constants.case_name, "svd.dat", "w", svdvalues);
+    outVec(constants.case_name, "svdreal.dat", "w", svdvaluesreal);
 
     myfile.close();
 
     return;
 }
 
-double stepBacktrackUncons(
-    double alpha,
-    std::vector<double> &designVar,
-    VectorXd &searchD,
-    VectorXd pk,
-    VectorXd gradient,
-    double currentI,
-    std::vector<double> x,
-    std::vector<double> dx,
-    std::vector<double> &W)
+double linesearch_backtrack_unconstrained(
+    const double initial_alpha,
+    const std::vector<double> x,
+    const std::vector<double> dx,
+    const VectorXd &pk,
+    const VectorXd &gradient,
+    const double current_cost,
+	const struct Flow_options &flo_opts,
+	const struct Optimization_options &opt_opts,
+    VectorXd* const searchD,
+    struct Flow_data* const flow_data,
+    struct Design* const current_design)
 {
-//  std::vector<double> W(3 * n_elem, 0);
-
+	int n_dvar = current_design->n_design_variables;
+	double alpha = initial_alpha;
     double c1 = 1e-4;
-    std::vector<double> tempS(n_elem + 1);
-    double newVal;
+    double c_pk_grad = c1 * gradient.dot(pk);
 
-    double c_pk_grad = 0;
-
-
-    c_pk_grad = c1 * gradient.dot(pk);
-
-    std::vector<double> tempD(nDesVar);
-    for (int i = 0; i < nDesVar; i++)
-    {
-        tempD[i] = designVar[i] + alpha * pk[i];
+	// Copy current design
+	struct Design new_design = *current_design;
+    for (int i = 0; i < n_dvar; i++) {
+        new_design.design_variables[i] = current_design->design_variables[i] + alpha * pk[i];
     }
 
-    tempS = evalS(tempD, x, dx, desParam);
-    quasiOneD(x, tempS, W);
-    newVal = evalFitness(dx, W);
-
-    while(newVal > (currentI + alpha * c_pk_grad) && alpha > 1e-16)
+    std::vector<double> tempA = evalS(new_design, x, dx);
+	quasiOneD(x, tempA, flo_opts, flow_data);
+    double new_cost = evalFitness(dx, flo_opts, flow_data->W, opt_opts);
+	while(new_cost > (current_cost + alpha * c_pk_grad))
     {
         alpha = alpha * 0.5;
-        std::cout<<"Alpha Reduction: "<<alpha<<std::endl;
+        printf("Alpha Reduction: %e\n", alpha);
+		if (alpha < 1e-14) {
+			printf("Error. Can't find step size. Returning with tiny step.\n");
+		}
 
-        for (int i = 0; i < nDesVar; i++)
-            tempD[i] = designVar[i] + alpha * pk[i];
-        tempS = evalS(tempD, x, dx, desParam);
-        quasiOneD(x, tempS, W);
-        newVal = evalFitness(dx, W);
-        std::cout<<"newVal: "<<newVal<<std::endl;
-        std::cout<<"currentI + alpha/2.0 * c_pk_grad: "<<
-        currentI + alpha/ 2.0 * c_pk_grad<<std::endl;
-    }
-    if (alpha < 1e-16) std::cout<<"Error. Can't find step size"<<std::endl;
-
-    designVar = tempD;
-    for (int i = 0; i < nDesVar; i++)
-    {
-        searchD[i] = alpha * pk[i];
+        for (int i = 0; i < n_dvar; i++) {
+            new_design.design_variables[i] = current_design->design_variables[i] + alpha * pk[i];
+		}
+        tempA = evalS(new_design, x, dx);
+		quasiOneD(x, tempA, flo_opts, flow_data);
+		new_cost = evalFitness(dx, flo_opts, flow_data->W, opt_opts);
+        std::cout<<"new_cost: "<<new_cost<<std::endl;
+        printf("current_cost + alpha/2.0 * c_pk_grad: %e\n", current_cost + alpha/ 2.0 * c_pk_grad);
     }
 
-    return newVal;
+    *current_design = new_design;
+    for (int i = 0; i < n_dvar; i++) {
+        (*searchD)[i] = alpha * pk[i];
+    }
+
+    return new_cost;
 }
 
-MatrixXd finiteD2g(
-    std::vector<double> x,
-    std::vector<double> dx,
-    std::vector<double> area,
-    std::vector<double> designVar,
-    double h)
-{
-    MatrixXd Hessian(nDesVar, nDesVar);
-    std::vector<double> W(3 * n_elem, 0);
-    std::vector<double> tempS(n_elem + 1);
-    std::vector<double> tempD(nDesVar);
-    VectorXd gradp(nDesVar);
-    VectorXd gradn(nDesVar);
-    VectorXd psi(3 * n_elem);
-
-    double currentI = -1;
-    Hessian.setZero();
-    for (int i = 0; i < nDesVar; i++)
-    {
-        tempD = designVar;
-        tempD[i] += h;
-        tempS = evalS(tempD, x, dx, desParam);
-        quasiOneD(x, tempS, W);
-        gradp = getGradient(1, currentI, x, dx, tempS, W, tempD, psi);
-
-        tempD = designVar;
-        tempD[i] -= h;
-        tempS = evalS(tempD, x, dx, desParam);
-        quasiOneD(x, tempS, W);
-        gradn = getGradient(1, currentI, x, dx, tempS, W, tempD, psi);
-        for (int j = 0; j < nDesVar; j++)
-        {
-            Hessian(i, j) += (gradp(j) - gradn(j)) / (2*h);
-            Hessian(j, i) += (gradp(j) - gradn(j)) / (2*h);
-        }
-    }
-    Hessian = Hessian / 2.0;
-    return Hessian;
-}
-
-
-MatrixXd finiteD2(
-    std::vector<double> x,
-    std::vector<double> dx,
-    std::vector<double> area,
-    std::vector<double> designVar,
-    double h,
-    double currentI)
-{
-    std::vector<double> W(3 * n_elem, 0);
-    MatrixXd Hessian(nDesVar, nDesVar);
-    std::vector<double> tempS(n_elem + 1);
-
-    double I, I1, I2, I3, I4, dhi, dhj;
-
-    std::vector<double> tempD(nDesVar);
-
-    if (currentI < 0 && gradientType != 3)
-    {
-        quasiOneD(x, area, W);
-        I = evalFitness(dx, W);
-    }
-    else
-    {
-        I = currentI;
-    }
-    for (int i = 0; i < nDesVar; i++)
-    for (int j = i; j < nDesVar; j++)
-    {
-        dhi = designVar[i] * h;
-        dhj = designVar[j] * h;
-        if (i == j) {
-            tempD = designVar;
-            tempD[i] += dhi;
-            tempD[j] += dhj;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I1 = evalFitness(dx, W);
-
-            tempD = designVar;
-            tempD[i] += dhi;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I2 = evalFitness(dx, W);
-
-            tempD = designVar;
-            tempD[i] -= dhi;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I3 = evalFitness(dx, W);
-
-            tempD = designVar;
-            tempD[i] -= dhi;
-            tempD[j] -= dhj;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I4 = evalFitness(dx, W);
-            Hessian(i, j) = (-I1 + 16*I2 - 30*I + 16*I3 - I4) / (12 * dhi * dhj);
-        } else {
-            tempD = designVar;
-            tempD[i] += dhi;
-            tempD[j] += dhj;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I1 = evalFitness(dx, W);
-
-            tempD = designVar;
-            tempD[i] += dhi;
-            tempD[j] -= dhj;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I2 = evalFitness(dx, W);
-
-            tempD = designVar;
-            tempD[i] -= dhi;
-            tempD[j] += dhj;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I3 = evalFitness(dx, W);
-
-            tempD = designVar;
-            tempD[i] -= dhi;
-            tempD[j] -= dhj;
-            tempS = evalS(tempD, x, dx, desParam);
-            quasiOneD(x, tempS, W);
-            I4 = evalFitness(dx, W);
-
-            Hessian(i, j) = (I1 - I2 - I3 + I4) / (4 * dhi * dhj);
-            Hessian(j, i) = Hessian(i, j);
-        }
-    }
-    //Hessian = Hessian + Hessian.transposeInPlace();
-    //Hessian = Hessian / 2.0;
-    return Hessian;
-}
 
 double checkCond(MatrixXd H) {
     JacobiSVD<MatrixXd> svd(H);
@@ -579,14 +316,15 @@ LLT<MatrixXd> checkPosDef(MatrixXd H) {
 }
 
 MatrixXd BFGS(
-    MatrixXd oldH,
-    VectorXd oldg,
-    VectorXd currentg,
-    VectorXd searchD)
+    const MatrixXd &oldH,
+    const VectorXd &oldg,
+    const VectorXd &currentg,
+    const VectorXd &searchD)
 {
-    MatrixXd newH(nDesVar, nDesVar);
-    VectorXd dg(nDesVar), dx(nDesVar);
-    MatrixXd dH(nDesVar, nDesVar), a(nDesVar, nDesVar), b(nDesVar, nDesVar);
+	int n_rows = oldH.rows();
+    MatrixXd newH(n_rows, n_rows);
+    VectorXd dg(n_rows), dx(n_rows);
+    MatrixXd dH(n_rows, n_rows), a(n_rows, n_rows), b(n_rows, n_rows);
 
     dg = currentg - oldg;
     dx = searchD;
@@ -623,3 +361,86 @@ VectorXd implicitSmoothing(VectorXd gradient, double epsilon)
 
     return smoothGrad;
 }
+
+void test_grad(
+	const std::vector<double> &x,
+	const std::vector<double> &dx, 
+	const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data,
+	const struct Optimization_options &opt_opts,
+	const struct Design &design)
+{
+	printf("Comparing Adjoint, Direct-Differentiation, and Central FD\n");
+	int n_dvar = design.n_design_variables;
+    VectorXd adjoint_gradient(n_dvar), direct_gradient(n_dvar), cfinite_gradient(n_dvar), ffinite_gradient(n_dvar);
+
+    adjoint_gradient = getGradient(1, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+    direct_gradient = getGradient(2, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+    cfinite_gradient = getGradient(-3, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+    ffinite_gradient = getGradient(-1, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+
+	printf("%-23s %-23s %-23s %-23s %-23s %-23s %-23s %-23s\n", "Adjoint", "Direct-Diff", "Central FD", "ForwardFD", "AD-DM", "AD-FD","DM-FD", "CFD-FFD");
+	//printf(" Adjoint                  Direct-Diff             Central FD              AD-DM                   AD-FD                   DM-FD\n");
+	for (int i = 0; i < n_dvar; i++) {
+		double g1 = adjoint_gradient[i];
+		double g2 = direct_gradient[i];
+		double g3 = cfinite_gradient[i];
+		double g4 = ffinite_gradient[i];
+		double r1 = (g1-g2)/(g1+1e-15);
+		double r2 = (g1-g3)/(g1+1e-15);
+		double r3 = (g2-g3)/(g2+1e-15);
+		double r4 = (g3-g4)/(g3+1e-15);
+		printf("%23.15e %23.15e %23.15e %23.15e %23.15e %23.15e %23.15e %23.15e\n", g1, g2, g3, g4, r1, r2, r3, r4);
+	}
+	return;
+}
+//void test_hessian(
+//	double current_cost,
+//	std::vector<double> x,
+//	std::vector<double> dx, 
+//	std::vector<double> area,
+//	Flow_data flow_data,
+//	std::vector<double> designVar)
+//{
+//    opt_opts.exact_hessian = 1; // Calculate exact Hessian to compare with BFGS
+//    MatrixXd directAdjoint = getAnalyticHessian(x, dx, flow_data.W, area, designVar, 3);
+//    double err;
+//    std::cout<<"DA: "<<directAdjoint<<std::endl;
+//
+//    MatrixXd H;
+//    for (int i = 3; i < 8; i++) {
+//        double h = pow(10,-i);
+//        std::cout<<"h = "<<h<<std::endl;
+//    std::cout.setstate(std::ios_base::failbit);
+//        MatrixXd H = finiteD2g(x, dx, area, flow_data, designVar, h);
+//    std::cout.clear();
+//        err = (directAdjoint - H).norm()/directAdjoint.norm();
+//        std::cout<<"DA - FDg: "<<err<<std::endl;
+//        //std::cout<<std::setprecision(15)<<H<<std::endl;
+//
+//    std::cout.setstate(std::ios_base::failbit);
+//        H = finiteD2(x, dx, area, flow_data, designVar, h, current_cost);
+//    std::cout.clear();
+//        err = (directAdjoint - H).norm()/directAdjoint.norm();
+//        std::cout<<"DA - FD: "<<err<<std::endl;
+//        //std::cout<<std::setprecision(15)<<H<<std::endl;
+//    }
+//
+//    H= getAnalyticHessian(x, dx, flow_data.W, area, designVar, 1);
+//    err = (directAdjoint - H).norm()/directAdjoint.norm();
+//    std::cout<<"DA - AD: "<<err<<std::endl;
+//    //std::cout<<std::setprecision(15)<<H<<std::endl;
+//
+//    H= getAnalyticHessian(x, dx, flow_data.W, area, designVar, 2);
+//    err = (directAdjoint - H).norm()/directAdjoint.norm();
+//    std::cout<<"DA - AA: "<<err<<std::endl;
+//    //std::cout<<std::setprecision(15)<<H<<std::endl;
+//
+//
+//    H= getAnalyticHessian(x, dx, flow_data.W, area, designVar, 0);
+//    err = (directAdjoint - H).norm()/directAdjoint.norm();
+//    std::cout<<"DA - DD: "<<err<<std::endl;
+//    //std::cout<<std::setprecision(15)<<H<<std::endl;
+//    return;
+//}

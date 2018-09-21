@@ -2,18 +2,15 @@
 #define output_h
 #include <string>
 #include <stdio.h>
-#include "globals.h"
 template <typename vec>
 
-void outVec(std::string fn2, std::string ra, vec data)
-{
+void outVec(std::string case_name, std::string filename, std::string ra, vec data) {
     // wa = "w" for read
     // wa = "a" for append
     FILE *Results;
-    std::string fn = "./Results/"+ filename + fn2;
+    std::string fn = "./Results/"+ case_name + filename;
     Results = fopen(fn.c_str(), ra.c_str());
-    for (int i = 0; i < (int)data.size(); i++)
-    {
+    for (int i = 0; i < (int)data.size(); i++) {
         fprintf(Results, "%1.15e\n", data[i]);
     }
 
