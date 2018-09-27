@@ -1,5 +1,5 @@
-#ifndef boundary_conditions_h
-#define boundary_conditions_h
+#ifndef BOUNDARY_CONDITIONS_H
+#define BOUNDARY_CONDITIONS_H
 
 #include<vector>
 #include"structures.h"

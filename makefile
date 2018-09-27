@@ -1,7 +1,7 @@
 CXX	= g++
 #DEBUG	= -pg
-#DEBUG	= -g -Wall -Warray-bounds
-DEBUG	= -O3
+DEBUG	= -g -Wall -Warray-bounds
+#DEBUG	= -O3
 OBJDIR  = ./obj
 CPP_FILES	=	$(wildcard *.cpp)
 OBJ_FILES	=	$(addprefix	$(OBJDIR)/,	$(notdir	$(CPP_FILES:.cpp=.o)))

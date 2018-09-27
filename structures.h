@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+template<class T> void UNUSED( const T& ) { }
+
 struct Flow_data {
 	std::vector<double> dt;
 	std::vector<double> W;
@@ -54,6 +56,7 @@ struct Optimization_options {
 	std::vector<double> target_pressure;
 	int descent_type, gradient_type, hessian_type, exact_hessian;
 	double opt_tol, adj_tol, dwdx_tol;
+    double default_pert=1e-4;
 
 	struct Design               *initial_design;
 	struct Design               *current_design;

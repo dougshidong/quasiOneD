@@ -159,17 +159,17 @@ MatrixXd evaldWdDes(
     // DS   dS   dW DS           DS    ( dW )        ( dS )
 
 	int n_elem = x.size();
-    // Evaluate dRdS
-    MatrixXd dRdS(3 * n_elem, n_elem + 1);
-    dRdS = evaldRdS(flo_opts, flow_data);
+    // Evaluate dRdArea
+    MatrixXd dRdArea(3 * n_elem, n_elem + 1);
+    dRdArea = evaldRdArea(flo_opts, flow_data);
 
-    // Evaluate dSdDes
-    MatrixXd dSdDes(n_elem + 1, design.n_design_variables);
-    dSdDes = evaldSdDes(x, dx, design);
+    // Evaluate dAreadDes
+    MatrixXd dAreadDes(n_elem + 1, design.n_design_variables);
+    dAreadDes = evaldAreadDes(x, dx, design);
 
     //Evaluate dRdDes
     MatrixXd dRdDes(3 * n_elem, design.n_design_variables);
-    dRdDes = dRdS * dSdDes;
+    dRdDes = dRdArea * dAreadDes;
 
     // Evaluate dRdW
     SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
@@ -203,23 +203,23 @@ VectorXd gradient_directDifferentiation(
     // W = W(W0, area)
     // DI   dCost   dCost DW
     // -- = --- + --- --
-    // DS   dS    dW  DS
+    // DS   dArea    dW  DS
     //
     // Evaluate dCostdW
     VectorXd dCostdW(3 * n_elem);
     dCostdW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-    // Evaluate dSdDes
-    MatrixXd dSdDes(n_elem + 1, design.n_design_variables);
-    dSdDes = evaldSdDes(x, dx, design);
-    // Evaluate dCostdS
-    VectorXd dCostdS(n_elem + 1);
-    dCostdS = evaldCostdS(n_elem);
+    // Evaluate dAreadDes
+    MatrixXd dAreadDes(n_elem + 1, design.n_design_variables);
+    dAreadDes = evaldAreadDes(x, dx, design);
+    // Evaluate dCostdArea
+    VectorXd dCostdArea(n_elem + 1);
+    dCostdArea = evaldCostdArea(n_elem);
     VectorXd dCostdDes(design.n_design_variables);
-    dCostdDes = dCostdS.transpose() * dSdDes;
+    dCostdDes = dCostdArea.transpose() * dAreadDes;
 
     // Evaluate dWdDes
     MatrixXd dWdDes(3 * n_elem, design.n_design_variables);
-    dWdDes = evaldWdDes(x, dx, area, flo_opts, flow_data, design, 3, 1e-16); // Used for validate, so fast = better
+    dWdDes = evaldWdDes(x, dx, area, flo_opts, flow_data, design, 0, 1e-16); // Used for validate, so fast = better
     // Evaluate dCostdDes
     VectorXd dIdDes(design.n_design_variables);
     dIdDes = (dCostdDes.transpose() + dCostdW.transpose() * dWdDes);
@@ -245,9 +245,9 @@ VectorXd gradient_adjoint(
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
-    // Evaluate dSdDes
-    MatrixXd dSdDes(n_elem + 1, n_design_variables);
-    dSdDes = evaldSdDes(x, dx, design);
+    // Evaluate dAreadDes
+    MatrixXd dAreadDes(n_elem + 1, n_design_variables);
+    dAreadDes = evaldAreadDes(x, dx, design);
 
     // *************************************
     // Evaluate Objective Derivatives
@@ -255,22 +255,22 @@ VectorXd gradient_adjoint(
     // Evaluate dCostdW
     VectorXd dCostdW(3 * n_elem);
     dCostdW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-    // Evaluate dCostdS
-    VectorXd dCostdS(n_elem + 1);
-    dCostdS = evaldCostdS(n_elem);
+    // Evaluate dCostdArea
+    VectorXd dCostdArea(n_elem + 1);
+    dCostdArea = evaldCostdArea(n_elem);
     // Evaluate dCostdDes
     VectorXd dCostdDes(n_design_variables);
-    dCostdDes = dCostdS.transpose() * dSdDes;
+    dCostdDes = dCostdArea.transpose() * dAreadDes;
 
     // *************************************
     // Evaluate Residual Derivatives
     // *************************************
-    // Evaluate dRdS
-    MatrixXd dRdS(3 * n_elem, n_elem + 1);
-    dRdS = evaldRdS(flo_opts, flow_data);
+    // Evaluate dRdArea
+    MatrixXd dRdArea(3 * n_elem, n_elem + 1);
+    dRdArea = evaldRdArea(flo_opts, flow_data);
     // Evaluate dRdDes
     MatrixXd dRdDes(3 * n_elem, n_design_variables);
-    dRdDes = dRdS * dSdDes;
+    dRdDes = dRdArea * dAreadDes;
     // Evaluate dRdW
     SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
 

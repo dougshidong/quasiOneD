@@ -81,20 +81,20 @@ SparseMatrix<double> evaldCostdWdW(
     return ddCostdWdW;
 }
 
-VectorXd evaldCostdS(const int n_elem) {
-    VectorXd dCostdS(n_elem + 1);
-    dCostdS.setZero();
-    return dCostdS;
+VectorXd evaldCostdArea(const int n_elem) {
+    VectorXd dCostdArea(n_elem + 1);
+    dCostdArea.setZero();
+    return dCostdArea;
 }
 
-MatrixXd evalddCostdSdS(const int n_elem) {
-    MatrixXd ddCostdSdS(n_elem + 1, n_elem + 1);
-    ddCostdSdS.setZero();
-    return ddCostdSdS;
+MatrixXd evalddCostdAreadArea(const int n_elem) {
+    MatrixXd ddCostdAreadArea(n_elem + 1, n_elem + 1);
+    ddCostdAreadArea.setZero();
+    return ddCostdAreadArea;
 }
 
-MatrixXd evalddCostdWdS(const int n_elem) {
-    MatrixXd ddCostdWdS(3 * n_elem, n_elem + 1);
-    ddCostdWdS.setZero();
-    return ddCostdWdS;
+MatrixXd evalddCostdWdArea(const int n_elem) {
+    MatrixXd ddCostdWdArea(3 * n_elem, n_elem + 1);
+    ddCostdWdArea.setZero();
+    return ddCostdWdArea;
 }

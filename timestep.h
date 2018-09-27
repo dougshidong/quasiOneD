@@ -6,10 +6,10 @@
 
 void initializeTimeStep(int n_elem);
 void getDomainResi( 
-	const struct Flow_options &flow_options,
+	const struct Flow_options &flo_opts,
 	const std::vector<double> &area,
 	const std::vector<double> &W,
-	const std::vector<double> &fluxes,
+	std::vector<double> &fluxes,
 	std::vector<double> &residual);
 void stepInTime(
 	const struct Flow_options &flow_options,

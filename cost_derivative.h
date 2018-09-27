@@ -15,7 +15,7 @@ SparseMatrix<double> evaldCostdWdW(
 	std::vector<double> W,
 	std::vector<double> dx);
 
-VectorXd evaldCostdS(const int n_elem);
-MatrixXd evalddCostdSdS(const int n_elem);
-MatrixXd evalddCostdWdS(const int n_elem);
+VectorXd evaldCostdArea(const int n_elem);
+MatrixXd evalddCostdAreadArea(const int n_elem);
+MatrixXd evalddCostdWdArea(const int n_elem);
 #endif

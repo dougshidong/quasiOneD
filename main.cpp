@@ -6,6 +6,7 @@
 #include "grid.h"
 #include "spline.h"
 #include "quasiOneD.h"
+#include "second_order_flow.h"
 #include "convert.h"
 #include "optimizer.h"
 #include "oneshot.h"
@@ -41,6 +42,11 @@ int main(int argc,char **argv)
 				  input_data->flow_options->n_elem);
     dx = eval_dx(x);
 
+    if (input_data->optimization_options->perform_design == -1) {
+		const struct Design initial_design = *(input_data->optimization_options->initial_design); // Make a copy
+        area = evalS(initial_design, x, dx);
+        second_order_flow(*constants, x, area, *(input_data->flow_options));
+    }
     if (input_data->optimization_options->perform_design == 0) {
 		const struct Design initial_design = *(input_data->optimization_options->initial_design); // Make a copy
         area = evalS(initial_design, x, dx);

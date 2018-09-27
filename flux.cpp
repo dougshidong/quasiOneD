@@ -6,6 +6,7 @@
 #include"convert.h"
 
 void matrixMult(double A[][3], double B[][3], double result[][3]);
+
 void Flux_Scalar(
 	const struct Flow_options &flow_options,
     const std::vector<double> &W,

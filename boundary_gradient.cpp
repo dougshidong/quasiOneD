@@ -6,7 +6,7 @@
 // Jacobian at the Boundaries
 void dRdW_BC_inlet(
 	const struct Flow_options &flow_options,
-	const struct Flow_data &flow_data,
+	const std::vector<double> &W,
     std::vector<double> &dBidWi,
     std::vector<double> &dBidWd)
 {
@@ -29,14 +29,14 @@ void dRdW_BC_inlet(
     // Subsonic Inlet
 	const int i1 = 0;
 	const int i2 = 1;
-	const double r1 = flow_data.W[i1*3+0];
-	const double r2 = flow_data.W[i2*3+0];
-	const double p1 = get_p(gam, flow_data.W[i1*3+0], flow_data.W[i1*3+1], flow_data.W[i1*3+2]);
-	const double p2 = get_p(gam, flow_data.W[i2*3+0], flow_data.W[i2*3+1], flow_data.W[i2*3+2]);
-	const double u1 = flow_data.W[i1*3+1] / r1;
-	const double u2 = flow_data.W[i2*3+1] / r2;
-	const double c1 = get_c(gam, flow_data.W[i1*3+0], flow_data.W[i1*3+1], flow_data.W[i1*3+2]);
-	const double c2 = get_c(gam, flow_data.W[i2*3+0], flow_data.W[i2*3+1], flow_data.W[i2*3+2]);
+	const double r1 = W[i1*3+0];
+	const double r2 = W[i2*3+0];
+	const double p1 = get_p(gam, W[i1*3+0], W[i1*3+1], W[i1*3+2]);
+	const double p2 = get_p(gam, W[i2*3+0], W[i2*3+1], W[i2*3+2]);
+	const double u1 = W[i1*3+1] / r1;
+	const double u2 = W[i2*3+1] / r2;
+	const double c1 = get_c(gam, W[i1*3+0], W[i1*3+1], W[i1*3+2]);
+	const double c2 = get_c(gam, W[i2*3+0], W[i2*3+1], W[i2*3+2]);
     if (u1 < c1) {
         // Shorthand
         const double gamr = (gam - 1.0) / (gam + 1.0);
@@ -201,7 +201,7 @@ void dRdW_BC_inlet(
         dbdwp[8] = de1dtdp1;
 
         // Get Transformation Matrix
-        eval_dWpdW(gam, flow_data.W[i1*3+0], flow_data.W[i1*3+1], &dwpdw);
+        eval_dWpdW(gam, W[i1*3+0], W[i1*3+1], &dwpdw);
 
         for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++)
@@ -220,7 +220,7 @@ void dRdW_BC_inlet(
         dbdwp[8] = de1dtdp2;
 
         // Get Transformation Matrix
-        eval_dWpdW(gam, flow_data.W[i2*3+0], flow_data.W[i2*3+1], &dwpdw);
+        eval_dWpdW(gam, W[i2*3+0], W[i2*3+1], &dwpdw);
 
         for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++)
@@ -238,7 +238,7 @@ void dRdW_BC_inlet(
 
 void dRdW_BC_outlet(
 	const struct Flow_options &flow_options,
-	const struct Flow_data &flow_data,
+	const std::vector<double> &W,
     std::vector<double> &dBodWd,
     std::vector<double> &dBodWo)
 {
@@ -259,14 +259,14 @@ void dRdW_BC_outlet(
 
     const int i1 = n_elem - 1;
     const int i2 = n_elem - 2;
-    const double r1 = flow_data.W[i1*3+0];
-    const double r2 = flow_data.W[i2*3+0];
-    const double p1 = get_p(gam, flow_data.W[i1*3+0], flow_data.W[i1*3+1], flow_data.W[i1*3+2]);
-    const double p2 = get_p(gam, flow_data.W[i2*3+0], flow_data.W[i2*3+1], flow_data.W[i2*3+2]);
-	const double u1 = flow_data.W[i1*3+1] / flow_data.W[i1*3+0];
-	const double u2 = flow_data.W[i2*3+1] / flow_data.W[i2*3+0];
-    const double c1 = get_c(gam, flow_data.W[i1*3+0], flow_data.W[i1*3+1], flow_data.W[i1*3+2]);
-    const double c2 = get_c(gam, flow_data.W[i2*3+0], flow_data.W[i2*3+1], flow_data.W[i2*3+2]);
+    const double r1 = W[i1*3+0];
+    const double r2 = W[i2*3+0];
+    const double p1 = get_p(gam, W[i1*3+0], W[i1*3+1], W[i1*3+2]);
+    const double p2 = get_p(gam, W[i2*3+0], W[i2*3+1], W[i2*3+2]);
+	const double u1 = W[i1*3+1] / W[i1*3+0];
+	const double u2 = W[i2*3+1] / W[i2*3+0];
+    const double c1 = get_c(gam, W[i1*3+0], W[i1*3+1], W[i1*3+2]);
+    const double c2 = get_c(gam, W[i2*3+0], W[i2*3+1], W[i2*3+2]);
 
     // Speed of Sound
     const double dc1dr1 = - p1 * gam / (2.0 * r1 * c1 * r1);
@@ -443,7 +443,7 @@ void dRdW_BC_outlet(
     dbdwp[8] = de1dtdp1;
 
     // Get Transformation Matrix
-	eval_dWpdW(gam, flow_data.W[i1*3+0], flow_data.W[i1*3+1], &dwpdw);
+	eval_dWpdW(gam, W[i1*3+0], W[i1*3+1], &dwpdw);
 
     for (int row = 0; row < 3; row++)
     for (int col = 0; col < 3; col++)
@@ -461,7 +461,7 @@ void dRdW_BC_outlet(
     dbdwp[8] = de1dtdp2;
 
     // Get Transformation Matrix
-	eval_dWpdW(gam, flow_data.W[i2*3+0], flow_data.W[i2*3+1], &dwpdw);
+	eval_dWpdW(gam, W[i2*3+0], W[i2*3+1], &dwpdw);
 
     for (int row = 0; row < 3; row++)
     for (int col = 0; col < 3; col++)

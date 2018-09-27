@@ -10,7 +10,7 @@
 #include"fitness.h"
 #include"grid.h"
 #include"gradient.h"
-//#include"analyticHessian.h"
+#include"analyticHessian.h"
 #include"output.h"
 #include<time.h>
 #include<stdlib.h>     /* srand, rand */
@@ -26,11 +26,13 @@ void test_grad(
 	const struct Optimization_options &opt_opts,
 	const struct Design &design);
 void test_hessian(
-	double current_cost,
-	std::vector<double> x, std::vector<double> dx, 
-	std::vector<double> area,
-	Flow_data flow_data,
-	std::vector<double> designVar);
+	const std::vector<double> &x,
+	const std::vector<double> &dx, 
+	const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data,
+	const struct Optimization_options &opt_opts,
+	const struct Design &design);
 
 double linesearch_backtrack_unconstrained(
     const double initial_alpha,
@@ -103,21 +105,21 @@ void optimizer(
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
 	bool testingGradient = true;
-	testingGradient = false;
+	//testingGradient = false;
 	if (testingGradient) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
-        //test_hessian(current_cost, x, dx, area, flow_data, designVar);
+        test_hessian(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 		exit(0);
 	}
 
     // Initialize B
     H.setIdentity();
     H = H * 1.0;
-    //if (opt_opts.exact_hessian != 0) {
-    //    H = getAnalyticHessian(x, dx, flow_data.W, area, designVar, hessian_type);
-    //    checkCond(H);
-    //    H = invertHessian(H);
-    //}
+    if (opt_opts.exact_hessian != 0) {
+        H = getAnalyticHessian(opt_opts.hessian_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
+        checkCond(H);
+        H = invertHessian(H);
+    }
 
     double gradient_norm = 0;
     for (int i = 0; i < n_dvar; i++)
@@ -380,9 +382,12 @@ void test_grad(
 	const struct Optimization_options &opt_opts,
 	const struct Design &design)
 {
-	printf("Comparing Adjoint, Direct-Differentiation, and Central FD\n");
+	printf("Testing gradient...\n");
 	int n_dvar = design.n_design_variables;
-    VectorXd adjoint_gradient(n_dvar), direct_gradient(n_dvar), cfinite_gradient(n_dvar), ffinite_gradient(n_dvar);
+    VectorXd adjoint_gradient(n_dvar),
+             direct_gradient(n_dvar),
+             cfinite_gradient(n_dvar),
+             ffinite_gradient(n_dvar);
 
     adjoint_gradient = getGradient(1, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
     direct_gradient = getGradient(2, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
@@ -404,52 +409,57 @@ void test_grad(
 	}
 	return;
 }
-//void test_hessian(
-//	double current_cost,
-//	std::vector<double> x,
-//	std::vector<double> dx, 
-//	std::vector<double> area,
-//	Flow_data flow_data,
-//	std::vector<double> designVar)
-//{
-//    opt_opts.exact_hessian = 1; // Calculate exact Hessian to compare with BFGS
-//    MatrixXd directAdjoint = getAnalyticHessian(x, dx, flow_data.W, area, designVar, 3);
-//    double err;
-//    std::cout<<"DA: "<<directAdjoint<<std::endl;
-//
-//    MatrixXd H;
-//    for (int i = 3; i < 8; i++) {
-//        double h = pow(10,-i);
-//        std::cout<<"h = "<<h<<std::endl;
-//    std::cout.setstate(std::ios_base::failbit);
-//        MatrixXd H = finiteD2g(x, dx, area, flow_data, designVar, h);
-//    std::cout.clear();
-//        err = (directAdjoint - H).norm()/directAdjoint.norm();
-//        std::cout<<"DA - FDg: "<<err<<std::endl;
-//        //std::cout<<std::setprecision(15)<<H<<std::endl;
-//
-//    std::cout.setstate(std::ios_base::failbit);
-//        H = finiteD2(x, dx, area, flow_data, designVar, h, current_cost);
-//    std::cout.clear();
-//        err = (directAdjoint - H).norm()/directAdjoint.norm();
-//        std::cout<<"DA - FD: "<<err<<std::endl;
-//        //std::cout<<std::setprecision(15)<<H<<std::endl;
-//    }
-//
-//    H= getAnalyticHessian(x, dx, flow_data.W, area, designVar, 1);
-//    err = (directAdjoint - H).norm()/directAdjoint.norm();
-//    std::cout<<"DA - AD: "<<err<<std::endl;
-//    //std::cout<<std::setprecision(15)<<H<<std::endl;
-//
-//    H= getAnalyticHessian(x, dx, flow_data.W, area, designVar, 2);
-//    err = (directAdjoint - H).norm()/directAdjoint.norm();
-//    std::cout<<"DA - AA: "<<err<<std::endl;
-//    //std::cout<<std::setprecision(15)<<H<<std::endl;
-//
-//
-//    H= getAnalyticHessian(x, dx, flow_data.W, area, designVar, 0);
-//    err = (directAdjoint - H).norm()/directAdjoint.norm();
-//    std::cout<<"DA - DD: "<<err<<std::endl;
-//    //std::cout<<std::setprecision(15)<<H<<std::endl;
-//    return;
-//}
+void test_hessian(
+	const std::vector<double> &x,
+	const std::vector<double> &dx, 
+	const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data,
+	const struct Optimization_options &opt_opts,
+	const struct Design &design)
+{
+	printf("Testing Hessian...\n");
+    struct Optimization_options o_opts_copy = opt_opts; // Want to make sure it's the exact Hessian
+    o_opts_copy.exact_hessian = 1;
+
+    const int n_dvar = design.n_design_variables;
+    MatrixXd DA(n_dvar, n_dvar),
+             AA(n_dvar, n_dvar),
+             AD(n_dvar, n_dvar),
+             DD(n_dvar, n_dvar),
+             FDG(n_dvar, n_dvar),
+             FD2(n_dvar, n_dvar);
+    printf("Evaluating DD...\n");
+    DD = getAnalyticHessian(2, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+    printf("Evaluating AD...\n");
+    AD = getAnalyticHessian(1, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+    printf("Evaluating AA...\n");
+    AA = getAnalyticHessian(2, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+    printf("Evaluating DA...\n");
+    DA = getAnalyticHessian(3, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+    printf("Evaluating FDG...\n");
+    FDG = getAnalyticHessian(-1, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+    printf("Evaluating FD2...\n");
+    FD2 = getAnalyticHessian(-2, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+	//printf(" Adjoint                  Direct-Diff             Central FD              AD-DM                   AD-FD                   DM-FD\n");
+
+	printf("%-23s %-23s %-23s %-23s %-23s %-23s \n", "DD", "DD-AD", "DA-AA", "DD-DA", "DD-FDG", "DD-FD2");
+	//printf(" Adjoint                  Direct-Diff             Central FD              AD-DM                   AD-FD                   DM-FD\n");
+	for (int i = 0; i < n_dvar; i++) {
+        for (int j = i; j < n_dvar; j++) {
+            double h1 = DD(i,j);
+            double h2 = AD(i,j);
+            double h3 = AA(i,j);
+            double h4 = DA(i,j);
+            double h5 = FDG(i,j);
+            double h6 = FD2(i,j);
+            double r2 = (h1-h2)/(h1+1e-15);
+            double r3 = (h1-h3)/(h1+1e-15);
+            double r4 = (h1-h4)/(h1+1e-15);
+            double r5 = (h1-h5)/(h1+1e-15);
+            double r6 = (h1-h6)/(h1+1e-15);
+            printf("%23.15e %23.15e %23.15e %23.15e %23.15e %23.15e \n", h1, r2, r3, r4, r5, r6);
+        }
+	}
+	return;
+}

@@ -15,7 +15,7 @@
 #include"residuald1.h"
 #include"cost_derivative.h"
 #include"parametrization.h"
-//#include"analyticHessian.h"
+#include"analyticHessian.h"
 #include"output.h"
 #include<time.h>
 #include<stdlib.h>     /* srand, rand */
@@ -79,9 +79,9 @@ void oneshot(
 	current_design.design_variables = initial_design.design_variables;
     std::vector<double> area = evalS(current_design, x, dx);
 
-    MatrixXd dSdDes(n_elem + 1, n_dvar);
-	VectorXd dCostdS(n_elem + 1);
-	dCostdS = evaldCostdS(n_elem);
+    MatrixXd dAreadDes(n_elem + 1, n_dvar);
+	VectorXd dCostdArea(n_elem + 1);
+	dCostdArea = evaldCostdArea(n_elem);
     VectorXd dCostdDes(n_dvar);
 	dCostdDes.setZero();
     VectorXd pIpX(n_dvar);
@@ -138,7 +138,6 @@ void oneshot(
         iteration++ ;
 
         // Get flow update
-		for (int i = 1;i<10000;i++)
 		stepInTime(flo_opts, area, dx, &flow_data);
 
 		// Get adjoint update
@@ -150,11 +149,11 @@ void oneshot(
 		adjoint = adjoint + step_size*adjoint_update;
 
 		// Get design update
-		dSdDes = evaldSdDes(x, dx, current_design);
-		//dCostdS = evaldCostdS(n_elem); //0
-		//dCostdDes = dCostdS.transpose() * dSdDes; //0
+		dAreadDes = evaldAreadDes(x, dx, current_design);
+		//dCostdArea = evaldCostdArea(n_elem); //0
+		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
-		pGpX = evaldRdS(flo_opts, flow_data) * dSdDes;
+		pGpX = evaldRdArea(flo_opts, flow_data) * dAreadDes;
 		gradient = pIpX + pGpX.transpose()*adjoint;
 
         if (opt_opts.descent_type == 1) {
@@ -284,15 +283,17 @@ void oneshot_dwdx(
 	VectorXd adjoint(3*n_elem);
 	VectorXd adjoint_update(3*n_elem);
 	adjoint.setZero();
+	SparseMatrix<double> Iden(3*n_elem, 3*n_elem);
+    Iden.setIdentity();
 	// **************************************************************************************************************************************
 	// Initialize the design
 	struct Design current_design = initial_design;
 	current_design.design_variables = initial_design.design_variables;
     std::vector<double> area = evalS(current_design, x, dx);
 
-    MatrixXd dSdDes(n_elem + 1, n_dvar);
-	VectorXd dCostdS(n_elem + 1);
-	dCostdS = evaldCostdS(n_elem);
+    MatrixXd dAreadDes(n_elem + 1, n_dvar);
+	VectorXd dCostdArea(n_elem + 1);
+	dCostdArea = evaldCostdArea(n_elem);
     VectorXd dCostdDes(n_dvar);
 	dCostdDes.setZero();
     VectorXd pIpX(n_dvar);
@@ -317,10 +318,10 @@ void oneshot_dwdx(
     // Initialize B
     H.setIdentity();
     H = H * 1.0;
-    //if (opt_opts.exact_hessian != 0) {
-    //    H = getAnalyticHessian(x, dx, flow_data.W, area, designVar, hessian_type);
-    //    H = invertHessian(H);
-    //}
+    if (opt_opts.exact_hessian != 0) {
+        H = getAnalyticHessian(opt_opts.hessian_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
+        H = invertHessian(H);
+    }
 
     double residual_norm = 1.0;
     double gradient_norm = 0;
@@ -353,18 +354,21 @@ void oneshot_dwdx(
 
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-		pGpW = evaldRdW(area, flo_opts, flow_data);
+        auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
+		pGpW = Iden - (*max_dt)*evaldRdW(area, flo_opts, flow_data);
 
 		// Get design update
-		dSdDes = evaldSdDes(x, dx, current_design);
-		//dCostdS = evaldCostdS(n_elem); //0
-		//dCostdDes = dCostdS.transpose() * dSdDes; //0
+		dAreadDes = evaldAreadDes(x, dx, current_design);
+		//dCostdArea = evaldCostdArea(n_elem); //0
+		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
-		pGpX = evaldRdS(flo_opts, flow_data) * dSdDes;
+		pGpX = -evaldRdArea(flo_opts, flow_data) * dAreadDes;
+
 		gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
 		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
 
-		double step_size = 1e-0;
+		double step_size = 1e-9;
+        step_size = 0;
 
         if (opt_opts.descent_type == 1) {
             pk =  -gradient;
@@ -374,6 +378,7 @@ void oneshot_dwdx(
                 H_BFGS = BFGS(H, oldGrad, gradient, searchD);
                 H = H_BFGS;
             }
+            std::cout<<H<<std::endl;
             pk = -H * gradient;
 			searchD = step_size*pk;
 		}

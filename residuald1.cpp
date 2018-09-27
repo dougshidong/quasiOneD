@@ -47,8 +47,8 @@ SparseMatrix<double> evaldRdW(
 	
     // Get Boundary Jacobians
     std::vector<double> dBidWi(9), dBidWd(9), dBodWd(9), dBodWo(9);
-	dRdW_BC_inlet(flo_opts, flow_data, dBidWi, dBidWd);
-	dRdW_BC_outlet(flo_opts, flow_data, dBodWd, dBodWo);
+	dRdW_BC_inlet(flo_opts, flow_data.W, dBidWi, dBidWd);
+	dRdW_BC_outlet(flo_opts, flow_data.W, dBodWd, dBodWo);
 
     // Evaluate dpdW
     std::vector<double> dpdW(3*n_elem, 0);
@@ -506,7 +506,7 @@ void dFluxdW_scalard(
 //    std::vector<double> W,
 //    std::vector<double> area)
 //{
-//    double dpdw[3], rho, u, dS;
+//    double dpdw[3], rho, u, dArea;
 //	int n_elem = W.size()/3;
 //    std::vector<double> dQdW(3 * n_elem);
 //    for (int i = 0; i < n_elem; i++)
@@ -518,11 +518,11 @@ void dFluxdW_scalard(
 //        dpdw[1] = - (gam - 1) * u;
 //        dpdw[2] = (gam - 1);
 //
-//        dS = area[i + 1] - area[i];
+//        dArea = area[i + 1] - area[i];
 //
-//        dQdW[i * 3 + 0] = dpdw[0] * dS;
-//        dQdW[i * 3 + 1] = dpdw[1] * dS;
-//        dQdW[i * 3 + 2] = dpdw[2] * dS;
+//        dQdW[i * 3 + 0] = dpdw[0] * dArea;
+//        dQdW[i * 3 + 1] = dpdw[1] * dArea;
+//        dQdW[i * 3 + 2] = dpdw[2] * dArea;
 //    }
 //    return dQdW;
 //}
@@ -546,7 +546,7 @@ std::vector<double> evaldpdW(
 }
 // DERIVATIVES WRT GEOMETRY
 
-MatrixXd evaldRdS(
+MatrixXd evaldRdArea(
 	const struct Flow_options &flo_opts,
 	const struct Flow_data &flow_data)
 {
@@ -554,11 +554,11 @@ MatrixXd evaldRdS(
 	std::vector<double> fluxes(3*(n_elem+1));
 	getFlux(flo_opts, flow_data.W, fluxes);
 
-    MatrixXd dRdS(3 * n_elem, n_elem + 1);
+    MatrixXd dRdArea(3 * n_elem, n_elem + 1);
 
     std::vector<double> Q(3 * n_elem, 0), p(n_elem);
     int Si, kR, kS;
-    dRdS.setZero();
+    dRdArea.setZero();
     for (int Ri = 1; Ri < n_elem - 1; Ri++)
     {
 		const double p = get_p(flo_opts.gam, flow_data.W[Ri*3+0], flow_data.W[Ri*3+1], flow_data.W[Ri*3+2]);
@@ -568,25 +568,25 @@ MatrixXd evaldRdS(
 
             Si = Ri;
             kS = Si * 3 + k;
-            dRdS(kR, Si) = -fluxes[kS];
-            if (k == 1) dRdS(kR, Si) += p;
+            dRdArea(kR, Si) = -fluxes[kS];
+            if (k == 1) dRdArea(kR, Si) += p;
 
             Si = Ri + 1;
             kS = Si * 3 + k;
-            dRdS(kR, Si) = fluxes[kS];
-            if (k == 1) dRdS(kR, Si) += -p;
+            dRdArea(kR, Si) = fluxes[kS];
+            if (k == 1) dRdArea(kR, Si) += -p;
         }
     }
-    return dRdS;
+    return dRdArea;
 }
 
-//MatrixXd evaldRdS_FD(
+//MatrixXd evaldRdArea_FD(
 //    std::vector<double> Flux,
 //    std::vector<double> area,
 //    std::vector<double> W)
 //{
-//    MatrixXd dRdS(3 * n_elem, n_elem + 1);
-//    dRdS.setZero();
+//    MatrixXd dRdArea(3 * n_elem, n_elem + 1);
+//    dRdArea.setZero();
 //    std::vector<double> Resi0(3 * n_elem, 0), Resi1(3 * n_elem, 0), Resi2(3 * n_elem, 0);
 //    std::vector<double> Sd(n_elem + 1, 0);
 //    std::vector<double> Q(3 * n_elem, 0);
@@ -624,10 +624,10 @@ MatrixXd evaldRdS(
 //                ki = Ri * 3 + k;
 //                kip = (Ri + 1) * 3 + k;
 //                Resi2[ki] = Flux[kip] * Sd[Ri + 1] - Flux[ki] * Sd[Ri] - Q[ki];
-//                dRdS(ki, Si) = (Resi1[ki] - Resi2[ki]) / (2 * pert);
+//                dRdArea(ki, Si) = (Resi1[ki] - Resi2[ki]) / (2 * pert);
 //            }
 //        }
 //    }
 //
-//    return dRdS;
+//    return dRdArea;
 //}

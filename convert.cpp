@@ -38,9 +38,9 @@ void WtoF(
 // get Q
 void WtoQ(
 	const double gam,
-    std::vector<double> const &W,
-    std::vector<double> &Q,
-    std::vector<double> const &area)
+    const std::vector<double> &area,
+    const std::vector<double> &W,
+    std::vector<double> &Q)
 {
 	int n_elem = W.size()/3;
     for (int i = 0; i < n_elem; i++)
@@ -147,13 +147,11 @@ void eval_dWpdW(
 
 Eigen::MatrixXd eval_dWpdW(
 	const double gam,
-    std::vector<double> const &W,
-    int i)
+	const double rho,
+	const double rho_u)
 {
     Eigen::MatrixXd M(3, 3);
-    double rho, u;
-    rho = W[i*3+0];
-    u = W[i*3+1] / rho;
+    const double u = rho_u / rho;
     M(0,0) = 1.0;
     M(0,1) = 0.0;
     M(0,2) = 0.0;
@@ -189,4 +187,28 @@ void dWdWp(
     M[6] = u * u / 2.0;
     M[7] = u * rho;
     M[8] = 1.0 / (gam - 1.0);
+}
+
+std::vector <Eigen::Matrix3d> ddWpdWdWp(
+    const double gam,
+    const std::vector<double> &W,
+    const int i)
+{
+    double rho, u;
+    rho = W[i * 3 + 0];
+    u = W[i * 3 + 1] / rho;
+
+    std::vector <Eigen::Matrix3d> M(3);
+    M[0].setZero();
+    M[1].setZero();
+    M[2].setZero();
+
+    M[1](0,0) = u / (rho * rho);
+    M[1](0,1) = -1.0 / rho;
+    M[1](1,0) = -1.0 / (rho * rho);
+
+    M[2](0,1) = u * (gam - 1.0);
+    M[2](1,1) = 1.0 - gam;
+
+    return M;
 }

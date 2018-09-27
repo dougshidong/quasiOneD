@@ -5,6 +5,7 @@
 #include <vector>
 #include <Eigen/Core>
 
+using namespace Eigen;
 MatrixXd hessian_central_gradient(
     const std::vector<double> &x,
     const std::vector<double> &dx,
@@ -13,7 +14,7 @@ MatrixXd hessian_central_gradient(
 	const struct Flow_data &flow_data,
 	const struct Optimization_options &opt_opts,
 	const struct Design &design,
-    double pert)
+    double pert);
 MatrixXd hessian_central(
     const std::vector<double> &x,
     const std::vector<double> &dx,
@@ -22,5 +23,5 @@ MatrixXd hessian_central(
 	const struct Flow_data &flow_data,
 	const struct Optimization_options &opt_opts,
 	const struct Design &design,
-    double pert)
+    double pert);
 #endif

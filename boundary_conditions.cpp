@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <vector>
+
 void inletBC(
     const Flow_options &flo_opts,
     const double dt0,

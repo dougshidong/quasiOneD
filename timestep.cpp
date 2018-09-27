@@ -92,6 +92,40 @@ void stepInTime(
 	outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
 }
 
+struct Flow_data stepInTime_noupdate(
+	const struct Flow_options &flo_opts,
+    const std::vector<double> &area,
+    const std::vector<double> &dx,
+    const struct Flow_data &flow_data)
+{
+    struct Flow_data new_flow = flow_data;
+	// Calculate Time Step
+	int n_elem = flo_opts.n_elem;
+	for (int i = 0; i < n_elem; i++) {
+		double u = new_flow.W[i*3+1] / new_flow.W[i*3+0];
+		double c = get_c(flo_opts.gam, new_flow.W[i*3+0], new_flow.W[i*3+1], new_flow.W[i*3+2]);
+		new_flow.dt[i] = (flo_opts.CFL * dx[i]) / fabs(u + c);
+	}
+    if (flo_opts.time_scheme == 0) {
+        EulerExplicitStep(flo_opts, area, dx, &new_flow);
+    } else if (flo_opts.time_scheme == 1) {
+        abort();//rk4(area, dx, dt, new_flow);
+    } else if (flo_opts.time_scheme == 2) {
+        jamesonrk(flo_opts, area, dx, &new_flow);
+    } else if (flo_opts.time_scheme == 3) {
+        abort();//eulerImplicit(area, dx, dt, new_flow);
+    } else if (flo_opts.time_scheme == 4) {
+        abort();//crankNicolson(area, dx, dt, new_flow);
+    }
+
+	const int first_cell = 0;
+	const int last_cell = n_elem-1;
+	inletBC(flo_opts, new_flow.dt[first_cell], dx[first_cell], &new_flow);
+	outletBC(flo_opts, new_flow.dt[last_cell], dx[last_cell], &new_flow);
+
+    return new_flow;
+}
+
 
 // Euler Explicit
 void EulerExplicitStep(

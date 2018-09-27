@@ -287,3 +287,26 @@ VectorXd solve_linear(
 
     return X;
 }
+
+VectorXd solve_linear(
+    const MatrixXd A,
+    const VectorXd rhs,
+	const int linear_solver_type,
+	const double tolerance)
+{
+	int A_rows = A.rows();
+	int A_cols = A.cols();
+	int rhs_rows = rhs.rows();
+	assert(A_rows==A_cols);
+	assert(A_rows==rhs_rows);
+    VectorXd X(rhs_rows);
+    X.setZero();
+
+    if (linear_solver_type == 0) {
+        X = A.fullPivLu().solve(rhs);
+    } else {
+        abort();
+	}
+
+    return X;
+}

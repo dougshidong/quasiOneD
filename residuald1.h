@@ -11,7 +11,7 @@ SparseMatrix<double> evaldRdW(
     const std::vector<double> &area,
 	const struct Flow_options &flo_opts,
 	const struct Flow_data &flow_data);
-MatrixXd evaldRdS(
+MatrixXd evaldRdArea(
 	const struct Flow_options &flo_opts,
 	const struct Flow_data &flow_data);
 
@@ -26,19 +26,22 @@ void StegerJac(
     std::vector<double> &Flux);
 
 std::vector<double> evaldlambdadW(
-    std::vector<double> W,
-    int i);
+	const double gam,
+    const double rho,
+	const double rho_u,
+	const double e);
 
-void ScalarJac(
-    std::vector<double> W,
+void dFluxdW_scalard(
+	const struct Flow_options &flo_opts,
+    const std::vector<double> &W,
     std::vector<double> &Ap_list,
     std::vector<double> &An_list);
 
 std::vector<double> evaldpdW(
-    std::vector<double> W,
-    std::vector<double> area);
+	const double gamma,
+    const std::vector<double> &W);
 
-MatrixXd evaldRdS_FD(
+MatrixXd evaldRdArea_FD(
     std::vector<double> Flux,
     std::vector<double> area,
     std::vector<double> W);

@@ -58,8 +58,8 @@ void eval_dWpdW(
 
 Eigen::MatrixXd eval_dWpdW(
 	const double gam,
-    std::vector<double> const &W,
-    int i);
+	const double rho,
+	const double rho_u);
 
 void dWdWp(
 	const double gam,
@@ -74,7 +74,12 @@ void WtoF(
 
 void WtoQ(
 	const double gam,
-    std::vector<double> const &W,
-    std::vector<double> &Q,
-    std::vector<double> const &area);
+    const std::vector<double> &area,
+    const std::vector<double> &W,
+    std::vector<double> &Q);
+
+std::vector <Eigen::Matrix3d> ddWpdWdWp(
+    const double gam,
+    const std::vector<double> &W,
+    const int i);
 #endif
