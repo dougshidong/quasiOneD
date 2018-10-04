@@ -9,7 +9,8 @@
 #include "second_order_flow.h"
 #include "convert.h"
 #include "optimizer.h"
-#include "oneshot.h"
+#include "oneshot_adjoint.h"
+#include "oneshot_dwdx.h"
 #include"petsc.h"
 #include"petscsys.h"
 
