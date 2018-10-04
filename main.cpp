@@ -103,7 +103,7 @@ int main(int argc,char **argv)
 
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);
-    } else if (input_data->optimization_options->perform_design == 2) {
+    } else if (input_data->optimization_options->perform_design >= 2) {
 		struct Flow_data flow_data;
 		flow_data.dt.resize(n_elem);
 		flow_data.W.resize(3*n_elem);
@@ -139,8 +139,11 @@ int main(int argc,char **argv)
 		// Re-evaluate the are based on the B-spline-parametrization
 		initial_design->parametrization = 2;
 
-		oneshot_dwdx(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
-		//oneshot(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
+		if (input_data->optimization_options->perform_design == 2) {
+			oneshot_adjoint(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
+		} else if (input_data->optimization_options->perform_design >= 2) {
+			oneshot_dwdx(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
+		}
 
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);

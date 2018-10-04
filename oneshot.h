@@ -3,7 +3,7 @@
 
 #include<vector>
 #include"structures.h"
-void oneshot(
+void oneshot_adjoint(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,

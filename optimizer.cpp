@@ -105,7 +105,7 @@ void optimizer(
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
 	bool testingGradient = true;
-	//testingGradient = false;
+	testingGradient = false;
 	if (testingGradient) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
         test_hessian(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
@@ -336,7 +336,7 @@ MatrixXd BFGS(
     dx = searchD;
 
 	if(dx.dot(dg) < 0) {
-		printf("Negative curvature. Not updating BFGS");
+		printf("Negative curvature. Not updating BFGS \n");
 		return oldH;
 	}
 
@@ -430,7 +430,7 @@ void test_hessian(
              FDG(n_dvar, n_dvar),
              FD2(n_dvar, n_dvar);
     printf("Evaluating DD...\n");
-    DD = getAnalyticHessian(2, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
+    DD = getAnalyticHessian(0, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
     printf("Evaluating AD...\n");
     AD = getAnalyticHessian(1, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
     printf("Evaluating AA...\n");

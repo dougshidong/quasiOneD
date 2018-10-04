@@ -22,7 +22,7 @@
 
 using namespace Eigen;
 
-void oneshot(
+void oneshot_adjoint(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,
@@ -66,6 +66,7 @@ void oneshot(
         flow_data.W[i*3+1] = rho * u;
         flow_data.W[i*3+2] = e;
     }
+	struct Flow_data flow_data_linesearch = flow_data;
 	// **************************************************************************************************************************************
 	// Initialize the adjoint
 	VectorXd pIpW(3*n_elem);
@@ -73,6 +74,8 @@ void oneshot(
 	VectorXd adjoint(3*n_elem);
 	VectorXd adjoint_update(3*n_elem);
 	adjoint.setZero();
+	SparseMatrix<double> identity(3*n_elem, 3*n_elem);
+    identity.setIdentity();
 	// **************************************************************************************************************************************
 	// Initialize the design
 	struct Design current_design = initial_design;
@@ -91,7 +94,7 @@ void oneshot(
 
     MatrixXd H(n_dvar, n_dvar),
 	         H_BFGS(n_dvar, n_dvar);
-    VectorXd pk(n_dvar), searchD(n_dvar);
+    VectorXd search_direction(n_dvar), design_change(n_dvar);
 
 
     double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
@@ -138,15 +141,34 @@ void oneshot(
         iteration++ ;
 
         // Get flow update
-		stepInTime(flo_opts, area, dx, &flow_data);
+		residual_norm = 1;
+		for (int i = 1; i < 10000 && residual_norm > 1e-9; i++) {
+			stepInTime(flo_opts, area, dx, &flow_data);
+
+			// Calculating the norm of the density residual
+			residual_norm = 0;
+			for (int k = 0; k < 1; k++) {
+				for (int i = 0; i < n_elem; i++) {
+					residual_norm = residual_norm + pow(flow_data.residual[i*3+k], 2);
+				}
+			}
+			residual_norm = sqrt(residual_norm);
+		}
 
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
 		pGpW = evaldRdW(area, flo_opts, flow_data);
-		adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
-		//std::cout<<pGpW<<std::endl;
-		double step_size = 1e-3;
-		adjoint = adjoint + step_size*adjoint_update;
+        auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
+		pGpW = identity - (*max_dt)*evaldRdW(area, flo_opts, flow_data) / dx[1];
+
+		double step_size = 1e-1;
+		double adjoint_update_norm = 1;
+		for (int i = 1; i < 10000 && adjoint_update_norm > 1e-1; i++) {
+			adjoint_update = pIpW - pGpW.transpose()*adjoint - adjoint;
+			adjoint = adjoint + step_size*adjoint_update;
+			adjoint_update_norm = adjoint_update.norm();
+		}
+		step_size = 1e+0;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -154,18 +176,18 @@ void oneshot(
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
 		pGpX = evaldRdArea(flo_opts, flow_data) * dAreadDes;
-		gradient = pIpX + pGpX.transpose()*adjoint;
+		gradient = pIpX - pGpX.transpose()*adjoint;
 
         if (opt_opts.descent_type == 1) {
-            pk =  -gradient;
-			searchD = step_size*pk;
+            search_direction =  -gradient;
+			design_change = step_size*search_direction;
         } else if (opt_opts.descent_type == 2) {
             if (iteration > 1) {
-                H_BFGS = BFGS(H, oldGrad, gradient, searchD);
+                H_BFGS = BFGS(H, oldGrad, gradient, design_change);
                 H = H_BFGS;
             }
-            pk = -H * gradient;
-			searchD = pk;
+            search_direction = -H * gradient;
+			design_change = search_direction;
 		}
 
 
@@ -174,15 +196,47 @@ void oneshot(
 		//if(n_dvar/8>=1) step = n_dvar/8;
 		if(step!=1) printf("Only printing 1 out of %d variables\n", step);
 		for (int i=0; i<n_dvar; i+=step) {
-			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], pk[i]);
+			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], search_direction[i]);
+		}
+
+		double c1 = 1e-4;
+		double c_pk_grad = c1 * gradient.dot(search_direction);
+
+		// Copy current design
+		struct Design new_design = current_design;
+
+		std::vector<double> new_area = evalS(new_design, x, dx);
+		flow_data_linesearch.W = flow_data.W;
+		stepInTime(flo_opts, area, dx, &flow_data_linesearch);
+		double new_cost = evalFitness(dx, flo_opts, flow_data_linesearch.W, opt_opts);
+		while(new_cost > (current_cost + step_size * c_pk_grad))
+		{
+			step_size = step_size * 0.5;
+			printf("Alpha Reduction: %e\n", step_size);
+			if (step_size < 1e-14) {
+				printf("Error. Can't find step size. Returning with tiny step.\n");
+			}
+
+			for (int i = 0; i < n_dvar; i++) {
+				new_design.design_variables[i] = current_design.design_variables[i] + step_size * search_direction[i];
+			}
+			new_area = evalS(new_design, x, dx);
+			flow_data_linesearch.W = flow_data.W;
+			stepInTime(flo_opts, area, dx, &flow_data_linesearch);
+			new_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
+			std::cout<<"new_cost: "<<new_cost<<std::endl;
+			printf("current_cost + step_size/2.0 * c_pk_grad: %e\n", current_cost + step_size/ 2.0 * c_pk_grad);
+		}
+		for (int i = 0; i < n_dvar; i++) {
+			current_design.design_variables[i] = new_design.design_variables[i];
 		}
 
         //double initial_alpha = 1.0;
 		//current_cost = linesearch_backtrack_unconstrained(
-		//	initial_alpha, x, dx, pk, gradient, current_cost, flo_opts, opt_opts, &searchD, &flow_data, &current_design);
+		//	initial_alpha, x, dx, search_direction, gradient, current_cost, flo_opts, opt_opts, &design_change, &flow_data, &current_design);
 
 		for (int i=0; i<n_dvar; i++) {
-			current_design.design_variables[i] += searchD[i];
+			current_design.design_variables[i] += design_change[i];
 		}
 		area = evalS(current_design, x, dx);
         oldGrad = gradient;
@@ -197,14 +251,6 @@ void oneshot(
         gradient_norm = sqrt(gradient_norm);
         gradient_norm_list.push_back(gradient_norm);
 
-        // Calculating the norm of the density residual
-        residual_norm = 0;
-        for (int k = 0; k < 1; k++) {
-			for (int i = 0; i < n_elem; i++) {
-				residual_norm = residual_norm + pow(flow_data.residual[i*3+k], 2);
-			}
-		}
-        residual_norm = sqrt(residual_norm);
 
 		clock_t toc = clock();
         double elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
@@ -283,8 +329,8 @@ void oneshot_dwdx(
 	VectorXd adjoint(3*n_elem);
 	VectorXd adjoint_update(3*n_elem);
 	adjoint.setZero();
-	SparseMatrix<double> Iden(3*n_elem, 3*n_elem);
-    Iden.setIdentity();
+	SparseMatrix<double> identity(3*n_elem, 3*n_elem);
+    identity.setIdentity();
 	// **************************************************************************************************************************************
 	// Initialize the design
 	struct Design current_design = initial_design;
@@ -303,7 +349,7 @@ void oneshot_dwdx(
 
     MatrixXd H(n_dvar, n_dvar),
 	         H_BFGS(n_dvar, n_dvar);
-    VectorXd pk(n_dvar), searchD(n_dvar);
+    VectorXd search_direction(n_dvar), design_change(n_dvar);
 
 
     double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
@@ -355,7 +401,7 @@ void oneshot_dwdx(
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
         auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-		pGpW = Iden - (*max_dt)*evaldRdW(area, flo_opts, flow_data);
+		pGpW = identity - (*max_dt)*evaldRdW(area, flo_opts, flow_data);
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -371,16 +417,16 @@ void oneshot_dwdx(
         step_size = 0;
 
         if (opt_opts.descent_type == 1) {
-            pk =  -gradient;
-			searchD = step_size*pk;
+            search_direction =  -gradient;
+			design_change = step_size*search_direction;
         } else if (opt_opts.descent_type == 2) {
             if (iteration > 1) {
-                H_BFGS = BFGS(H, oldGrad, gradient, searchD);
+                H_BFGS = BFGS(H, oldGrad, gradient, design_change);
                 H = H_BFGS;
             }
             std::cout<<H<<std::endl;
-            pk = -H * gradient;
-			searchD = step_size*pk;
+            search_direction = -H * gradient;
+			design_change = step_size*search_direction;
 		}
 
 
@@ -389,15 +435,15 @@ void oneshot_dwdx(
 		//if(n_dvar/8>=1) step = n_dvar/8;
 		if(step!=1) printf("Only printing 1 out of %d variables\n", step);
 		for (int i=0; i<n_dvar; i+=step) {
-			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], searchD[i]);
+			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], design_change[i]);
 		}
 
         //double initial_alpha = 1.0;
 		//current_cost = linesearch_backtrack_unconstrained(
-		//	initial_alpha, x, dx, pk, gradient, current_cost, flo_opts, opt_opts, &searchD, &flow_data, &current_design);
+		//	initial_alpha, x, dx, search_direction, gradient, current_cost, flo_opts, opt_opts, &design_change, &flow_data, &current_design);
 
 		for (int i=0; i<n_dvar; i++) {
-			current_design.design_variables[i] += searchD[i];
+			current_design.design_variables[i] += design_change[i];
 		}
 		area = evalS(current_design, x, dx);
         oldGrad = gradient;
@@ -447,3 +493,4 @@ void oneshot_dwdx(
 
     return;
 }
+
