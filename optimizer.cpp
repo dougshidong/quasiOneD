@@ -105,7 +105,7 @@ void optimizer(
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
 	bool testingGradient = true;
-	testingGradient = false;
+	//testingGradient = false;
 	if (testingGradient) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
         test_hessian(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
@@ -163,6 +163,7 @@ void optimizer(
             if (it_design > 1) {
                 H_BFGS = BFGS(H, oldGrad, gradient, searchD);
                 H = H_BFGS;
+				std::cout<<H.eigenvalues()<<std::endl;
             }
             pk = -H * gradient;
         } else if (opt_opts.descent_type == 3) {
@@ -334,15 +335,17 @@ MatrixXd BFGS(
 
     dg = currentg - oldg;
     dx = searchD;
+	const double dgdx = dx.dot(dg);
 
-	if(dx.dot(dg) < 0) {
+	if(dgdx < 0) {
 		printf("Negative curvature. Not updating BFGS \n");
 		return oldH;
 	}
 
-    a = ((dx.transpose() * dg + dg.transpose() * oldH * dg)(0) * (dx * dx.transpose()))
-         / ((dx.transpose() * dg)(0) * (dx.transpose() * dg)(0));
-    b = (oldH * dg * dx.transpose() + dx * dg.transpose() * oldH) / (dx.transpose() * dg)(0);
+    //a = ((dx.transpose() * dg + dg.transpose() * oldH * dg)(0) * (dx * dx.transpose()))
+    //     / ((dx.transpose() * dg)(0) * (dx.transpose() * dg)(0));
+    a = ((dgdx + dg.transpose() * oldH * dg) * (dx * dx.transpose())) / (dgdx*dgdx);
+    b = (oldH * dg * dx.transpose() + dx * dg.transpose() * oldH) / (dgdx);
 
     dH = a - b;
 

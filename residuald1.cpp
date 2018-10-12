@@ -69,7 +69,7 @@ SparseMatrix<double> evaldRdW(
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
 
-            val = - dBidWi[k];
+            val = - 1.0/n_elem/flow_data.dt[0] * dBidWi[k];
             dRdW.insert(rowi, coli) = val;
 
             // d(inlet)/d(domain)
@@ -78,7 +78,7 @@ SparseMatrix<double> evaldRdW(
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
 
-            val = - dBidWd[k];
+            val = - 1.0/n_elem/flow_data.dt[0] *dBidWd[k];
             dRdW.insert(rowi, coli) = val;
 
             // d(outlet)/d(outlet)
@@ -87,7 +87,7 @@ SparseMatrix<double> evaldRdW(
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
 
-            val = - dBodWo[k];
+            val = - 1e-0/n_elem/flow_data.dt[n_elem-1] *dBodWo[k];
             dRdW.insert(rowi, coli) = val;
 
             // d(outlet)/d(domain)
@@ -96,7 +96,7 @@ SparseMatrix<double> evaldRdW(
             rowi = Ri * 3 + row;
             coli = Wi * 3 + col;
 
-            val = - dBodWd[k];
+            val = - 1e-0/n_elem/flow_data.dt[n_elem-1] *dBodWd[k];
             dRdW.insert(rowi, coli) = val;
         }
     }

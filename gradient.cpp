@@ -279,12 +279,12 @@ VectorXd gradient_adjoint(
     // *************************************
     //VectorXd psi(3 * n_elem);
     SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
-    slusolver1.compute(-dRdW.transpose());
+    slusolver1.compute(dRdW.transpose());
     if (slusolver1.info() != 0)
 		std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
     psi = slusolver1.solve(dCostdW);
 
-    VectorXd dIdDes = dCostdDes.transpose() + psi.transpose()*dRdDes;
+    VectorXd dIdDes = dCostdDes.transpose() - psi.transpose()*dRdDes;
 
 	return dIdDes;
 }

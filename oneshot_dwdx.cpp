@@ -178,11 +178,14 @@ void oneshot_dwdx(
         } else if (opt_opts.descent_type == 2) {
             if (iteration > 1) {
                 H_BFGS = BFGS(H, oldGrad, gradient, design_change);
-                H = H_BFGS;
+				double t = 1e-1;
+                H = t*H_BFGS + (1-t)*H;
             }
             std::cout<<H<<std::endl;
+            std::cout<<H.eigenvalues()<<std::endl;
             search_direction = -H * gradient;
-			design_change = step_size*search_direction;
+			//design_change = step_size*search_direction;
+			design_change = search_direction;
 		}
 
 

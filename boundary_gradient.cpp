@@ -445,10 +445,13 @@ void dRdW_BC_outlet(
     // Get Transformation Matrix
 	eval_dWpdW(gam, W[i1*3+0], W[i1*3+1], &dwpdw);
 
-    for (int row = 0; row < 3; row++)
-    for (int col = 0; col < 3; col++)
-    for (int k = 0; k < 3; k++)
-        dBodWo[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
+    for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			for (int k = 0; k < 3; k++) {
+				dBodWo[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
+			}
+		}
+	}
 
     dbdwp[0] = dr1dtdr2;
     dbdwp[1] = dr1dtdu2;

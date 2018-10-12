@@ -100,7 +100,6 @@ void oneshot_adjoint(
 
     VectorXd gradient(n_dvar);
     VectorXd oldGrad(n_dvar); //BFGS
-    gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
     std::vector<double> gradient_norm_list, timeVec;
     clock_t tic = clock();
@@ -134,6 +133,62 @@ void oneshot_adjoint(
 		}
 		residual_norm = sqrt(residual_norm);
 	}
+	// Get adjoint update
+	pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
+	auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
+	pGpW = (*max_dt)/dx[1] *evaldRdW(area, flo_opts, flow_data);
+	std::cout<<pGpW<<std::endl;
+	pGpW.insert(0,0) = 1e-9;
+	pGpW.insert(1,1) = 1e-9;
+	pGpW.insert(2,2) = 1e-9;
+	pGpW = identity - pGpW;
+	std::cout<<pGpW<<std::endl;
+	//pGpW = evaldRdW(area, flo_opts, flow_data);
+	std::cout<<pGpW<<std::endl;
+	abort();
+
+	double step_size = 1.0;
+	double adjoint_update_norm = 1;
+	for (int i = 1; i < 20000 && adjoint_update_norm > 1e-12; i++) {
+		adjoint = pIpW + pGpW.transpose()*adjoint;
+
+		//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
+		//adjoint = (1-step_size)*adjoint - step_size*adjoint_update;
+		//adjoint_update_norm = adjoint_update.norm();
+
+		//VectorXd old_adj = adjoint;
+		//adjoint = pIpW + pGpW.transpose()*adjoint;
+		//adjoint_update = adjoint - old_adj;
+		//adjoint_update_norm = adjoint_update.norm();
+		//MatrixXd pGpA = MatrixXd( (1-step_size)*identity - step_size*(pGpW-identity) );
+		MatrixXd pGpA = MatrixXd( pGpW.transpose() );
+		std::cout<< pGpA.eigenvalues() <<std::endl;
+		//JacobiSVD<MatrixXd> svd(pGpA);
+		//std::cout<< svd.singularValues() <<std::endl;
+		VectorXd residual = adjoint - (adjoint.transpose()*pGpW).transpose() - pIpW;
+		printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
+		printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, residual.norm());
+	}
+	VectorXd residual = adjoint - (adjoint.transpose()*pGpW).transpose() - pIpW;
+
+	std::cout<< residual <<std::endl<<std::endl;
+
+	pGpW = identity - evaldRdW(area, flo_opts, flow_data);
+	SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver0;
+	slusolver0.compute(identity.transpose() - pGpW.transpose());
+	if (slusolver0.info() != 0)
+		std::cout<<"Factorization failed. Error: "<<slusolver0.info()<<std::endl;
+	VectorXd adjoint2 = slusolver0.solve(pIpW);
+
+	SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
+	slusolver1.compute(evaldRdW(area, flo_opts, flow_data).transpose());
+	if (slusolver1.info() != 0)
+		std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
+	VectorXd psi = slusolver1.solve(pIpW);
+	std::cout<<adjoint-adjoint2<<std::endl<<std::endl;
+	std::cout<<adjoint-psi<<std::endl<<std::endl;
+	std::cout<<psi-adjoint2<<std::endl<<std::endl;
+	abort();
     while(
 		(iteration < opt_opts.opt_maxit) &&
 
@@ -145,7 +200,7 @@ void oneshot_adjoint(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 1; i < 2000 && residual_norm > 1e-2; i++) {
+		for (int i = 1; i < 20000 && residual_norm > 1e-12; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
 			// Calculating the norm of the density residual
@@ -160,18 +215,34 @@ void oneshot_adjoint(
 
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-		pGpW = evaldRdW(area, flo_opts, flow_data);
         auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-		pGpW = identity - (*max_dt)*evaldRdW(area, flo_opts, flow_data) / dx[1];
+		pGpW = identity - (*max_dt)/dx[1] *evaldRdW(area, flo_opts, flow_data);
 
-		double step_size = 1e-3;
+		double step_size =0.1;// 1e-1;
 		double adjoint_update_norm = 1;
-		for (int i = 1; i < 2000 && adjoint_update_norm > 1e-12; i++) {
-			adjoint_update = pIpW - pGpW.transpose()*adjoint - adjoint;
-			adjoint = adjoint + step_size*adjoint_update;
-			adjoint_update_norm = adjoint_update.norm();
+		for (int i = 1; i < 20000 && adjoint_update_norm > 1e-12; i++) {
+			//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
+			//adjoint = adjoint + step_size*adjoint_update;
+			//adjoint_update_norm = adjoint_update.norm();
+
+			//adjoint_update = adjoint + pIpW + pGpW.transpose()*adjoint;
+			//adjoint = adjoint - step_size*adjoint_update;
+			//adjoint_update_norm = adjoint_update.norm();
+
+
+			adjoint_update = pIpW + pGpW.transpose()*adjoint;
+			adjoint = adjoint - step_size*(adjoint - adjoint_update);
+			adjoint_update_norm = (adjoint_update-adjoint).norm();
+			//std::cout<<MatrixXd( identity - step_size*(identity+pGpW) ).eigenvalues()<<std::endl;
+			printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
+			SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
+			slusolver1.compute(evaldRdW(area, flo_opts, flow_data).transpose());
+			if (slusolver1.info() != 0)
+				std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
+			VectorXd psi = slusolver1.solve(pIpW);
+			std::cout<<adjoint+psi<<std::endl;
 		}
-		step_size = 1e+0;
+		step_size = 1e+1;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -179,7 +250,7 @@ void oneshot_adjoint(
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
 		pGpX = -evaldRdArea(flo_opts, flow_data) * dAreadDes;
-		gradient = pIpX - pGpX.transpose()*adjoint;
+		gradient = pIpX - (*max_dt)/dx[1]*pGpX.transpose()*adjoint;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;
@@ -205,45 +276,42 @@ void oneshot_adjoint(
 			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], search_direction[i]);
 		}
 
-		double c1 = 1e-4;
-		double c_pk_grad = c1 * gradient.dot(search_direction);
-
-		// Copy current design
-		struct Design new_design = current_design;
-
-		std::vector<double> new_area = evalS(new_design, x, dx);
-		flow_data_linesearch.W = flow_data.W;
-		stepInTime(flo_opts, new_area, dx, &flow_data_linesearch);
-		double new_cost = evalFitness(dx, flo_opts, flow_data_linesearch.W, opt_opts);
-		while(new_cost > (current_cost + step_size * c_pk_grad))
-		{
-			step_size = step_size * 0.1;
-			printf("Alpha Reduction: %e\n", step_size);
-			if (step_size < 1e-10) {
-				printf("Error. Can't find step size. Returning with tiny step.\n");
-				break;
-			}
-
-			for (int i = 0; i < n_dvar; i++) {
-				new_design.design_variables[i] = current_design.design_variables[i] + step_size * search_direction[i];
-			}
-			new_area = evalS(new_design, x, dx);
+		bool do_linesearch = false;
+		if (do_linesearch) {
+			double c1 = 1e-4;
+			double c_pk_grad = c1 * gradient.dot(search_direction);
+			struct Design new_design = current_design;
+			std::vector<double> new_area = evalS(new_design, x, dx);
 			flow_data_linesearch.W = flow_data.W;
 			stepInTime(flo_opts, new_area, dx, &flow_data_linesearch);
-			new_cost = evalFitness(dx, flo_opts, flow_data_linesearch.W, opt_opts);
-			printf("new_cost: %e\n", new_cost);
-			printf("current_cost + step_size/2.0 * c_pk_grad: %e\n", current_cost + step_size/ 2.0 * c_pk_grad);
-		}
-		for (int i = 0; i < n_dvar; i++) {
-			current_design.design_variables[i] = new_design.design_variables[i];
-		}
+			double new_cost = evalFitness(dx, flo_opts, flow_data_linesearch.W, opt_opts);
+			while(new_cost > (current_cost + step_size * c_pk_grad))
+			{
+				step_size = step_size * 0.1;
+				printf("Alpha Reduction: %e\n", step_size);
+				if (step_size < 1e-10) {
+					printf("Error. Can't find step size. Returning with tiny step.\n");
+					break;
+				}
 
-        //double initial_alpha = 1.0;
-		//current_cost = linesearch_backtrack_unconstrained(
-		//	initial_alpha, x, dx, search_direction, gradient, current_cost, flo_opts, opt_opts, &design_change, &flow_data, &current_design);
-
-		for (int i=0; i<n_dvar; i++) {
-			current_design.design_variables[i] += design_change[i];
+				for (int i = 0; i < n_dvar; i++) {
+					new_design.design_variables[i] = current_design.design_variables[i] + step_size * search_direction[i];
+				}
+				new_area = evalS(new_design, x, dx);
+				flow_data_linesearch.W = flow_data.W;
+				stepInTime(flo_opts, new_area, dx, &flow_data_linesearch);
+				new_cost = evalFitness(dx, flo_opts, flow_data_linesearch.W, opt_opts);
+				printf("new_cost: %e\n", new_cost);
+				printf("current_cost + step_size/2.0 * c_pk_grad: %e\n", current_cost + step_size/ 2.0 * c_pk_grad);
+			}
+			for (int i = 0; i < n_dvar; i++) {
+				//design_change[i] = new_design.design_variables[i] - current_design.design_variables[i];
+				current_design.design_variables[i] = new_design.design_variables[i];
+			}
+		} else {
+			for (int i=0; i<n_dvar; i++) {
+				current_design.design_variables[i] += design_change[i];
+			}
 		}
 		area = evalS(current_design, x, dx);
         oldGrad = gradient;
