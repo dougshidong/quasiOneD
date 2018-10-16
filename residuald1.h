@@ -11,7 +11,15 @@ SparseMatrix<double> evaldRdW(
     const std::vector<double> &area,
 	const struct Flow_options &flo_opts,
 	const struct Flow_data &flow_data);
+SparseMatrix<double> evaldRdW_FD(
+    const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data);
 MatrixXd evaldRdArea(
+	const struct Flow_options &flo_opts,
+	const struct Flow_data &flow_data);
+MatrixXd evaldRdArea_FD(
+    const std::vector<double> &area,
 	const struct Flow_options &flo_opts,
 	const struct Flow_data &flow_data);
 

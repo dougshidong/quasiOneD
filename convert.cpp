@@ -12,6 +12,7 @@ void get_all_p(
 	std::vector<double> &p)
 {
 	int n_elem = p.size();
+    assert(n_elem == W.size()/3);
     for (int i = 0; i < n_elem; i++) {
 		p[i] = get_p(gam, W[i*3+0], W[i*3+1], W[i*3+2]);
     }

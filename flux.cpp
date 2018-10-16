@@ -10,13 +10,13 @@ void matrixMult(double A[][3], double B[][3], double result[][3]);
 void Flux_Scalar(
 	const struct Flow_options &flow_options,
     const std::vector<double> &W,
-    std::vector<double> &fluxes);
+    std::vector<double> *const fluxes);
 
 // Get fluxes based on flux_scheme
 void getFlux(
 	const struct Flow_options &flow_options,
 	const std::vector<double> &W,
-	std::vector<double> &fluxes)
+	std::vector<double> *const fluxes)
 {
     if (flow_options.flux_scheme == 0)      // Scalar
         Flux_Scalar(flow_options, W, fluxes);
@@ -34,9 +34,13 @@ void getFlux(
 void Flux_Scalar(
 	const struct Flow_options &flow_options,
     const std::vector<double> &W,
-    std::vector<double> &fluxes)
+    std::vector<double> *const fluxes)
 {
-	std::vector<double> F_m(3), F_p(3);
+	const int n_face = flow_options.n_elem+1;
+    assert(n_face == (*fluxes).size()/3);
+
+    std::vector<double> F_m(3);
+    std::vector<double> F_p(3);
 
 	double gam = flow_options.gam;
 	double w1 = W[0*3+0], w2 = W[0*3+1], w3 = W[0*3+2];
@@ -46,11 +50,11 @@ void Flux_Scalar(
 	F_m[1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
 	F_m[2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
 
-	int n_elem = flow_options.n_elem;
-    for (int i = 1; i < n_elem; i++) {
-		w1 = W[i*3+0];
-		w2 = W[i*3+1];
-		w3 = W[i*3+2];
+    for (int i_face = 0; i_face < n_face; i_face++) {
+        const int i_cell = i_face+1;
+		w1 = W[i_cell*3+0];
+		w2 = W[i_cell*3+1];
+		w3 = W[i_cell*3+2];
 		double u_p = w2 / w1;
 		double c_p = get_c(gam,w1,w2,w3);
 
@@ -63,15 +67,16 @@ void Flux_Scalar(
 		F_p[1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
 		F_p[2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
 
-        for (int k = 0; k < 3; k++) {
-            int ki = i * 3 + k;
-            int kim = (i - 1) * 3 + k;
-            fluxes[ki] = 0.5 * (F_m[k] + F_p[k]) - 0.5 * flow_options.scalar_d_eps * lambda * (W[ki] - W[kim]);
+        for (int i_state = 0; i_state < 3; i_state++) {
+            const int kip = (i_face + 1) * 3 + i_state;
+            const int ki  = (i_face - 0) * 3 + i_state;
+            (*fluxes)[ki] = 0.5 * (F_m[i_state] + F_p[i_state]) - 0.5 * flow_options.scalar_d_eps * lambda * (W[kip] - W[ki]);
         }
 		F_m = F_p;
 		u_m = u_p;
 		c_m = c_p;
     }
+    return;
 }
 
 //void initializeFlux(int n_elem)

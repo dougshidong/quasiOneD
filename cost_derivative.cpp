@@ -13,7 +13,7 @@ VectorXd evaldCostdW(
 	const std::vector<double> &W,
 	const std::vector<double> &dx)
 {
-	const int n_elem = W.size()/3;
+	const int n_elem = flo_opts.n_elem;
 	const double inlet_total_p = flo_opts.inlet_total_p;
 	const double gam = flo_opts.gam;
 
@@ -21,17 +21,18 @@ VectorXd evaldCostdW(
 
     for (int i = 0; i < n_elem; i++)
     {
-        const double rho = W[i * 3 + 0];
-        const double u = W[i * 3 + 1] / rho;
-        const double p = (gam - 1) * ( W[i * 3 + 2] - rho * u * u / 2.0 );
+        const int iw = i+1;
+        const double rho = W[iw * 3 + 0];
+        const double u = W[iw * 3 + 1] / rho;
+        const double p = (gam - 1) * ( W[iw * 3 + 2] - rho * u * u / 2.0 );
 
         const double dpdw0 = (gam - 1) / 2.0 * u * u;
         const double dpdw1 = - (gam - 1) * u;
         const double dpdw2 = (gam - 1);
 
-        dCostdW[i * 3 + 0] = (p / inlet_total_p - opt_opts.target_pressure[i]) * dpdw0 * dx[i] / inlet_total_p;
-        dCostdW[i * 3 + 1] = (p / inlet_total_p - opt_opts.target_pressure[i]) * dpdw1 * dx[i] / inlet_total_p;
-        dCostdW[i * 3 + 2] = (p / inlet_total_p - opt_opts.target_pressure[i]) * dpdw2 * dx[i] / inlet_total_p;
+        dCostdW[i * 3 + 0] = (p / inlet_total_p - opt_opts.target_pressure[iw]) * dpdw0 * dx[iw] / inlet_total_p;
+        dCostdW[i * 3 + 1] = (p / inlet_total_p - opt_opts.target_pressure[iw]) * dpdw1 * dx[iw] / inlet_total_p;
+        dCostdW[i * 3 + 2] = (p / inlet_total_p - opt_opts.target_pressure[iw]) * dpdw2 * dx[iw] / inlet_total_p;
     }
     return dCostdW;
 }

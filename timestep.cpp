@@ -18,20 +18,20 @@ void getDomainResi(
 	const struct Flow_options &flo_opts,
 	const std::vector<double> &area,
 	const std::vector<double> &W,
-	std::vector<double> &fluxes,
-	std::vector<double> &residual)
+	std::vector<double>* const fluxes,
+	std::vector<double>* const residual)
 {
 	getFlux(flo_opts, W, fluxes);
-	int n_elem = W.size()/3;
-    for (int k = 0; k < 3; k++) {
-        for (int i = 1; i < n_elem - 1; i++) {
-            int ki = i * 3 + k;
-            int kip = (i + 1) * 3 + k;
-            residual[ki] = fluxes[kip] * area[i + 1] - fluxes[ki] * area[i];
+	const int n_elem = flo_opts.n_elem;
+    for (int i_state = 0; i_state < 3; i_state++) {
+        for (int i_res = 1; i_res < n_elem+1; i_res++) {
+            const int kim = (i_res - 1) * 3 + i_state;
+            const int ki  = (i_res + 0) * 3 + i_state;
+            (*residual)[ki] = (*fluxes)[ki] * area[i_res] - (*fluxes)[kim] * area[i_res-1];
 
-			if (k==1) { // Source Term
-				double p = get_p(flo_opts.gam, W[i*3+0], W[i*3+1], W[i*3+2]);
-				residual[ki] -= p * (area[i + 1] - area[i]);
+			if (i_state==1) { // Source Term
+				double p = get_p(flo_opts.gam, W[i_res*3+0], W[i_res*3+1], W[i_res*3+2]);
+				(*residual)[ki] -= p * (area[i_res] - area[i_res-1]);
 			}
         }
     }
@@ -69,11 +69,16 @@ void stepInTime(
 {
 	// Calculate Time Step
 	int n_elem = flo_opts.n_elem;
-	for (int i = 0; i < n_elem; i++) {
-		double u = flow_data->W[i*3+1] / flow_data->W[i*3+0];
-		double c = get_c(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
+	const int first_cell = 0;
+	const int last_cell = n_elem+1;
+	for (int i = 1; i < n_elem+1; i++) {
+		const double u = flow_data->W[i*3+1] / flow_data->W[i*3+0];
+		const double c = get_c(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
 		flow_data->dt[i] = (flo_opts.CFL * dx[i]) / fabs(u + c);
 	}
+    flow_data->dt[first_cell] = flow_data->dt[first_cell+1];
+    flow_data->dt[last_cell] = flow_data->dt[last_cell-1];
+
     if (flo_opts.time_scheme == 0) {
         EulerExplicitStep(flo_opts, area, dx, flow_data);
     } else if (flo_opts.time_scheme == 1) {
@@ -85,9 +90,6 @@ void stepInTime(
     } else if (flo_opts.time_scheme == 4) {
         abort();//crankNicolson(area, dx, dt, flow_data);
     }
-
-	const int first_cell = 0;
-	const int last_cell = n_elem-1;
 	inletBC(flo_opts, flow_data->dt[first_cell], dx[first_cell], flow_data);
 	outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
 }
@@ -101,7 +103,7 @@ struct Flow_data stepInTime_noupdate(
     struct Flow_data new_flow = flow_data;
 	// Calculate Time Step
 	int n_elem = flo_opts.n_elem;
-	for (int i = 0; i < n_elem; i++) {
+	for (int i = 1; i < n_elem+1; i++) {
 		double u = new_flow.W[i*3+1] / new_flow.W[i*3+0];
 		double c = get_c(flo_opts.gam, new_flow.W[i*3+0], new_flow.W[i*3+1], new_flow.W[i*3+2]);
 		new_flow.dt[i] = (flo_opts.CFL * dx[i]) / fabs(u + c);
@@ -134,13 +136,13 @@ void EulerExplicitStep(
     const std::vector<double> &dx,
     struct Flow_data* const flow_data)
 {
-    getDomainResi(flo_opts, area, flow_data->W, flow_data->fluxes, flow_data->residual);
+    getDomainResi(flo_opts, area, flow_data->W, &flow_data->fluxes, &flow_data->residual);
 
 	int n_elem = flo_opts.n_elem;
     for (int k = 0; k < 3; k++){
-		for (int i = 1; i < n_elem - 1; i++) {
-			ki = i * 3 + k;
-			flow_data->W[ki] = flow_data->W[ki] - (flow_data->dt[i] / dx[i]) * flow_data->residual[ki];
+		for (int i = 1; i < n_elem+1; i++) {
+			const int ki_res = i * 3 + k;
+			flow_data->W[ki_res] = flow_data->W[ki_res] - (flow_data->dt[i] / dx[i]) * flow_data->residual[ki_res];
 		}
 	}
     return;
@@ -157,32 +159,26 @@ void jamesonrk(
 	int n_elem = flo_opts.n_elem;
     // Initialize First Stage
     for (int k = 0; k < 3; k++) {
-        for (int i = 0; i < n_elem; i++) {
-            ki = i * 3 + k;
+        for (int i = 0; i < n_elem+2; i++) {
+            const int ki = i * 3 + k;
             flow_data->W_stage[ki] = flow_data->W[ki];
         }
     }
     // 1-4 Stage
     for (int r = 1; r < 5; r++) {
         // Calculate Residuals
-		getDomainResi(flo_opts, area, flow_data->W_stage, flow_data->fluxes, flow_data->residual);
+		getDomainResi(flo_opts, area, flow_data->W_stage, &flow_data->fluxes, &flow_data->residual);
         // Step in RK time
-        for (int k = 0; k < 3; k++)
-        {
-            for (int i = 1; i < n_elem - 1; i++)
-            {
+        for (int k = 0; k < 3; k++) {
+            for (int i = 1; i < n_elem+1; i++) {
                 ki = i * 3 + k;
-                flow_data->W_stage[ki] = flow_data->W[ki] - (flow_data->dt[i] / (5 - r)) * flow_data->residual[ki] / dx[i];
+                flow_data->W_stage[ki] = flow_data->W[ki] - (flow_data->dt[i-1] / (5 - r)) * flow_data->residual[ki] / dx[i-1];
             }
-            flow_data->W_stage[0 * 3 + k] = flow_data->W[0 * 3 + k];
-            flow_data->W_stage[(n_elem - 1) * 3 + k] = flow_data->W[(n_elem - 1) * 3 + k];
         }
     }
 
-    for (int k = 0; k < 3; k++)
-    {
-        for (int i = 1; i < n_elem - 1; i++)
-        {
+    for (int k = 0; k < 3; k++) {
+        for (int i = 1; i < n_elem+1; i++) {
             ki = i * 3 + k;
             flow_data->residual[ki] = (flow_data->W_stage[ki] - flow_data->W[ki]) * dx[i] / flow_data->dt[i];
             flow_data->W[ki] = flow_data->W_stage[ki];

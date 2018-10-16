@@ -24,7 +24,7 @@ mach_inlet  tot_in_T    tot_in_p    out_p_ratio
 *******************************************
 DESIGN OPTIMIZATION PARAMETERS
 do_design   des_param   cost_func
-2           2           1
+1           2           1
 descent     grad_type   hess_type   hess_exact   dwdx_tol
 2           1           3           0            1.0e-16
 opt_tol     opt_maxit

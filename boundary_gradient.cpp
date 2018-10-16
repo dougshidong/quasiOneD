@@ -208,6 +208,9 @@ void dRdW_BC_inlet(
         for (int k = 0; k < 3; k++)
             dBidWi[row * 3 + col] += dbdwp[row * 3 + k] * dwpdw[k * 3 + col];
 
+        for (int k = 0; k < 3; k++)
+            dBidWi[k * 3 + k] += 1;
+
         // Assign dR1/dWp2
         dbdwp[0] = dr1dtdr2;
         dbdwp[1] = dr1dtdu2;
@@ -452,6 +455,8 @@ void dRdW_BC_outlet(
 			}
 		}
 	}
+    for (int k = 0; k < 3; k++)
+        dBodWo[k * 3 + k] += 1;
 
     dbdwp[0] = dr1dtdr2;
     dbdwp[1] = dr1dtdu2;

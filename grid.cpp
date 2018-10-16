@@ -6,20 +6,15 @@
 
 std::vector<double> sinParam(
     const double h, const double t1, const double t2,
-    std::vector<double> x,
-    std::vector<double> dx)
+    std::vector<double> x)
 {
 	const double PI = atan(1.0) * 4.0;
-	int n_elem = x.size();
-    std::vector<double> area(n_elem + 1);
+	const int n_face = x.size();
+    std::vector<double> area(n_face);
     // Define Area
-    for (int i = 1; i < n_elem; i++) {
-        double xh = x[i] - dx[i] / 2.0;
-        area[i] = 1 - h * pow(sin(PI * pow(xh, t1)), t2);
+    for (int i = 0; i < n_face; i++) {
+        area[i] = 1 - h * pow(sin(PI * pow(x[i], t1)), t2);
     }
-
-    area[0] = 1;
-    area[n_elem] = 1;
 
     return area;
 }
@@ -27,27 +22,27 @@ std::vector<double> sinParam(
 
 // Evaluate X
 std::vector<double> uniform_x(double a, double b, int n_elem) {
-    std::vector<double> x(n_elem);
-    double dxConst = (b - a)/n_elem;
-
-    for (int i = 0; i < n_elem; i++)
-        x[i] = dxConst/2 + dxConst * i;
-
+    const int n_face = n_elem+1;
+    std::vector<double> x(n_face);
+    const double dxConst = (b - a)/n_elem;
+    for (int i = 0; i < n_face; i++) {
+        x[i] = dxConst * i;
+        //x[i] = dxConst/2 + dxConst * i;
+    }
     return x;
 }
 
 //  Evaluate dx
 
 std::vector<double> eval_dx(std::vector<double> x) {
-	int n_elem = x.size();
-    std::vector<double> dx(n_elem);
-
-    dx[0] = x[1] - x[0];
-    for (int i = 1; i < n_elem - 1; i++) {
-        dx[i] =  (x[i] - x[i - 1])/2  +  (x[i + 1] - x[i])/2 ;
+	const int n_face = x.size();
+	const int n_dx = n_face+1;
+    std::vector<double> dx(n_dx);
+    for (int i = 0; i < n_face-1; i++) {
+        dx[i+1] =  x[i+1] - x[i];
     }
-    dx[n_elem - 1] = x[x.size() - 1] - x[x.size() - 2];
-
+    dx[0] = dx[1];
+    dx[n_face] = dx[n_face-1];
     return dx;
 }
 
@@ -56,13 +51,13 @@ std::vector<double> evalS(
     const std::vector<double> &x,
     const std::vector<double> &dx)
 {
-	int n_elem = x.size();
-    std::vector<double> area(n_elem + 1);
+	int n_face = x.size();
+    std::vector<double> area(n_face);
     if (design.parametrization == 0) {
 		abort();
     }
     else if (design.parametrization == 1) {
-        area = sinParam(design.h, design.t1, design.t2, x, dx);\
+        area = sinParam(design.h, design.t1, design.t2, x);\
     }
     else if (design.parametrization == 2) {
 		int n_control_pts = design.n_design_variables + 2;

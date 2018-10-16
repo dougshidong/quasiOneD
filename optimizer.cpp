@@ -71,11 +71,14 @@ void optimizer(
 	int n_elem = flo_opts.n_elem;
 	int n_dvar = opt_opts.n_design_variables;
 	struct Flow_data flow_data;
-	flow_data.dt.resize(n_elem);
-	flow_data.W.resize(3*n_elem);
-	flow_data.W_stage.resize(3*n_elem);
-	flow_data.fluxes.resize(3*(n_elem+1)); // At the faces
-	flow_data.residual.resize(3*n_elem);
+
+    const int n_face = n_elem + 1;
+    const int n_elem_ghost = n_elem + 2;
+    flow_data.dt.resize(n_elem_ghost);
+    flow_data.W.resize(3*n_elem_ghost);
+    flow_data.W_stage.resize(3*n_elem_ghost);
+    flow_data.residual.resize(3*n_elem_ghost);
+    flow_data.fluxes.resize(3*n_face);
 
 	struct Design current_design = initial_design;
 	current_design.design_variables = initial_design.design_variables;
@@ -392,9 +395,13 @@ void test_grad(
              cfinite_gradient(n_dvar),
              ffinite_gradient(n_dvar);
 
+    printf("Evaluating adjoint gradient...\n");
     adjoint_gradient = getGradient(1, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+    printf("Evaluating direct gradient...\n");
     direct_gradient = getGradient(2, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+    printf("Evaluating central FD gradient...\n");
     cfinite_gradient = getGradient(-3, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
+    printf("Evaluating forward FD gradient...\n");
     ffinite_gradient = getGradient(-1, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
 
 	printf("%-23s %-23s %-23s %-23s %-23s %-23s %-23s %-23s\n", "Adjoint", "Direct-Diff", "Central FD", "ForwardFD", "AD-DM", "AD-FD","DM-FD", "CFD-FFD");
@@ -446,7 +453,7 @@ void test_hessian(
     FD2 = getAnalyticHessian(-2, o_opts_copy.cost_function, x, dx, area, flo_opts, flow_data, o_opts_copy, design);
 	//printf(" Adjoint                  Direct-Diff             Central FD              AD-DM                   AD-FD                   DM-FD\n");
 
-	printf("%-23s %-23s %-23s %-23s %-23s %-23s \n", "DD", "DD-AD", "DA-AA", "DD-DA", "DD-FDG", "DD-FD2");
+	printf("%-23s %-23s %-23s %-23s %-23s %-23s %-23s\n", "DD", "DD-AD", "DA-AA", "DD-DA", "DD-FDG", "DD-FD2", "FDG-FD2");
 	//printf(" Adjoint                  Direct-Diff             Central FD              AD-DM                   AD-FD                   DM-FD\n");
 	for (int i = 0; i < n_dvar; i++) {
         for (int j = i; j < n_dvar; j++) {
@@ -461,7 +468,8 @@ void test_hessian(
             double r4 = (h1-h4)/(h1+1e-15);
             double r5 = (h1-h5)/(h1+1e-15);
             double r6 = (h1-h6)/(h1+1e-15);
-            printf("%23.15e %23.15e %23.15e %23.15e %23.15e %23.15e \n", h1, r2, r3, r4, r5, r6);
+            double r7 = (h5-h6)/(h1+1e-15);
+            printf("%23.15e %23.15e %23.15e %23.15e %23.15e %23.15e %23.15e\n", h1, r2, r3, r4, r5, r6, r7);
         }
 	}
 	return;

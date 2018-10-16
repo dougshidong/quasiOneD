@@ -6,6 +6,10 @@ Eigen::MatrixXd evaldAreadDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const struct Design &design);
+Eigen::MatrixXd evaldAreadDes_FD(
+    const std::vector<double> &x,
+    const std::vector<double> &dx,
+    const struct Design &design);
 
 std::vector <Eigen::MatrixXd> evalddAreadDesdDes(
     const std::vector<double> &x,

@@ -138,14 +138,16 @@ void oneshot_adjoint(
 	auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
 	pGpW = (*max_dt)/dx[1] *evaldRdW(area, flo_opts, flow_data);
 	std::cout<<pGpW<<std::endl;
-	pGpW.insert(0,0) = 1e-9;
-	pGpW.insert(1,1) = 1e-9;
-	pGpW.insert(2,2) = 1e-9;
-	pGpW = identity - pGpW;
+	pGpW.coeffRef(0,0) = 1e-9;
+	pGpW.coeffRef(1,1) = 1e-9;
+	pGpW.coeffRef(2,2) = 1e-9;
 	std::cout<<pGpW<<std::endl;
+	pGpW = identity - pGpW;
 	//pGpW = evaldRdW(area, flo_opts, flow_data);
 	std::cout<<pGpW<<std::endl;
-	abort();
+    MatrixXd pGpA = MatrixXd( pGpW.transpose() );
+    std::cout<< pGpA.eigenvalues() <<std::endl;
+    abort();
 
 	double step_size = 1.0;
 	double adjoint_update_norm = 1;

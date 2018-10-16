@@ -7,5 +7,5 @@
 void getFlux(
 	const struct Flow_options &flow_options,
     const std::vector<double> &W,
-    std::vector<double> &fluxes);
+    std::vector<double> *const fluxes);
 #endif

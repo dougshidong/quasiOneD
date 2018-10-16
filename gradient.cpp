@@ -60,7 +60,7 @@ VectorXd getGradient(
 {
     VectorXd grad(opt_opts.n_design_variables);
     if (gradient_type < 0) {;
-        double pert = 1e-6;
+        double pert = 1e-5;
 		// -1 FFD
 		// -2 BFD
 		// -3 CFD
@@ -104,13 +104,13 @@ VectorXd gradient_FD(
 		I0 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 	}
     for (int i = 0; i < n_design_variables; i++) {
-        double dh = design.design_variables[i] * pert;
+        double dh = design.design_variables.at(i) * pert;
 		if(dh == 0) dh = pert;
 
 		pert_design.design_variables = design.design_variables;
         if (FD_type == -1) // FFD
         {
-			pert_design.design_variables[i] += dh;
+			pert_design.design_variables.at(i) += dh;
             pert_area = evalS(pert_design, x, dx);
 			quasiOneD(x, pert_area, flo_opts, &pert_flow);
 
@@ -119,7 +119,7 @@ VectorXd gradient_FD(
         }
         else if (FD_type == -2) // BFD
         {
-			pert_design.design_variables[i] -= dh;
+			pert_design.design_variables.at(i) -= dh;
             pert_area = evalS(pert_design, x, dx);
 			quasiOneD(x, pert_area, flo_opts, &pert_flow);
 			double I2 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
@@ -127,13 +127,13 @@ VectorXd gradient_FD(
         }
         else if (FD_type == -3) // CFD
         {
-			pert_design.design_variables[i] += dh;
+			pert_design.design_variables.at(i) += dh;
             pert_area = evalS(pert_design, x, dx);
 			quasiOneD(x, pert_area, flo_opts, &pert_flow);
 			double I1 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
 			pert_design.design_variables = design.design_variables;
-			pert_design.design_variables[i] -= dh;
+			pert_design.design_variables.at(i) -= dh;
             pert_area = evalS(pert_design, x, dx);
 			quasiOneD(x, pert_area, flo_opts, &pert_flow);
 			double I2 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
@@ -158,24 +158,26 @@ MatrixXd evaldWdDes(
     // -- = -- + -- -- = 0  -->  -- =  ( -- )        ( -- )
     // DS   dS   dW DS           DS    ( dW )        ( dS )
 
-	int n_elem = x.size();
+	const int n_elem = flo_opts.n_elem;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
     // Evaluate dRdArea
-    MatrixXd dRdArea(3 * n_elem, n_elem + 1);
+    MatrixXd dRdArea(n_resi, n_face);
     dRdArea = evaldRdArea(flo_opts, flow_data);
 
     // Evaluate dAreadDes
-    MatrixXd dAreadDes(n_elem + 1, design.n_design_variables);
+    MatrixXd dAreadDes(n_face, design.n_design_variables);
     dAreadDes = evaldAreadDes(x, dx, design);
 
     //Evaluate dRdDes
-    MatrixXd dRdDes(3 * n_elem, design.n_design_variables);
+    MatrixXd dRdDes(n_resi, design.n_design_variables);
     dRdDes = dRdArea * dAreadDes;
 
     // Evaluate dRdW
     SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
 
     // Solve DWDS
-    MatrixXd dWdDes(3 * n_elem, design.n_design_variables);
+    MatrixXd dWdDes(n_resi, design.n_design_variables);
     // Solver type eig_solv
     // 0 = Sparse LU
     // 1 = Dense LU Full Piv
@@ -196,7 +198,9 @@ VectorXd gradient_directDifferentiation(
 	const struct Optimization_options &opt_opts,
 	const struct Design &design)
 {
-	int n_elem = flo_opts.n_elem;
+	const int n_elem = flo_opts.n_elem;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
     // Direct Differentiation
     // I = Ic(W, area)
     // R = R(W, area) = 0 @ SS
@@ -206,19 +210,19 @@ VectorXd gradient_directDifferentiation(
     // DS   dArea    dW  DS
     //
     // Evaluate dCostdW
-    VectorXd dCostdW(3 * n_elem);
+    VectorXd dCostdW(n_resi);
     dCostdW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
     // Evaluate dAreadDes
-    MatrixXd dAreadDes(n_elem + 1, design.n_design_variables);
+    MatrixXd dAreadDes(n_face, design.n_design_variables);
     dAreadDes = evaldAreadDes(x, dx, design);
     // Evaluate dCostdArea
-    VectorXd dCostdArea(n_elem + 1);
+    VectorXd dCostdArea(n_face);
     dCostdArea = evaldCostdArea(n_elem);
     VectorXd dCostdDes(design.n_design_variables);
     dCostdDes = dCostdArea.transpose() * dAreadDes;
 
     // Evaluate dWdDes
-    MatrixXd dWdDes(3 * n_elem, design.n_design_variables);
+    MatrixXd dWdDes(n_resi, design.n_design_variables);
     dWdDes = evaldWdDes(x, dx, area, flo_opts, flow_data, design, 0, 1e-16); // Used for validate, so fast = better
     // Evaluate dCostdDes
     VectorXd dIdDes(design.n_design_variables);
@@ -239,24 +243,28 @@ VectorXd gradient_adjoint(
 	const struct Optimization_options &opt_opts,
     const struct Design &design)
 {
-	int n_elem = flo_opts.n_elem;
+	const int n_elem = flo_opts.n_elem;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
+
 	int n_design_variables = design.n_design_variables;
-    VectorXd psi(n_elem*3);
+    VectorXd psi(n_resi);
     // *************************************
     // Evaluate Area to Design Derivatives
     // *************************************
     // Evaluate dAreadDes
-    MatrixXd dAreadDes(n_elem + 1, n_design_variables);
+    MatrixXd dAreadDes(n_face, n_design_variables);
     dAreadDes = evaldAreadDes(x, dx, design);
+    //dAreadDes = evaldAreadDes_FD(x, dx, design);
 
     // *************************************
     // Evaluate Objective Derivatives
     // *************************************
     // Evaluate dCostdW
-    VectorXd dCostdW(3 * n_elem);
+    VectorXd dCostdW(n_resi);
     dCostdW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
     // Evaluate dCostdArea
-    VectorXd dCostdArea(n_elem + 1);
+    VectorXd dCostdArea(n_face);
     dCostdArea = evaldCostdArea(n_elem);
     // Evaluate dCostdDes
     VectorXd dCostdDes(n_design_variables);
@@ -266,18 +274,23 @@ VectorXd gradient_adjoint(
     // Evaluate Residual Derivatives
     // *************************************
     // Evaluate dRdArea
-    MatrixXd dRdArea(3 * n_elem, n_elem + 1);
+    MatrixXd dRdArea(n_resi, n_face);
     dRdArea = evaldRdArea(flo_opts, flow_data);
+    //dRdArea = evaldRdArea_FD(area, flo_opts, flow_data);
     // Evaluate dRdDes
-    MatrixXd dRdDes(3 * n_elem, n_design_variables);
+    MatrixXd dRdDes(n_resi, n_design_variables);
     dRdDes = dRdArea * dAreadDes;
     // Evaluate dRdW
-    SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
+    SparseMatrix<double> dRdW_FD = evaldRdW(area, flo_opts, flow_data);
+    SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, flow_data);
+
+    std::cout<<dRdW<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<dRdW_FD<<std::endl<<std::endl<<std::endl<<std::endl;
 
     // *************************************
     // Solve for Adjoint (1 Flow Eval)
     // *************************************
-    //VectorXd psi(3 * n_elem);
+    //VectorXd psi(n_resi);
     SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
     slusolver1.compute(dRdW.transpose());
     if (slusolver1.info() != 0)

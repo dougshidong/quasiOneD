@@ -33,51 +33,45 @@ int main(int argc,char **argv)
 	std::string input_filename = "input.in";
 	inputfile(input_filename, input_data);
 
-	int n_elem = input_data->flow_options->n_elem;
+	const int n_elem = input_data->flow_options->n_elem;
+	const int n_elem_ghost = n_elem+2;
+	const int n_face = input_data->flow_options->n_elem+1;
 
-    std::vector<double> x(n_elem), area(n_elem + 1);
-    std::vector<double> dx(n_elem);
 
-    x = uniform_x(input_data->flow_options->grid_xstart, 
+    std::vector<double> x = uniform_x(input_data->flow_options->grid_xstart, 
 				  input_data->flow_options->grid_xend, 
 				  input_data->flow_options->n_elem);
-    dx = eval_dx(x);
+    std::vector<double> dx = eval_dx(x);
 
-    if (input_data->optimization_options->perform_design == -1) {
-		const struct Design initial_design = *(input_data->optimization_options->initial_design); // Make a copy
-        area = evalS(initial_design, x, dx);
-        second_order_flow(*constants, x, area, *(input_data->flow_options));
-    }
     if (input_data->optimization_options->perform_design == 0) {
 		const struct Design initial_design = *(input_data->optimization_options->initial_design); // Make a copy
-        area = evalS(initial_design, x, dx);
+        const std::vector<double> area = evalS(initial_design, x, dx);
 
 		struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 		struct Flow_data flow_data;
-		flow_data.dt.resize(n_elem);
-		flow_data.W.resize(3*n_elem);
-		flow_data.W_stage.resize(3*n_elem);
-		flow_data.fluxes.resize(3*n_elem);
-		flow_data.residual.resize(3*n_elem);
+		flow_data.dt.resize(n_elem_ghost);
+		flow_data.W.resize(3*n_elem_ghost);
+		flow_data.W_stage.resize(3*n_elem_ghost);
+		flow_data.fluxes.resize(3*n_face);
+		flow_data.residual.resize(3*n_elem_ghost);
         quasiOneD(x, area, flow_options, &flow_data);
     }
-    else if (input_data->optimization_options->perform_design == 1) {
+    else if (abs(input_data->optimization_options->perform_design) == 1) {
 		struct Flow_data flow_data;
-		flow_data.dt.resize(n_elem);
-		flow_data.W.resize(3*n_elem);
-		flow_data.W_stage.resize(3*n_elem);
-		flow_data.fluxes.resize(3*n_elem);
-		flow_data.residual.resize(3*n_elem);
-
+		flow_data.dt.resize(n_elem_ghost);
+		flow_data.W.resize(3*n_elem_ghost);
+		flow_data.W_stage.resize(3*n_elem_ghost);
+		flow_data.residual.resize(3*n_elem_ghost);
+		flow_data.fluxes.resize(3*n_face);
 
 		const struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 
 		// Target design with sine parametrization
 		printf("Creating target pressure...\n");
-        area = evalS(*(input_data->optimization_options->target_design), x, dx);
+        std::vector<double> area = evalS(*(input_data->optimization_options->target_design), x, dx);
         quasiOneD(x, area, flow_options, &flow_data);
 
-		input_data->optimization_options->target_pressure.resize(n_elem);
+		input_data->optimization_options->target_pressure.resize(n_elem+2);
 		get_all_p(flow_options.gam, flow_data.W, input_data->optimization_options->target_pressure);
 
 		const struct Optimization_options opt_options = *(input_data->optimization_options); // Make a copy
@@ -106,17 +100,17 @@ int main(int argc,char **argv)
         //quasiOneD(x, area, flow_options, &flow_data);
     } else if (input_data->optimization_options->perform_design >= 2) {
 		struct Flow_data flow_data;
-		flow_data.dt.resize(n_elem);
-		flow_data.W.resize(3*n_elem);
-		flow_data.W_stage.resize(3*n_elem);
-		flow_data.fluxes.resize(3*n_elem);
-		flow_data.residual.resize(3*n_elem);
+		flow_data.dt.resize(n_elem_ghost);
+		flow_data.W.resize(3*n_elem_ghost);
+		flow_data.W_stage.resize(3*n_elem_ghost);
+		flow_data.residual.resize(3*n_elem_ghost);
+		flow_data.fluxes.resize(3*n_face);
 
 		const struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 
 		// Target design with sine parametrization
 		printf("Creating target pressure...\n");
-        area = evalS(*(input_data->optimization_options->target_design), x, dx);
+        std::vector<double> area = evalS(*(input_data->optimization_options->target_design), x, dx);
         quasiOneD(x, area, flow_options, &flow_data);
 
 		input_data->optimization_options->target_pressure.resize(n_elem);

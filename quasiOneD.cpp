@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <math.h>
 #include <vector>
+#include "grid.h"
 #include "flux.h"
 #include "timestep.h"
 #include "output.h"
@@ -13,8 +14,7 @@ double isenP(const double gam, const double pt, const double M) {
 	return pt * pow((1 + (gam - 1) / 2 * pow(M, 2)), ( - gam / (gam - 1)));
 }
 
-double isenT(const double gam,double Tt, const double M) {
-	return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
+double isenT(const double gam,double Tt, const double M) { return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
 }
 
 double quasiOneD(
@@ -26,20 +26,13 @@ double quasiOneD(
 	const double gam = flo_opts.gam;
 	const int n_elem = flo_opts.n_elem;
 
-	if(n_elem!=x.size()) abort();
+	if(n_elem+1 != x.size()) abort();
 
-    std::vector<double> dx(n_elem);
-    for (int i = 1; i < n_elem-1; i++) {
-        dx[i] =  (x[i] - x[i-1])/2  +  (x[i+1] - x[i])/2 ;
-    }
-    dx[0] = x[1] - x[0];
-    dx[n_elem-1] = x[n_elem-1] - x[n_elem-2];
+    std::vector<double> dx = eval_dx(x);
 
-    std::vector<double> dt(n_elem);
-
-    std::vector <int> itV(flo_opts.flow_maxit/flo_opts.print_freq);
-    std::vector<double> normV(flo_opts.flow_maxit/flo_opts.print_freq);
-    std::vector<double> timeVec(flo_opts.flow_maxit/flo_opts.print_freq);
+    std::vector<int> itV;
+    std::vector<double> normV;
+    std::vector<double> timeVec;
 
 
     // Inlet flow properties
@@ -55,7 +48,7 @@ double quasiOneD(
 	flow_data->W[0*3+2] = e;
     // Flow properties initialization with outlet
     // State Vectors Initialization
-    for (int i = 1; i < n_elem; i++) {
+    for (int i = 1; i < n_elem+2; i++) {
         p = flo_opts.outlet_p;
         rho = p / (flo_opts.R * inlet_T);
         c = sqrt(gam * p / rho);
@@ -82,7 +75,7 @@ double quasiOneD(
 
         // Calculating the norm of the density residual
         residual_norm = 0;
-        for (int i = 0; i < n_elem; i++) {
+        for (int i = 1; i < n_elem+1; i++) {
             residual_norm = residual_norm + pow(flow_data->residual[i*3+0], 2);
 		}
         residual_norm = sqrt(residual_norm);
@@ -92,12 +85,12 @@ double quasiOneD(
             if (flo_opts.print_conv == 1) {
                 std::cout<<"Iteration "<<iterations <<"   NormR "<<std::setprecision(15)<<residual_norm<<std::endl;
             }
-            itV[iterations / flo_opts.print_freq - 1] = iterations;
-            normV[iterations / flo_opts.print_freq - 1] = residual_norm;
+            //itV[iterations / flo_opts.print_freq - 1] = iterations;
+            //normV[iterations / flo_opts.print_freq - 1] = residual_norm;
 
             toc = clock();
             elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
-            timeVec[iterations / flo_opts.print_freq - 1] = elapsed;
+            //timeVec[iterations / flo_opts.print_freq - 1] = elapsed;
 
 			if (flo_opts.print_solution == 1) {
 				for (int k = 0; k < 3; k++) {
@@ -116,7 +109,7 @@ double quasiOneD(
 	}
     outVec(flo_opts.case_name, "current_pressure.dat", "w", p_vec);
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<residual_norm<<std::endl;
-    return 1;
+    return 0;
 }
 
 

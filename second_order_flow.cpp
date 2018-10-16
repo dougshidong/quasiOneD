@@ -83,7 +83,7 @@ void second_order_flow(
     // Evaluate R
     VectorXd old_rhs(3*n_elem);
     VectorXd rhs(3*n_elem);
-    getDomainResi(flo_opts, area, flow_data.W, flow_data.fluxes, flow_data.residual);
+    getDomainResi(flo_opts, area, flow_data.W, &flow_data.fluxes, &flow_data.residual);
     // Evaluate dRdW
     SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
     // Evaluate ddRdWdW
@@ -131,7 +131,7 @@ void second_order_flow(
         iteration++ ;
         std::cout<<"Iteration "<<iteration <<"   NormR "<<std::setprecision(15)<<residual_norm<<std::endl;
 
-        getDomainResi(flo_opts, area, flow_data.W, flow_data.fluxes, flow_data.residual);
+        getDomainResi(flo_opts, area, flow_data.W, &flow_data.fluxes, &flow_data.residual);
         for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
             rhs(Ri) = -flow_data.residual[Ri];
         }

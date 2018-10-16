@@ -7,24 +7,58 @@
 
 using namespace Eigen;
 
+MatrixXd evaldAreadDes_FD(
+    const std::vector<double> &x,
+    const std::vector<double> &dx,
+    const struct Design &design)
+{
+	const int n_elem = x.size()-1;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
+    const int n_flux = n_face*3;
+
+	const int n_dvar = design.n_design_variables;
+    MatrixXd dAreadDes(n_face, n_dvar);
+
+    struct Design pert_design1 = design;
+    struct Design pert_design2 = design;
+    const double h = 1e-07;
+    for (int i_dvar = 0; i_dvar < n_dvar; i_dvar++) {
+        const double pertD = design.design_variables.at(i_dvar)*h;
+
+        pert_design1 = design;
+        pert_design1.design_variables.at(i_dvar) = design.design_variables.at(i_dvar) + pertD;
+        std::vector<double> area1 = evalS(pert_design1, x, dx);
+
+        pert_design2 = design;
+        pert_design2.design_variables.at(i_dvar) = design.design_variables.at(i_dvar) - pertD;
+        std::vector<double> area2 = evalS(pert_design2, x, dx);
+
+        for (int i_area = 0; i_area < n_face; i_area++) {
+            dAreadDes(i_area, i_dvar) = (area1.at(i_area)-area2.at(i_area))/(2.0*pertD);
+        }
+    }
+    return dAreadDes;
+}
 MatrixXd evaldAreadDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const struct Design &design)
 {
-	const int n_elem = x.size();
+	const int n_elem = x.size()-1;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
+    const int n_flux = n_face*3;
+
 	const int n_dvar = design.n_design_variables;
-    MatrixXd dAreadDes(n_elem + 1, n_dvar);
-    if (design.parametrization == 0) 
-    {
+    MatrixXd dAreadDes(n_face, n_dvar);
+    if (design.parametrization == 0) {
     //    dAreadDes.setZero();
     //    for (int Si = 1; Si < n_elem; Si++)
     //    {
     //        dAreadDes(Si, Si - 1) = 1;
     //    }
-    }
-    if (design.parametrization == 1)
-    {
+    } else if (design.parametrization == 1) {
     //    double d1 = design.design_variables[0];
     //    double d2 = design.design_variables[1];
     //    double d3 = design.design_variables[2];
@@ -75,11 +109,14 @@ MatrixXd evalddAreadDesdDes_FD(
     const struct Design &design,
     const int Si)
 {
-    const int n_elem = x.size();
+	const int n_elem = x.size()-1;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
+    const int n_flux = n_face*3;
     double pertdi, pertdj;
     double pert = 1e-2;
-    std::vector<double> area(n_elem + 1);
-    std::vector<double> S1(n_elem+1), S2(n_elem+1), S3(n_elem+1), S4(n_elem+1);
+    std::vector<double> area(n_face);
+    std::vector<double> S1(n_face), S2(n_face), S3(n_face), S4(n_face);
     struct Design pert_design = design;
     area = evalS(design, x, dx);
 
@@ -164,13 +201,16 @@ std::vector <MatrixXd> evalddAreadDesdDes(
     const struct Design &design)
 {
     const int PI = atan(1.0) * 4.0;
-	const int n_elem = x.size();
+	const int n_elem = x.size()-1;
+    const int n_resi = n_elem*3;
+	const int n_face = n_elem+1;
+    const int n_flux = n_face*3;
     const int n_dvar = design.n_design_variables;
-    std::vector <MatrixXd> ddAreadDesdDes(n_elem + 1);
+    std::vector <MatrixXd> ddAreadDesdDes(n_face);
     MatrixXd ddAreaidDesdDes(n_dvar, n_dvar);
     ddAreaidDesdDes.setZero();
     if (design.parametrization == 0 || design.parametrization == 2) {
-        for (int Si = 0; Si < n_elem + 1; Si++) {
+        for (int Si = 0; Si < n_face; Si++) {
             ddAreadDesdDes[Si] = ddAreaidDesdDes;
         }
     } else if (design.parametrization == 1) {
@@ -179,15 +219,16 @@ std::vector <MatrixXd> evalddAreadDesdDes(
         double d3 = design.design_variables[2];
         double xh;
         double xd2, spxd2, cpxd2 ;
-        for (int Si = 0; Si < n_elem + 1; Si++)
+        for (int Si = 0; Si < n_face; Si++)
         {
-            if (Si == 0 || Si == n_elem)
-            {
-                ddAreadDesdDes[Si] = Matrix3d::Zero();
-            }
-            else
-            {
+            //if (Si == 0 || Si == n_elem)
+            //{
+            //    ddAreadDesdDes[Si] = Matrix3d::Zero();
+            //}
+            //else
+            //{
                 xh = fabs(x[Si] - dx[Si] / 2.0);
+                xh = x[Si];
                 xd2 = pow(xh, d2);
                 spxd2 = sin(PI * xd2);
                 cpxd2 = cos(PI * xd2);
@@ -213,7 +254,7 @@ std::vector <MatrixXd> evalddAreadDesdDes(
                 ddAreaidDesdDes(2, 1) = ddAreaidDesdDes(1, 2);
                 
                 ddAreadDesdDes[Si] = ddAreaidDesdDes;
-            }
+            //}
         }
     }
     return ddAreadDesdDes;

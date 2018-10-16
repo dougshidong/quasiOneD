@@ -9,8 +9,8 @@ void getDomainResi(
 	const struct Flow_options &flo_opts,
 	const std::vector<double> &area,
 	const std::vector<double> &W,
-	std::vector<double> &fluxes,
-	std::vector<double> &residual);
+	std::vector<double> *const fluxes,
+	std::vector<double> *const residual);
 void stepInTime(
 	const struct Flow_options &flow_options,
     const std::vector<double> &area,

@@ -63,7 +63,8 @@ void outletBC(
 	const double dx0,
     struct Flow_data* const flow_data)
 {
-	const int n_elem = flo_opts.n_elem;
+	//const int n_elem = flo_opts.n_elem;
+	const int n_elem_ghost = flo_opts.n_elem+2;
 	const double gam = flo_opts.gam;
     double avgc, avgu, dtdx, MachOut;
     double eigenvalues[3], Ri[3];
@@ -71,9 +72,9 @@ void outletBC(
     double rho[2], u[2], e[2], p[2], c[2];
 
     for (int i = 0; i < 2; i++) {
-        rho[i] = flow_data->W[(i + (n_elem - 2)) * 3 + 0];
-        u[i] = flow_data->W[(i + (n_elem - 2)) * 3 + 1] / rho[i];
-        e[i] = flow_data->W[(i + (n_elem - 2)) * 3 + 2];
+        rho[i] = flow_data->W[(i + (n_elem_ghost - 2)) * 3 + 0];
+        u[i] = flow_data->W[(i + (n_elem_ghost - 2)) * 3 + 1] / rho[i];
+        e[i] = flow_data->W[(i + (n_elem_ghost - 2)) * 3 + 2];
         p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2 );
         c[i] = sqrt( gam * p[i] / rho[i] );
     }
@@ -109,12 +110,12 @@ void outletBC(
     T = p[1] / (rho[1] * flo_opts.R);
     e[1] = rho[1] * (flo_opts.Cv * T + 0.5 * pow(u[1], 2));
 
-    flow_data->residual[(n_elem - 1) * 3 + 0] = (flow_data->W[(n_elem - 1) * 3 + 0] - rho[1]) / dtdx;
-    flow_data->residual[(n_elem - 1) * 3 + 1] = (flow_data->W[(n_elem - 1) * 3 + 1] - rho[1] * u[1]) / dtdx;
-    flow_data->residual[(n_elem - 1) * 3 + 2] = (flow_data->W[(n_elem - 1) * 3 + 2] - e[1]) / dtdx;
+    flow_data->residual[(n_elem_ghost - 1) * 3 + 0] = (flow_data->W[(n_elem_ghost - 1) * 3 + 0] - rho[1]) / dtdx;
+    flow_data->residual[(n_elem_ghost - 1) * 3 + 1] = (flow_data->W[(n_elem_ghost - 1) * 3 + 1] - rho[1] * u[1]) / dtdx;
+    flow_data->residual[(n_elem_ghost - 1) * 3 + 2] = (flow_data->W[(n_elem_ghost - 1) * 3 + 2] - e[1]) / dtdx;
 
-    flow_data->W[(n_elem - 1) * 3 + 0] = rho[1];
-    flow_data->W[(n_elem - 1) * 3 + 1] = rho[1] * u[1];
-    flow_data->W[(n_elem - 1) * 3 + 2] = e[1];
+    flow_data->W[(n_elem_ghost - 1) * 3 + 0] = rho[1];
+    flow_data->W[(n_elem_ghost - 1) * 3 + 1] = rho[1] * u[1];
+    flow_data->W[(n_elem_ghost - 1) * 3 + 2] = e[1];
 }
 

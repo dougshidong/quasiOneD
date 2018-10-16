@@ -14,6 +14,12 @@ struct Flow_data {
 	std::vector<double> residual;
 };
 
+struct Mesh_data {
+	std::vector<double> x;
+	std::vector<double> dx;
+	std::vector<double> area;
+};
+
 struct Constants {
 	const double PI = atan(1.0) * 4.0;
 	std::string case_name;
@@ -46,7 +52,6 @@ struct Design {
 	int n_design_variables;
 
 	std::vector<double> design_variables;
-
 };
 
 struct Optimization_options {
