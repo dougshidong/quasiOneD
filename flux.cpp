@@ -1,22 +1,27 @@
+#include "flux.h"
 #include "structures.h"
 #include<vector>
 #include<math.h>
 #include<iostream>
 #include"flux.h"
 #include"convert.h"
+#include<adolc/adolc.h>
 
-void matrixMult(double A[][3], double B[][3], double result[][3]);
+template<typename dreal>
+void matrixMult(dreal A[][3], dreal B[][3], dreal result[][3]);
 
+template<typename dreal>
 void Flux_Scalar(
-	const struct Flow_options &flow_options,
-    const std::vector<double> &W,
-    std::vector<double> *const fluxes);
+	const struct Flow_options<dreal> &flow_options,
+    const std::vector<dreal> &W,
+    std::vector<dreal> *const fluxes);
 
 // Get fluxes based on flux_scheme
+template<typename dreal>
 void getFlux(
-	const struct Flow_options &flow_options,
-	const std::vector<double> &W,
-	std::vector<double> *const fluxes)
+	const struct Flow_options<dreal> &flow_options,
+	const std::vector<dreal> &W,
+	std::vector<dreal> *const fluxes)
 {
     if (flow_options.flux_scheme == 0)      // Scalar
         Flux_Scalar(flow_options, W, fluxes);
@@ -30,22 +35,25 @@ void getFlux(
     //else if (flux_scheme == 4) // Roe
     //    Flux_Roe(fluxes, W);
 }
+template void getFlux(const struct Flow_options<double> &flow_options, const std::vector<double> &W, std::vector<double> *const fluxes);
+template void getFlux(const struct Flow_options<adouble> &flow_options, const std::vector<adouble> &W, std::vector<adouble> *const fluxes);
 
+template<typename dreal>
 void Flux_Scalar(
-	const struct Flow_options &flow_options,
-    const std::vector<double> &W,
-    std::vector<double> *const fluxes)
+	const struct Flow_options<dreal> &flow_options,
+    const std::vector<dreal> &W,
+    std::vector<dreal> *const fluxes)
 {
 	const int n_face = flow_options.n_elem+1;
     assert(n_face == (*fluxes).size()/3);
 
-    std::vector<double> F_m(3);
-    std::vector<double> F_p(3);
+    std::vector<dreal> F_m(3);
+    std::vector<dreal> F_p(3);
 
-	double gam = flow_options.gam;
-	double w1 = W[0*3+0], w2 = W[0*3+1], w3 = W[0*3+2];
-	double u_m = w2 / w1;
-	double c_m = get_c(gam,w1,w2,w3);
+	dreal gam = flow_options.gam;
+	dreal w1 = W[0*3+0], w2 = W[0*3+1], w3 = W[0*3+2];
+	dreal u_m = w2 / w1;
+	dreal c_m = get_c(gam,w1,w2,w3);
 	F_m[0] = w2;
 	F_m[1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
 	F_m[2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
@@ -55,13 +63,13 @@ void Flux_Scalar(
 		w1 = W[i_cell*3+0];
 		w2 = W[i_cell*3+1];
 		w3 = W[i_cell*3+2];
-		double u_p = w2 / w1;
-		double c_p = get_c(gam,w1,w2,w3);
+		dreal u_p = w2 / w1;
+		dreal c_p = get_c(gam,w1,w2,w3);
 
-        double avgu = ( u_m+u_p ) / 2.0;
-        double avgc = ( c_m+c_p ) / 2.0;
+        dreal avgu = ( u_m+u_p ) / 2.0;
+        dreal avgc = ( c_m+c_p ) / 2.0;
         //lambda = std::max( std::max( fabs(avgu), fabs(avgu + avgc) ), fabs(avgu - avgc) );
-        double lambda = avgu + avgc;
+        dreal lambda = avgu + avgc;
 
 		F_p[0] = w2;
 		F_p[1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
@@ -105,7 +113,7 @@ void Flux_Scalar(
 //  }
 //}
 
-//void evalLambda(double lamb[], double u, double c)
+//void evalLambda(dreal lamb[], dreal u, dreal c)
 //{
 //    lamb[0] = u;
 //    lamb[1] = u + c;
@@ -116,25 +124,25 @@ void Flux_Scalar(
 //
 //// fluxes Jacobian for SW/MSW/CMSW
 //void Flux_Jacobian(
-//    std::vector<double> &Ap_list,
-//    std::vector<double> &An_list,
-//    std::vector<double> const &W)
+//    std::vector<dreal> &Ap_list,
+//    std::vector<dreal> &An_list,
+//    std::vector<dreal> const &W)
 //{
-//    double eps = 0.1;
+//    dreal eps = 0.1;
 //
-//    double S[3][3] = {{0}},
+//    dreal S[3][3] = {{0}},
 //           Sinv[3][3] = {{0}},
 //           C[3][3] = {{0}},
 //           Cinv[3][3] = {{0}},
 //           lambdaP[3][3],
 //           lambdaN[3][3];
-//    double lambdaa[3];
+//    dreal lambdaa[3];
 //
 //
-//    double Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
+//    dreal Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 //
-//    double beta = 0.4;//gam-1;
-//    double rho, u, e, c;
+//    dreal beta = 0.4;//gam-1;
+//    dreal rho, u, e, c;
 //
 //    for (int i = 0; i < n_elem; i++)
 //    {
@@ -223,8 +231,8 @@ void Flux_Scalar(
 //
 //// StegerWarming
 //void Flux_SW(
-//    std::vector<double> &fluxes,
-//    std::vector<double> const &W)
+//    std::vector<dreal> &fluxes,
+//    std::vector<dreal> const &W)
 //{
 //
 //    Flux_Jacobian(Ap_list, An_list, W);
@@ -247,8 +255,8 @@ void Flux_Scalar(
 //
 //// Modified StegerWarming
 //void Flux_MSW(
-//    std::vector<double> &fluxes,
-//    std::vector<double> const &W)
+//    std::vector<dreal> &fluxes,
+//    std::vector<dreal> const &W)
 //{
 //
 //    for (int i = 0; i < n_elem - 1; i++)
@@ -281,8 +289,8 @@ void Flux_Scalar(
 //
 //// Corrected Modified StegerWarming
 //void Flux_CMSW(
-//    std::vector<double> &fluxes,
-//    std::vector<double> const &W)
+//    std::vector<dreal> &fluxes,
+//    std::vector<dreal> const &W)
 //{
 //    Flux_SW(FluxSW, W);
 //    Flux_MSW(FluxMSW, W);
@@ -314,23 +322,23 @@ void Flux_Scalar(
 //
 //
 //void Flux_Roe(
-//    std::vector<double> &fluxes,
-//    std::vector<double> const &W)
+//    std::vector<dreal> &fluxes,
+//    std::vector<dreal> const &W)
 //{
 //    // Get Convective Variables
 //    WtoF(W, F);
 //
-//    double beta = gam - 1.0;
-//    double rH, uH, hH, cH;
-//    double r1, u1, e1, p1, c1;
-//    double r2, u2, e2, p2, c2;
-//    double sr1, sr2;
-//    double temp;
-//    double epsilon[3];
-//    double lamb[3], lambp1[3], lambH[3];
-//    double lambdaP[3][3], lambdaN[3][3];
-//    double S[3][3], Sinv[3][3], C[3][3], Cinv[3][3];
-//    double Ap[3][3], An[3][3];
+//    dreal beta = gam - 1.0;
+//    dreal rH, uH, hH, cH;
+//    dreal r1, u1, e1, p1, c1;
+//    dreal r2, u2, e2, p2, c2;
+//    dreal sr1, sr2;
+//    dreal temp;
+//    dreal epsilon[3];
+//    dreal lamb[3], lambp1[3], lambH[3];
+//    dreal lambdaP[3][3], lambdaN[3][3];
+//    dreal S[3][3], Sinv[3][3], C[3][3], Cinv[3][3];
+//    dreal Ap[3][3], An[3][3];
 //    for (int row = 0; row < 3; row++)
 //    {
 //        for (int col = 0; col < 3; col++)
@@ -470,9 +478,9 @@ void Flux_Scalar(
 //    }
 //}
 //
-//void matrixMult(double A[][3], double B[][3], double result[][3])
+//void matrixMult(dreal A[][3], dreal B[][3], dreal result[][3])
 //{
-//    double temp[3][3];
+//    dreal temp[3][3];
 //    for (int row=0;row<3;row++)
 //        for (int col=0;col<3;col++)
 //            temp[row][col]=0;

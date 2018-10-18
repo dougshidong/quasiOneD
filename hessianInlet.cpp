@@ -1,3 +1,4 @@
+#include "hessianInlet.h"
 #include<Eigen/Core>
 #include<math.h>
 #include<iostream>
@@ -8,7 +9,7 @@
 using namespace Eigen;
 
 void HessianInlet(
-    const struct Flow_options &flo_opts,
+    const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddRindWdW)
 {

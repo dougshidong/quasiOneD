@@ -20,7 +20,7 @@ std::vector <MatrixXd> evalddFdWdW(
     const double p);
 
 void evalddFluxdWdW(
-    const struct Flow_options &flo_opts,
+    const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,
@@ -36,10 +36,11 @@ std::vector <MatrixXd> evalddQdWdW(const double gam, const std::vector<double> &
 
 std::vector <SparseMatrix<double> > evalddRdWdW_FD(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
+    const double dt = 1.0, dx = 1.0;
     const double gam = flo_opts.gam;
     std::vector <SparseMatrix<double> > ddRdWdW_FD(3 * n_elem);
 
@@ -47,7 +48,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
     for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
         ddRdWdW_FD[Ri] = ddRidWdW_FD;
     }
-    struct Flow_data pert_flow = flow_data;
+    struct Flow_data<double> pert_flow = flow_data;
 
     std::vector<double> Q(3 * n_elem, 0);
     double h = 1e-3;
@@ -69,7 +70,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
 
                         WtoQ(gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi1 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -78,7 +79,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
 
                         WtoQ(gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi2 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -87,7 +88,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
 
                         WtoQ(gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi3 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -96,7 +97,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
 
                         WtoQ(gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi4 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -114,7 +115,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         }
 
                         WtoQ(flo_opts.gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi0 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -122,7 +123,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] + 2.0 * pertWi;
 
                         WtoQ(flo_opts.gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi1 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -130,7 +131,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
 
                         WtoQ(flo_opts.gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi2 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -138,7 +139,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
 
                         WtoQ(flo_opts.gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi3 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -146,7 +147,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] - 2.0 * pertWi;
 
                         WtoQ(flo_opts.gam, area, pert_flow.W, Q);
-                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                         const double Resi4 = pert_flow.fluxes[Rikp] * area[Ri + 1] - pert_flow.fluxes[Rik] * area[Ri] - Q[Rik];
 
@@ -177,7 +178,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
                         pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi1 = pert_flow.residual[Rik];
 
                         // R2
@@ -187,7 +188,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
                         pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi2 = pert_flow.residual[Rik];
 
                         // R3
@@ -197,7 +198,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
                         pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi3 = pert_flow.residual[Rik];
 
                         // R4
@@ -207,7 +208,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
                         pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi4 = pert_flow.residual[Rik];
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
@@ -220,7 +221,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                             pert_flow.W[m] = flow_data.W[m];
                         }
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi0 = pert_flow.residual[Rik];
 
                         // R1
@@ -229,7 +230,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         }
                         pert_flow.W[Wi] = flow_data.W[Wi] + 2.0 * pertWi;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi1 = pert_flow.residual[Rik];
 
                         // R2
@@ -238,7 +239,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         }
                         pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi2 = pert_flow.residual[Rik];
 
                         // R3
@@ -247,7 +248,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         }
                         pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi3 = pert_flow.residual[Rik];
 
                         // R4
@@ -256,7 +257,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         }
                         pert_flow.W[Wi] = flow_data.W[Wi] - 2.0 * pertWi;
 
-                        inletBC(flo_opts, 1, 1, &pert_flow);
+                        inletBC(flo_opts, dt, dx, &pert_flow);
                         const double Resi4 = pert_flow.residual[Rik];
 
                         ddRdWdW_FD[Rik].insert(Wi, Wj) =
@@ -288,7 +289,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
                     pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi1 = pert_flow.residual[Rik];
 
                     // R2
@@ -298,7 +299,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
                     pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi2 = pert_flow.residual[Rik];
 
                     // R3
@@ -308,7 +309,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
                     pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi3 = pert_flow.residual[Rik];
 
                     // R4
@@ -318,7 +319,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
                     pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi4 = pert_flow.residual[Rik];
 
                     ddRdWdW_FD[Rik].insert(Wi, Wj) = (Resi1 - Resi2 - Resi3 + Resi4)
@@ -331,7 +332,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                         pert_flow.W[m] = flow_data.W[m];
                     }
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi0 = pert_flow.residual[Rik];
 
                     // R1
@@ -340,7 +341,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     }
                     pert_flow.W[Wi] = flow_data.W[Wi] + 2.0 * pertWi;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi1 = pert_flow.residual[Rik];
 
                     // R2
@@ -349,7 +350,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     }
                     pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi2 = pert_flow.residual[Rik];
 
                     // R3
@@ -358,7 +359,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     }
                     pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi3 = pert_flow.residual[Rik];
 
                     // R4
@@ -367,7 +368,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
                     }
                     pert_flow.W[Wi] = flow_data.W[Wi] - 2.0 * pertWi;
 
-                    outletBC(flo_opts, 1, 1, &pert_flow);
+                    outletBC(flo_opts, dt, dx, &pert_flow);
                     const double Resi4 = pert_flow.residual[Rik];
 
                     ddRdWdW_FD[Rik].insert(Wi, Wj) =
@@ -387,8 +388,8 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
 // Calculates Residual Hessian
 std::vector < SparseMatrix<double> > evalddRdWdW(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     std::vector <SparseMatrix<double> > ddRdWdW(3 * n_elem);
@@ -558,8 +559,8 @@ std::vector < SparseMatrix<double> > evalddRdWdW(
 
 std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     std::vector <SparseMatrix<double> > ddRdWdArea(3 * n_elem);
@@ -569,7 +570,7 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
         ddRdWdArea[Ri] = ddRidWdArea;
     }
 
-    struct Flow_data pert_flow = flow_data;
+    struct Flow_data<double> pert_flow = flow_data;
     std::vector<double> pertArea(n_elem + 1, 0);
     std::vector<double> Q(3 * n_elem, 0);
     double h = 1e-4;
@@ -596,7 +597,7 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
                     pertArea[Si] = area[Si] + dh_area;
 
                     WtoQ(flo_opts.gam, pertArea, pert_flow.W, Q);
-                    getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                    getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                     const double Resi1 = pert_flow.fluxes[Rikp] * pertArea[Ri + 1] - pert_flow.fluxes[Rik] * pertArea[Ri] - Q[Rik];
 
@@ -608,7 +609,7 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
                     pertArea[Si] = area[Si] - dh_area;
 
                     WtoQ(flo_opts.gam, pertArea, pert_flow.W, Q);
-                    getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                    getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                     const double Resi2 = pert_flow.fluxes[Rikp] * pertArea[Ri + 1] - pert_flow.fluxes[Rik] * pertArea[Ri] - Q[Rik];
 
@@ -620,7 +621,7 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
                     pertArea[Si] = area[Si] + dh_area;
 
                     WtoQ(flo_opts.gam, pertArea, pert_flow.W, Q);
-                    getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                    getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                     const double Resi3 = pert_flow.fluxes[Rikp] * pertArea[Ri + 1] - pert_flow.fluxes[Rik] * pertArea[Ri] - Q[Rik];
 
@@ -632,7 +633,7 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
                     pertArea[Si] = area[Si] - dh_area;
 
                     WtoQ(flo_opts.gam, pertArea, pert_flow.W, Q);
-                    getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+                    getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 
                     const double Resi4 = pert_flow.fluxes[Rikp] * pertArea[Ri + 1] - pert_flow.fluxes[Rik] * pertArea[Ri] - Q[Rik];
 
@@ -647,8 +648,8 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
 
 std::vector <SparseMatrix<double> > evalddRdWdArea(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     const double gam = flo_opts.gam;
@@ -849,25 +850,25 @@ MatrixXd evalddlambdadWdW(
 //                        // R1
 //                        pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
 //                        pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux1 = pert_flow.fluxes[Fluxik];
 //
 //                        // R2
 //                        pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
 //                        pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux2 = pert_flow.fluxes[Fluxik];
 //
 //                        // R3
 //                        pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
 //                        pert_flow.W[Wj] = flow_data.W[Wj] + pertWj;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux3 = pert_flow.fluxes[Fluxik];
 //
 //                        // R4
 //                        pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
 //                        pert_flow.W[Wj] = flow_data.W[Wj] - pertWj;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux4 = pert_flow.fluxes[Fluxik];
 //
 //                        ddFluxdWdW1[Fluxik](row, col) =
@@ -879,27 +880,27 @@ MatrixXd evalddlambdadWdW(
 //                        pert_flow.W[Wi] = flow_data.W[Wi];
 //                        pert_flow.W[Wj] = flow_data.W[Wj];
 //                    } else {
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux0 = pert_flow.fluxes[Fluxik];
 //
 //                        // R1
 //                        pert_flow.W[Wi] = flow_data.W[Wi] + 2.0 * pertWi;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux1 = pert_flow.fluxes[Fluxik];
 //
 //                        // R2
 //                        pert_flow.W[Wi] = flow_data.W[Wi] + pertWi;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux2 = pert_flow.fluxes[Fluxik];
 //
 //                        // R3
 //                        pert_flow.W[Wi] = flow_data.W[Wi] - pertWi;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux3 = pert_flow.fluxes[Fluxik];
 //
 //                        // R4
 //                        pert_flow.W[Wi] = flow_data.W[Wi] - 2.0 * pertWi;
-//                        getFlux(flo_opts, pert_flow.W, &pert_flow.fluxes);
+//                        getFlux<double>(flo_opts, pert_flow.W, &pert_flow.fluxes);
 //                        const double Flux4 = pert_flow.fluxes[Fluxik];
 //
 //                        ddFluxdWdW1[Fluxik](row, col) =
@@ -916,7 +917,7 @@ MatrixXd evalddlambdadWdW(
 //
 //}
 void evalddFluxdWdW_scalard(
-    const struct Flow_options &flo_opts,
+    const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,
@@ -1006,7 +1007,7 @@ void evalddFluxdWdW_scalard(
 }
 
 void evalddFluxdWdW(
-    const struct Flow_options &flo_opts,
+    const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,

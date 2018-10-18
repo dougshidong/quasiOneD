@@ -1,5 +1,5 @@
-#ifndef solver_linear_h
-#define solver_linear_h
+#ifndef SOLVER_LINEAR_H
+#define SOLVER_LINEAR_H
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>

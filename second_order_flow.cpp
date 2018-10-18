@@ -24,7 +24,7 @@ void second_order_flow(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &area,
-	const struct Flow_options &flo_opts)
+	const struct Flow_options<double> &flo_opts)
 {
 	const double gam = flo_opts.gam;
 	int n_elem = flo_opts.n_elem;
@@ -43,7 +43,7 @@ void second_order_flow(
     std::vector <int> itV(flo_opts.flow_maxit/flo_opts.print_freq);
     std::vector<double> normV(flo_opts.flow_maxit/flo_opts.print_freq);
     std::vector<double> timeVec(flo_opts.flow_maxit/flo_opts.print_freq);
-	struct Flow_data flow_data;
+	struct Flow_data<double> flow_data;
 	flow_data.dt.resize(n_elem);
 	flow_data.W.resize(3*n_elem);
 	flow_data.W_stage.resize(3*n_elem);

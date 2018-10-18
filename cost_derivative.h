@@ -1,17 +1,19 @@
-#ifndef cost_derivatives_h
-#define cost_derivatives_h
+#ifndef COST_DERIVATIVE_H
+#define COST_DERIVATIVE_H
+#include"structures.h"
 #include<Eigen/Core>
+#include<Eigen/Sparse>
 #include<vector>
 
 using namespace Eigen;
 VectorXd evaldCostdW(
-	const Optimization_options &opt_opts,
-	const Flow_options &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Flow_options<double> &flo_opts,
 	const std::vector<double> &W,
 	const std::vector<double> &dx);
 SparseMatrix<double> evaldCostdWdW(
-	const Optimization_options &opt_opts,
-	const Flow_options &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Flow_options<double> &flo_opts,
 	std::vector<double> W,
 	std::vector<double> dx);
 

@@ -1,3 +1,4 @@
+#include "oneshot_dwdx.h"
 #include "structures.h"
 #include<iostream>
 #include<fstream>
@@ -26,9 +27,9 @@ void oneshot_dwdx(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,
-	const struct Flow_options &flo_opts,
-	const struct Optimization_options &opt_opts,
-	const struct Design &initial_design)
+	const struct Flow_options<double> &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &initial_design)
 {
 	// **************************************************************************************************************************************
 	// Initialize the flow
@@ -36,7 +37,7 @@ void oneshot_dwdx(
 	int n_elem = flo_opts.n_elem;
 	if(n_elem!=x.size()) abort();
 	int n_dvar = opt_opts.n_design_variables;
-	struct Flow_data flow_data;
+	struct Flow_data<double> flow_data;
 	flow_data.dt.resize(n_elem);
 	flow_data.W.resize(3*n_elem);
 	flow_data.W_stage.resize(3*n_elem);
@@ -77,7 +78,7 @@ void oneshot_dwdx(
     identity.setIdentity();
 	// **************************************************************************************************************************************
 	// Initialize the design
-	struct Design current_design = initial_design;
+	struct Design<double> current_design = initial_design;
 	current_design.design_variables = initial_design.design_variables;
     std::vector<double> area = evalS(current_design, x, dx);
 

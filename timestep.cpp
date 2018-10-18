@@ -1,4 +1,5 @@
 // Time Stepping Schemes
+#include "timestep.h"
 #include "structures.h"
 #include<vector>
 #include<math.h>
@@ -7,19 +8,18 @@
 #include<Eigen/Sparse>
 #include "flux.h"
 #include "convert.h"
-//#include "petscGMRES.h"
 //#include "residuald1.h"
 #include "boundary_conditions.h"
-
-int ki, kip;
+#include<adolc/adolc.h>
 
 // Domain Residual R = FS_i+1/2 - FS_i-1/2 - Qi
+template<typename dreal>
 void getDomainResi( 
-	const struct Flow_options &flo_opts,
-	const std::vector<double> &area,
-	const std::vector<double> &W,
-	std::vector<double>* const fluxes,
-	std::vector<double>* const residual)
+	const struct Flow_options<dreal> &flo_opts,
+	const std::vector<dreal> &area,
+	const std::vector<dreal> &W,
+	std::vector<dreal>* const fluxes,
+	std::vector<dreal>* const residual)
 {
 	getFlux(flo_opts, W, fluxes);
 	const int n_elem = flo_opts.n_elem;
@@ -30,50 +30,47 @@ void getDomainResi(
             (*residual)[ki] = (*fluxes)[ki] * area[i_res] - (*fluxes)[kim] * area[i_res-1];
 
 			if (i_state==1) { // Source Term
-				double p = get_p(flo_opts.gam, W[i_res*3+0], W[i_res*3+1], W[i_res*3+2]);
+				dreal p = get_p(flo_opts.gam, W[i_res*3+0], W[i_res*3+1], W[i_res*3+2]);
 				(*residual)[ki] -= p * (area[i_res] - area[i_res-1]);
 			}
         }
     }
 }
+template void getDomainResi( 
+	const struct Flow_options<double> &flo_opts,
+	const std::vector<double> &area,
+	const std::vector<double> &W,
+	std::vector<double>* const fluxes,
+	std::vector<double>* const residual);
 
+template<typename dreal>
 void EulerExplicitStep(
-	const struct Flow_options &flo_opts,
-    const std::vector<double> &area,
-    const std::vector<double> &dx,
-    struct Flow_data* const flow_data);
+	const struct Flow_options<dreal> &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    struct Flow_data<dreal>* const flow_data);
 
+template<typename dreal>
 void jamesonrk(
-	const struct Flow_options &flo_opts,
-    const std::vector<double> &area,
-    const std::vector<double> &dx,
-    struct Flow_data* const flow_data);
+	const struct Flow_options<dreal> &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    struct Flow_data<dreal>* const flow_data);
 
-//void eulerImplicit(
-//    const std::vector<double> &area,
-//    const std::vector<double> &dx,
-//    const std::vector<double> &dt,
-//    Flow_data &flow_data);
-
-//void crankNicolson(
-//    const std::vector<double> &area,
-//    const std::vector<double> &dx,
-//    const std::vector<double> &dt,
-//    Flow_data &flow_data);
-
+template<typename dreal>
 void stepInTime(
-	const struct Flow_options &flo_opts,
-    const std::vector<double> &area,
-    const std::vector<double> &dx,
-    struct Flow_data* const flow_data)
+	const struct Flow_options<dreal> &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    struct Flow_data<dreal>* const flow_data)
 {
 	// Calculate Time Step
 	int n_elem = flo_opts.n_elem;
 	const int first_cell = 0;
 	const int last_cell = n_elem+1;
 	for (int i = 1; i < n_elem+1; i++) {
-		const double u = flow_data->W[i*3+1] / flow_data->W[i*3+0];
-		const double c = get_c(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
+		const dreal u = flow_data->W[i*3+1] / flow_data->W[i*3+0];
+		const dreal c = get_c(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
 		flow_data->dt[i] = (flo_opts.CFL * dx[i]) / fabs(u + c);
 	}
     flow_data->dt[first_cell] = flow_data->dt[first_cell+1];
@@ -93,19 +90,30 @@ void stepInTime(
 	inletBC(flo_opts, flow_data->dt[first_cell], dx[first_cell], flow_data);
 	outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
 }
-
-struct Flow_data stepInTime_noupdate(
-	const struct Flow_options &flo_opts,
+template void stepInTime(
+	const struct Flow_options<double> &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    const struct Flow_data &flow_data)
+    struct Flow_data<double>* const flow_data);
+template void stepInTime(
+	const struct Flow_options<adouble> &flo_opts,
+    const std::vector<adouble> &area,
+    const std::vector<adouble> &dx,
+    struct Flow_data<adouble>* const flow_data);
+
+template<typename dreal>
+struct Flow_data<dreal> stepInTime_noupdate(
+	const struct Flow_options<dreal> &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    const struct Flow_data<dreal> &flow_data)
 {
-    struct Flow_data new_flow = flow_data;
+    struct Flow_data<dreal> new_flow = flow_data;
 	// Calculate Time Step
 	int n_elem = flo_opts.n_elem;
 	for (int i = 1; i < n_elem+1; i++) {
-		double u = new_flow.W[i*3+1] / new_flow.W[i*3+0];
-		double c = get_c(flo_opts.gam, new_flow.W[i*3+0], new_flow.W[i*3+1], new_flow.W[i*3+2]);
+		dreal u = new_flow.W[i*3+1] / new_flow.W[i*3+0];
+		dreal c = get_c(flo_opts.gam, new_flow.W[i*3+0], new_flow.W[i*3+1], new_flow.W[i*3+2]);
 		new_flow.dt[i] = (flo_opts.CFL * dx[i]) / fabs(u + c);
 	}
     if (flo_opts.time_scheme == 0) {
@@ -130,11 +138,12 @@ struct Flow_data stepInTime_noupdate(
 
 
 // Euler Explicit
+template<typename dreal>
 void EulerExplicitStep(
-	const struct Flow_options &flo_opts,
-    const std::vector<double> &area,
-    const std::vector<double> &dx,
-    struct Flow_data* const flow_data)
+	const struct Flow_options<dreal> &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    struct Flow_data<dreal>* const flow_data)
 {
     getDomainResi(flo_opts, area, flow_data->W, &flow_data->fluxes, &flow_data->residual);
 
@@ -150,11 +159,12 @@ void EulerExplicitStep(
 
 
 // Jameson's 4th order Runge - Kutta Stepping Scheme
+template<typename dreal>
 void jamesonrk(
-	const struct Flow_options &flo_opts,
-    const std::vector<double> &area,
-    const std::vector<double> &dx,
-    struct Flow_data* const flow_data)
+	const struct Flow_options<dreal> &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    struct Flow_data<dreal>* const flow_data)
 {
 	int n_elem = flo_opts.n_elem;
     // Initialize First Stage
@@ -171,7 +181,7 @@ void jamesonrk(
         // Step in RK time
         for (int k = 0; k < 3; k++) {
             for (int i = 1; i < n_elem+1; i++) {
-                ki = i * 3 + k;
+                const int ki = i * 3 + k;
                 flow_data->W_stage[ki] = flow_data->W[ki] - (flow_data->dt[i-1] / (5 - r)) * flow_data->residual[ki] / dx[i-1];
             }
         }
@@ -179,7 +189,7 @@ void jamesonrk(
 
     for (int k = 0; k < 3; k++) {
         for (int i = 1; i < n_elem+1; i++) {
-            ki = i * 3 + k;
+            const int ki = i * 3 + k;
             flow_data->residual[ki] = (flow_data->W_stage[ki] - flow_data->W[ki]) * dx[i] / flow_data->dt[i];
             flow_data->W[ki] = flow_data->W_stage[ki];
         }
@@ -187,9 +197,9 @@ void jamesonrk(
 }
 
 //void dFdW(
-//    std::vector<double> &J,
-//    double Sp, double Sm,
-//    double rho, double u, double c)
+//    std::vector<dreal> &J,
+//    dreal Sp, dreal Sm,
+//    dreal rho, dreal u, dreal c)
 //{
 //    J[0] = 0.0;
 //    J[1] = 1.0;
@@ -205,13 +215,13 @@ void jamesonrk(
 //           / (2.0 * (gam - 1.0));
 //    J[8] = u * gam;
 //
-//    double Sa = (Sp + Sm) / 2.0;
+//    dreal Sa = (Sp + Sm) / 2.0;
 //    for (int i = 0; i < 9; i++)
 //    {
 //        J[i] *= Sa;
 //    }
 //    
-//    double dpdw[3];
+//    dreal dpdw[3];
 //    dpdw[0] = (gam - 1) / 2.0 * u * u;
 //    dpdw[1] = - (gam - 1) * u;
 //    dpdw[2] = (gam - 1);
@@ -222,9 +232,9 @@ void jamesonrk(
 //}
 
 //void eulerImplicit(
-//    const std::vector<double> &area,
-//    const std::vector<double> &dx,
-//    const std::vector<double> &dt,
+//    const std::vector<dreal> &area,
+//    const std::vector<dreal> &dx,
+//    const std::vector<dreal> &dt,
 //    Flow_data &flow_data)
 //{
 //    // Get flow_data.fluxes
@@ -233,7 +243,7 @@ void jamesonrk(
 //    getDomainResi(flow_data, area);
 //    Eigen::VectorXd RHS(3 * n_elem);
 //    RHS.setZero();
-//    Eigen::SparseMatrix<double> A(3 * n_elem, 3 * n_elem);
+//    Eigen::SparseMatrix<dreal> A(3 * n_elem, 3 * n_elem);
 //    A = evaldRdW(flow_data.W, dx, dt, area);
 //    for (int i = 0; i < 3; i++) {
 //        for (int j = 0; j < 3; j++) {
@@ -256,16 +266,16 @@ void jamesonrk(
 //        }
 //    }
 //    VectorXd Wt(3 * n_elem);
-//    SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
+//    SparseLU <SparseMatrix<dreal>, COLAMDOrdering< int > > slusolver1;
 //    slusolver1.compute(A);
 //    if (slusolver1.info() != 0)
 //        std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
 //    Wt = slusolver1.solve(RHS);
-//    double currentR = 0;
+//    dreal currentR = 0;
 //    for (int i = 0; i < n_elem; i++)
 //        currentR += flow_data.residual[i * 3 + 0] * flow_data.residual[i * 3 + 0];
 //    currentR = sqrt(currentR);
-//    double alpha = 1;
+//    dreal alpha = 1;
 //    if (1.0/currentR > 1e2)
 //    {
 //        alpha = 1.25 * pow(log10(1.0/currentR/1e1), 3);
@@ -281,9 +291,9 @@ void jamesonrk(
 //    }
 //}
 //void crankNicolson(
-//    const std::vector<double> &area,
-//    const std::vector<double> &dx,
-//    const std::vector<double> &dt,
+//    const std::vector<dreal> &area,
+//    const std::vector<dreal> &dx,
+//    const std::vector<dreal> &dt,
 //    Flow_data &flow_data)
 //{
 //    // Get flow_data.fluxes
@@ -292,7 +302,7 @@ void jamesonrk(
 //    getDomainResi(flow_data, area);
 //    Eigen::VectorXd RHS(3 * n_elem);
 //    RHS.setZero();
-//    Eigen::SparseMatrix<double> A(3 * n_elem, 3 * n_elem);
+//    Eigen::SparseMatrix<dreal> A(3 * n_elem, 3 * n_elem);
 //    A = 0.5 * evaldRdW(flow_data.W, dx, dt, area);
 //    for (int i = 0; i < 3; i++) {
 //        for (int j = 0; j < 3; j++) {
@@ -319,16 +329,16 @@ void jamesonrk(
 ////  *((unsigned int*)0) = 0xDEAD;
 //    VectorXd Wt(3 * n_elem);
 ////  Wt = solveGMRES(A, RHS);
-//    SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
+//    SparseLU <SparseMatrix<dreal>, COLAMDOrdering< int > > slusolver1;
 //    slusolver1.compute(A);
 //    if (slusolver1.info() != 0)
 //        std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
 //    Wt = slusolver1.solve(RHS);
-//    double currentR = 0;
+//    dreal currentR = 0;
 //    for (int i = 0; i < n_elem; i++)
 //        currentR += flow_data.residual[i * 3 + 0] * flow_data.residual[i * 3 + 0];
 //    currentR = sqrt(currentR);
-//    double alpha = 1;
+//    dreal alpha = 1;
 //    if (1.0/currentR > 1e2) {
 //        alpha = 1.1 * pow(log10(1.0/currentR/1e1), 3.0);
 //        std::cout<<alpha<<std::endl;
@@ -344,17 +354,17 @@ void jamesonrk(
 //}
 
 //void rk4(
-//    const std::vector<double> &area,
-//    const std::vector<double> &dx,
-//    const std::vector<double> &dt,
+//    const std::vector<dreal> &area,
+//    const std::vector<dreal> &dx,
+//    const std::vector<dreal> &dt,
 //    Flow_data &flow_data);
 //
 // 4th order Runge - Kutta Stepping Scheme
 // Need to figure out how to store more W
 //void rk4(
-//    const std::vector<double> &area,
-//    const std::vector<double> &dx,
-//    const std::vector<double> &dt,
+//    const std::vector<dreal> &area,
+//    const std::vector<dreal> &dx,
+//    const std::vector<dreal> &dt,
 //    Flow_data &flow_data)
 //{
 //    // Residual 0
@@ -407,7 +417,7 @@ void jamesonrk(
 //        for (int i = 1; i < n_elem - 1; i++)
 //        {
 //            ki = i * 3 + k;
-//            Wtemp[ki] = ((double)1.0 / 6.0) * (flow_data.W[ki] + 2 * W1[ki] + 2 * W2[ki] + W3[ki]);
+//            Wtemp[ki] = ((dreal)1.0 / 6.0) * (flow_data.W[ki] + 2 * W1[ki] + 2 * W2[ki] + W3[ki]);
 //            //flow_data.residual[ki] = (2 * Resi0[ki] + 2 * Resi1[ki] + Resi2[ki]) / 6.0;
 //            flow_data.residual[ki] = (Wtemp[ki] - flow_data.W[ki]) * dx[i] / dt[i];
 //            flow_data.W[ki] = Wtemp[ki];

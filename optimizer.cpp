@@ -1,3 +1,4 @@
+#include "optimizer.h"
 #include "structures.h"
 #include<iostream>
 #include<fstream>
@@ -21,18 +22,18 @@ void test_grad(
 	const std::vector<double> &x,
 	const std::vector<double> &dx, 
 	const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data,
-	const struct Optimization_options &opt_opts,
-	const struct Design &design);
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &design);
 void test_hessian(
 	const std::vector<double> &x,
 	const std::vector<double> &dx, 
 	const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data,
-	const struct Optimization_options &opt_opts,
-	const struct Design &design);
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &design);
 
 double linesearch_backtrack_unconstrained(
     const double initial_alpha,
@@ -41,11 +42,11 @@ double linesearch_backtrack_unconstrained(
     const VectorXd &pk,
     const VectorXd &gradient,
     const double current_cost,
-	const struct Flow_options &flo_opts,
-	const struct Optimization_options &opt_opts,
+	const struct Flow_options<double> &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
     VectorXd* const searchD,
-    struct Flow_data* const flow_data,
-    struct Design* const current_design);
+    struct Flow_data<double>* const flow_data,
+    struct Design<double>* const current_design);
 
 MatrixXd BFGS(
     const MatrixXd &oldH,
@@ -64,13 +65,13 @@ void optimizer(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,
-	const struct Flow_options &flo_opts,
-	const struct Optimization_options &opt_opts,
-	const struct Design &initial_design)
+	const struct Flow_options<double> &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &initial_design)
 {
 	int n_elem = flo_opts.n_elem;
 	int n_dvar = opt_opts.n_design_variables;
-	struct Flow_data flow_data;
+	struct Flow_data<double> flow_data;
 
     const int n_face = n_elem + 1;
     const int n_elem_ghost = n_elem + 2;
@@ -80,10 +81,10 @@ void optimizer(
     flow_data.residual.resize(3*n_elem_ghost);
     flow_data.fluxes.resize(3*n_face);
 
-	struct Design current_design = initial_design;
+	struct Design<double> current_design = initial_design;
 	current_design.design_variables = initial_design.design_variables;
 
-    std::vector<double> area = evalS(current_design, x, dx);
+    std::vector<double> area = evalS<double>(current_design, x, dx);
 
     std::vector<double> gradient_norm_list, timeVec, Herror, svdvalues, svdvaluesreal, Hcond;
     MatrixXd H(n_dvar, n_dvar),
@@ -243,11 +244,11 @@ double linesearch_backtrack_unconstrained(
     const VectorXd &pk,
     const VectorXd &gradient,
     const double current_cost,
-	const struct Flow_options &flo_opts,
-	const struct Optimization_options &opt_opts,
+	const struct Flow_options<double> &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
     VectorXd* const searchD,
-    struct Flow_data* const flow_data,
-    struct Design* const current_design)
+    struct Flow_data<double>* const flow_data,
+    struct Design<double>* const current_design)
 {
 	int n_dvar = current_design->n_design_variables;
 	double alpha = initial_alpha;
@@ -255,7 +256,7 @@ double linesearch_backtrack_unconstrained(
     double c_pk_grad = c1 * gradient.dot(pk);
 
 	// Copy current design
-	struct Design new_design = *current_design;
+	struct Design<double> new_design = *current_design;
     for (int i = 0; i < n_dvar; i++) {
         new_design.design_variables[i] = current_design->design_variables[i] + alpha * pk[i];
     }
@@ -383,10 +384,10 @@ void test_grad(
 	const std::vector<double> &x,
 	const std::vector<double> &dx, 
 	const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data,
-	const struct Optimization_options &opt_opts,
-	const struct Design &design)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &design)
 {
 	printf("Testing gradient...\n");
 	int n_dvar = design.n_design_variables;
@@ -423,13 +424,13 @@ void test_hessian(
 	const std::vector<double> &x,
 	const std::vector<double> &dx, 
 	const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data,
-	const struct Optimization_options &opt_opts,
-	const struct Design &design)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &design)
 {
 	printf("Testing Hessian...\n");
-    struct Optimization_options o_opts_copy = opt_opts; // Want to make sure it's the exact Hessian
+    struct Optimization_options<double> o_opts_copy = opt_opts; // Want to make sure it's the exact Hessian
     o_opts_copy.exact_hessian = 1;
 
     const int n_dvar = design.n_design_variables;

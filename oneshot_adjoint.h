@@ -1,13 +1,13 @@
-#ifndef oneshot_dwdx_h
-#define oneshot_dwdx_h
+#ifndef ONESHOT_ADJOINT_H
+#define ONESHOT_ADJOINT_H
 
 #include<vector>
 #include"structures.h"
-void oneshot_dwdx(
+void oneshot_adjoint(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,
-	const struct Flow_options &flo_opts,
-	const struct Optimization_options &opt_opts,
-	const struct Design &initial_design);
+	const struct Flow_options<double> &flo_opts,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &initial_design);
 #endif

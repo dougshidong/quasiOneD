@@ -1,5 +1,4 @@
-// Convert W to F or primitive variables
-
+#include"convert.h"
 #include<vector>
 #include<Eigen/Core>
 #include<math.h>
@@ -53,78 +52,6 @@ void WtoQ(
     }
 }
 
-// Get primitive variables
-void WtoP(
-    std::vector<double> const &W,
-    std::vector<double> &rho,
-    std::vector<double> &u,
-    std::vector<double> &e)
-{
-	int n_elem = W.size()/3;
-    for (int i = 0; i < n_elem; i++)
-    {
-        rho[i] = W[i*3+0];
-        u[i] = W[i*3+1] / rho[i];
-        e[i] = W[i*3+2];
-    }
-}
-
-// Get other primitive variables
-void WtoP2(
-	const double gam,
-    std::vector<double> const &W,
-    std::vector<double> &rho,
-    std::vector<double> &u,
-    std::vector<double> &p)
-{
-	int n_elem = W.size()/3;
-    for (int i = 0; i < n_elem; i++)
-    {
-        rho[i] = W[i*3+0];
-        u[i] = W[i*3+1] / rho[i];
-        p[i] = (gam - 1.0) * ( W[i*3+2] - (pow(W[i*3+1], 2.0) / W[i*3+0]) / 2.0 );
-    }
-}
-
-// Given rho, u p, get W
-void PtoW(
-	const double gam,
-    std::vector<double> &W,
-    std::vector<double> const &Wp)
-{
-	int n_elem = W.size()/3;
-    for (int i = 0; i < n_elem; i++)
-    {
-        W[i*3+0] = Wp[i*3+0];
-        W[i*3+1] = Wp[i*3+0] * Wp[i*3+1];
-        W[i*3+2] = Wp[i*3+2] / (gam - 1.0) + 
-                       (pow(Wp[i*3+1], 2.0) * Wp[i*3+0]) / 2.0;
-    }
-}
-
-// Get more primitive variables
-void WtoP(
-	const double gam,
-	const double R,
-    std::vector<double> const &W,
-    std::vector<double> &rho,
-    std::vector<double> &u,
-    std::vector<double> &e,
-    std::vector<double> &p,
-    std::vector<double> &c,
-    std::vector<double> &T)
-{
-	int n_elem = W.size()/3;
-    for (int i = 0; i < n_elem; i++)
-    {
-        rho[i] = W[i*3+0];
-        u[i] = W[i*3+1] / rho[i];
-        e[i] = W[i*3+2];
-        p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2.0 );
-        c[i] = sqrt( gam * p[i] / rho[i] );
-        T[i] = p[i] / (rho[i] * R);
-    }
-}
 // Inverse[dW/dWp] or dWp/dW
 // W  = [rho, rho * u, e]
 // Wp = [rho, u, p]

@@ -1,3 +1,4 @@
+#include"finitedifferences.h"
 #include <vector>
 #include <Eigen/Core>
 #include "structures.h"
@@ -12,20 +13,20 @@ MatrixXd hessian_central_gradient(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data,
-	const struct Optimization_options &opt_opts,
-	const struct Design &design,
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &design,
     double pert)
 {
 	int n_design_variables = design.n_design_variables;
     MatrixXd Hessian(n_design_variables, n_design_variables);
 
 	// Copy design, area, and flow to perturbed
-    struct Design pert_design = design;
+    struct Design<double> pert_design = design;
 	pert_design.design_variables = design.design_variables; 
     std::vector<double> pert_area = area;
-	struct Flow_data pert_flow = flow_data;
+	struct Flow_data<double> pert_flow = flow_data;
 	pert_flow.W          = flow_data.W;
 	pert_flow.W_stage    = flow_data.W_stage;
 	pert_flow.fluxes     = flow_data.fluxes;
@@ -66,20 +67,20 @@ MatrixXd hessian_central(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data,
-	const struct Optimization_options &opt_opts,
-	const struct Design &design,
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data,
+	const struct Optimization_options<double> &opt_opts,
+	const struct Design<double> &design,
     double pert)
 {
 	int n_design_variables = design.n_design_variables;
     MatrixXd Hessian(n_design_variables, n_design_variables);
 
 	// Copy design and area to perturbed
-    struct Design pert_design = design;
+    struct Design<double> pert_design = design;
 	pert_design.design_variables = design.design_variables; 
     std::vector<double> pert_area = area;
-	struct Flow_data pert_flow = flow_data;
+	struct Flow_data<double> pert_flow = flow_data;
 	//pert_flow.W          = flow_data.W;
 	//pert_flow.W_stage    = flow_data.W_stage;
 	//pert_flow.fluxes     = flow_data.fluxes;

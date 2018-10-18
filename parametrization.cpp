@@ -1,3 +1,4 @@
+#include "parametrization.h"
 #include<Eigen/Core>
 #include<vector>
 #include<iostream>
@@ -10,7 +11,7 @@ using namespace Eigen;
 MatrixXd evaldAreadDes_FD(
     const std::vector<double> &x,
     const std::vector<double> &dx,
-    const struct Design &design)
+    const struct Design<double> &design)
 {
 	const int n_elem = x.size()-1;
     const int n_resi = n_elem*3;
@@ -20,8 +21,8 @@ MatrixXd evaldAreadDes_FD(
 	const int n_dvar = design.n_design_variables;
     MatrixXd dAreadDes(n_face, n_dvar);
 
-    struct Design pert_design1 = design;
-    struct Design pert_design2 = design;
+    struct Design<double> pert_design1 = design;
+    struct Design<double> pert_design2 = design;
     const double h = 1e-07;
     for (int i_dvar = 0; i_dvar < n_dvar; i_dvar++) {
         const double pertD = design.design_variables.at(i_dvar)*h;
@@ -40,10 +41,11 @@ MatrixXd evaldAreadDes_FD(
     }
     return dAreadDes;
 }
+
 MatrixXd evaldAreadDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
-    const struct Design &design)
+    const struct Design<double> &design)
 {
 	const int n_elem = x.size()-1;
     const int n_resi = n_elem*3;
@@ -106,7 +108,7 @@ MatrixXd evaldAreadDes(
 MatrixXd evalddAreadDesdDes_FD(
     const std::vector<double> &x,
     const std::vector<double> &dx,
-    const struct Design &design,
+    const struct Design<double> &design,
     const int Si)
 {
 	const int n_elem = x.size()-1;
@@ -117,7 +119,7 @@ MatrixXd evalddAreadDesdDes_FD(
     double pert = 1e-2;
     std::vector<double> area(n_face);
     std::vector<double> S1(n_face), S2(n_face), S3(n_face), S4(n_face);
-    struct Design pert_design = design;
+    struct Design<double> pert_design = design;
     area = evalS(design, x, dx);
 
     MatrixXd ddAreadDesdDes(3,3);
@@ -195,10 +197,11 @@ MatrixXd evalddAreadDesdDes_FD(
     return ddAreadDesdDes;
 
 }
+
 std::vector <MatrixXd> evalddAreadDesdDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
-    const struct Design &design)
+    const struct Design<double> &design)
 {
     const int PI = atan(1.0) * 4.0;
 	const int n_elem = x.size()-1;

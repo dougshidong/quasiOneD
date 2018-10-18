@@ -15,7 +15,7 @@
 using namespace Eigen;
 
 void dFluxdW_scalard(
-	const struct Flow_options &flo_opts,
+	const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector<double> &dFluxdWL,
     std::vector<double> &dFluxdWR);
@@ -32,8 +32,8 @@ std::vector<double> evaldpdW(
 // Calculates Jacobian
 SparseMatrix<double> evaldRdW(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
     // Do not use with implicit solvers
 	if (flo_opts.time_scheme > 2) abort();
@@ -375,7 +375,7 @@ std::vector<double> evaldlambdadW(
 }
 
 void dFluxdW_scalard(
-	const struct Flow_options &flo_opts,
+	const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector<double> &dFluxdWL,
     std::vector<double> &dFluxdWR)
@@ -484,8 +484,8 @@ std::vector<double> evaldpdW(
 // DERIVATIVES WRT GEOMETRY
 
 MatrixXd evaldRdArea(
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
@@ -521,8 +521,8 @@ MatrixXd evaldRdArea(
 
 MatrixXd evaldRdArea_FD(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
@@ -532,8 +532,8 @@ MatrixXd evaldRdArea_FD(
 
     std::vector<double> pert_area1 = area;
     std::vector<double> pert_area2 = area;
-    struct Flow_data pert_flow1 = flow_data;
-    struct Flow_data pert_flow2 = flow_data;
+    struct Flow_data<double> pert_flow1 = flow_data;
+    struct Flow_data<double> pert_flow2 = flow_data;
 
     double dh = 1e-03;
     for (int Ri = 1; Ri < n_elem - 1; Ri++) {
@@ -564,8 +564,8 @@ MatrixXd evaldRdArea_FD(
 }
 SparseMatrix<double> evaldRdW_FD(
     const std::vector<double> &area,
-	const struct Flow_options &flo_opts,
-	const struct Flow_data &flow_data)
+	const struct Flow_options<double> &flo_opts,
+	const struct Flow_data<double> &flow_data)
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
@@ -575,8 +575,8 @@ SparseMatrix<double> evaldRdW_FD(
     SparseMatrix<double> dRdW(n_resi, n_resi);
     int Ri, Wi;
     int irow_glob, icol_glob;
-    struct Flow_data pert_flow1 = flow_data;
-    struct Flow_data pert_flow2 = flow_data;
+    struct Flow_data<double> pert_flow1 = flow_data;
+    struct Flow_data<double> pert_flow2 = flow_data;
     std::vector<double> dRdW_block(9, 0);
     int ki, kip;
     const double dh = 1e-07;
@@ -601,9 +601,11 @@ SparseMatrix<double> evaldRdW_FD(
                 pert_flow1.dt[first_cell] = pert_flow1.dt[first_cell+1];
                 pert_flow1.dt[last_cell] = pert_flow1.dt[last_cell-1];
 
+                const double dt1 = pert_flow1.dt[first_cell];
+                const double dt2 = pert_flow1.dt[last_cell];
                 for (int i = 0; i < 1000; i++) {
-                    inletBC(flo_opts, pert_flow1.dt[first_cell], dx, &pert_flow1);
-                    outletBC(flo_opts, pert_flow1.dt[last_cell], dx, &pert_flow1);
+                    inletBC(flo_opts, dt1, dx, &pert_flow1);
+                    outletBC(flo_opts, dt2, dx, &pert_flow1);
                 }
                 getDomainResi(flo_opts, area, pert_flow1.W, &(pert_flow1.fluxes), &(pert_flow1.residual));
 
@@ -618,8 +620,8 @@ SparseMatrix<double> evaldRdW_FD(
                 pert_flow2.dt[last_cell] = pert_flow2.dt[last_cell-1];
 
                 for (int i = 0; i < 1000; i++) {
-                    inletBC(flo_opts, pert_flow2.dt[first_cell], dx, &pert_flow2);
-                    outletBC(flo_opts, pert_flow2.dt[last_cell], dx, &pert_flow2);
+                    inletBC(flo_opts, dt1, dx, &pert_flow2);
+                    outletBC(flo_opts, dt2, dx, &pert_flow2);
                 }
                 getDomainResi(flo_opts, area, pert_flow2.W, &(pert_flow2.fluxes), &(pert_flow2.residual));
 

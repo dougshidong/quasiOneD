@@ -1,6 +1,5 @@
-
-#ifndef hessianOutlet_h
-#define hessianOutlet_h
+#ifndef HESSIANOUTLET_H
+#define HESSIANOUTLET_H
 
 #include<vector>
 #include<Eigen/Core>
@@ -9,7 +8,7 @@
 using namespace Eigen;
 
 void HessianOutlet(
-    const struct Flow_options &flo_opts,
+    const struct Flow_options<double> &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddRindWdW);
 #endif

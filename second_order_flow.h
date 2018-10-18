@@ -8,6 +8,6 @@ void second_order_flow(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &area,
-	const struct Flow_options &flo_opts);
+	const struct Flow_options<double> &flo_opts);
 
 #endif
