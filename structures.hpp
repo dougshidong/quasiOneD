@@ -7,36 +7,55 @@
 template<class T> void UNUSED( const T& ) { }
 
 template<typename dreal>
-struct Flow_data {
-	std::vector<dreal> dt;
-	std::vector<dreal> W;
-	std::vector<dreal> W_stage;
-	std::vector<dreal> fluxes;
-	std::vector<dreal> residual;
+class Flow_data {
+
+	public:
+		int n_elem, n_face, n_resi, n_flux;
+		std::vector<dreal> dt;
+		std::vector<dreal> W;
+		std::vector<dreal> W_stage;
+		std::vector<dreal> fluxes;
+		std::vector<dreal> residual;
+
+		Flow_data() {}
+		Flow_data(const int n_elem_input) {
+			const int n_elem_ghost = n_elem_input + 2;
+			const int n_resi_alloc = 3*n_elem_ghost;
+			n_elem = n_elem_input;
+			n_resi = n_elem*3;
+			n_face = n_elem+1;
+			n_flux = n_face*3;
+
+			dt.resize(n_elem_ghost);
+			W.resize(n_resi_alloc);
+			W_stage.resize(n_resi_alloc);
+			fluxes.resize(n_flux);
+			residual.resize(n_resi_alloc);
+		};
 };
 
 struct Constants {
 	const double PI = atan(1.0) * 4.0;
 	std::string case_name;
 };
-template<typename dreal>
+
 struct Flow_options {
 	std::string case_name;
 	int n_elem;
-	dreal grid_xstart, grid_xend;
+	double grid_xstart, grid_xend;
 
 	int flow_maxit;
-	dreal CFL;
-	dreal flow_tol;
+	double CFL;
+	double flow_tol;
 
 	int time_scheme, flux_scheme;
-	dreal scalar_d_eps;
+	double scalar_d_eps;
 
 	int print_freq, print_conv, print_solution;
 
-	dreal gam, R, Cv;
-	dreal a2;
-	dreal inlet_mach, inlet_total_T, inlet_total_p, outlet_p;
+	double gam, R, Cv;
+	double a2;
+	double inlet_mach, inlet_total_T, inlet_total_p, outlet_p;
 };
 
 template<typename dreal>
@@ -70,7 +89,7 @@ struct Optimization_options {
 
 struct Input_data{
 	struct Constants                   *constants;
-	struct Flow_options<double>         *flow_options;
+	struct Flow_options         *flow_options;
 	struct Optimization_options<double> *optimization_options;
 
 };

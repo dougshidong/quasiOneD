@@ -3,7 +3,7 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 #include <vector>
-#include "structures.h"
+#include "structures.hpp"
 
 using namespace Eigen;
 
@@ -13,8 +13,8 @@ VectorXd getGradient(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flow_options,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flow_options,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design);
 
@@ -22,8 +22,8 @@ MatrixXd evaldWdDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flow_options,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flow_options,
+	const class Flow_data<double> &flow_data,
 	const struct Design<double> &design);
 
 #endif

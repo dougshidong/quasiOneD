@@ -1,7 +1,7 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include "structures.h"
+#include "structures.hpp"
 #include <vector>
 
 template<typename dreal>

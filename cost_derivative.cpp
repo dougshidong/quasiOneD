@@ -1,9 +1,9 @@
-#include"cost_derivative.h"
-#include"structures.h"
+#include"cost_derivative.hpp"
+#include"structures.hpp"
 #include<vector>
 #include<Eigen/Core>
 #include<Eigen/Sparse>
-#include"fitness.h"
+#include"fitness.hpp"
 #include<iostream>
 
 using namespace Eigen;
@@ -11,7 +11,7 @@ using namespace Eigen;
 // dCost / dW
 VectorXd evaldCostdW(
 	const struct Optimization_options<double> &opt_opts,
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
 	const std::vector<double> &W,
 	const std::vector<double> &dx)
 {
@@ -42,7 +42,7 @@ VectorXd evaldCostdW(
 // ddCost / dWdW
 SparseMatrix<double> evaldCostdWdW(
 	const struct Optimization_options<double> &opt_opts,
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
 	std::vector<double> W,
 	std::vector<double> dx)
 {

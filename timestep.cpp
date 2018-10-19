@@ -1,21 +1,21 @@
 // Time Stepping Schemes
-#include "timestep.h"
-#include "structures.h"
+#include "timestep.hpp"
+#include "structures.hpp"
 #include<vector>
 #include<math.h>
 #include<iostream>
 #include<Eigen/Core>
 #include<Eigen/Sparse>
-#include "flux.h"
-#include "convert.h"
-//#include "residuald1.h"
-#include "boundary_conditions.h"
+#include "flux.hpp"
+#include "convert.hpp"
+//#include "residuald1.hpp"
+#include "boundary_conditions.hpp"
 #include<adolc/adolc.h>
 
 // Domain Residual R = FS_i+1/2 - FS_i-1/2 - Qi
 template<typename dreal>
 void getDomainResi( 
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
 	const std::vector<dreal> &area,
 	const std::vector<dreal> &W,
 	std::vector<dreal>* const fluxes,
@@ -36,33 +36,39 @@ void getDomainResi(
         }
     }
 }
-template void getDomainResi( 
-	const struct Flow_options<double> &flo_opts,
+template void getDomainResi<double>( 
+	const struct Flow_options &flo_opts,
 	const std::vector<double> &area,
 	const std::vector<double> &W,
 	std::vector<double>* const fluxes,
 	std::vector<double>* const residual);
+template void getDomainResi<adouble>( 
+	const struct Flow_options &flo_opts,
+	const std::vector<adouble> &area,
+	const std::vector<adouble> &W,
+	std::vector<adouble>* const fluxes,
+	std::vector<adouble>* const residual);
 
 template<typename dreal>
 void EulerExplicitStep(
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    struct Flow_data<dreal>* const flow_data);
+    class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
 void jamesonrk(
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    struct Flow_data<dreal>* const flow_data);
+    class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
 void stepInTime(
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    struct Flow_data<dreal>* const flow_data)
+    class Flow_data<dreal>* const flow_data)
 {
 	// Calculate Time Step
 	int n_elem = flo_opts.n_elem;
@@ -91,24 +97,19 @@ void stepInTime(
 	outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
 }
 template void stepInTime(
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
     const std::vector<double> &dx,
-    struct Flow_data<double>* const flow_data);
-template void stepInTime(
-	const struct Flow_options<adouble> &flo_opts,
-    const std::vector<adouble> &area,
-    const std::vector<adouble> &dx,
-    struct Flow_data<adouble>* const flow_data);
+    class Flow_data<double>* const flow_data);
 
 template<typename dreal>
-struct Flow_data<dreal> stepInTime_noupdate(
-	const struct Flow_options<dreal> &flo_opts,
+class Flow_data<dreal> stepInTime_noupdate(
+	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    const struct Flow_data<dreal> &flow_data)
+    const class Flow_data<dreal> &flow_data)
 {
-    struct Flow_data<dreal> new_flow = flow_data;
+    class Flow_data<dreal> new_flow = flow_data;
 	// Calculate Time Step
 	int n_elem = flo_opts.n_elem;
 	for (int i = 1; i < n_elem+1; i++) {
@@ -140,10 +141,10 @@ struct Flow_data<dreal> stepInTime_noupdate(
 // Euler Explicit
 template<typename dreal>
 void EulerExplicitStep(
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    struct Flow_data<dreal>* const flow_data)
+    class Flow_data<dreal>* const flow_data)
 {
     getDomainResi(flo_opts, area, flow_data->W, &flow_data->fluxes, &flow_data->residual);
 
@@ -161,10 +162,10 @@ void EulerExplicitStep(
 // Jameson's 4th order Runge - Kutta Stepping Scheme
 template<typename dreal>
 void jamesonrk(
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    struct Flow_data<dreal>* const flow_data)
+    class Flow_data<dreal>* const flow_data)
 {
 	int n_elem = flo_opts.n_elem;
     // Initialize First Stage

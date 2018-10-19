@@ -1,5 +1,5 @@
-#include "spline.h"
-#include "structures.h"
+#include "spline.hpp"
+#include "structures.hpp"
 #include <iostream>
 #include <math.h>
 #include <vector>

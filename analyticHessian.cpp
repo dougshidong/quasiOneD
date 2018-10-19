@@ -1,23 +1,23 @@
-#include"analyticHessian.h"
+#include"analyticHessian.hpp"
 #include<iostream>
 #include<iomanip>
 #include<math.h>
 #include<vector>
 #include<Eigen/Core>
 #include<Eigen/Sparse>
-#include"structures.h"
-#include"convert.h"
-#include"parametrization.h"
-#include"residuald1.h"
-#include"residuald2.h"
-#include"cost_derivative.h"
-#include"boundary_gradient.h"
-#include"quasiOneD.h"
-#include"flux.h"
-#include"grid.h"
-#include"solve_linear.h"
-#include"gradient.h"
-#include"finitedifferences.h"
+#include"structures.hpp"
+#include"convert.hpp"
+#include"parametrization.hpp"
+#include"residuald1.hpp"
+#include"residuald2.hpp"
+#include"cost_derivative.hpp"
+#include"boundary_gradient.hpp"
+#include"quasiOneD.hpp"
+#include"flux.hpp"
+#include"grid.hpp"
+#include"solve_linear.hpp"
+#include"gradient.hpp"
+#include"finitedifferences.hpp"
 
 using namespace Eigen;
 
@@ -25,8 +25,8 @@ std::vector <MatrixXd> evalddWdDesdDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design);
 
@@ -34,8 +34,8 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Design<double> &design);
 
 MatrixXd directAdjointHessian(
@@ -43,8 +43,8 @@ MatrixXd directAdjointHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design);
 MatrixXd adjointAdjointHessian(
@@ -52,8 +52,8 @@ MatrixXd adjointAdjointHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design);
 MatrixXd adjointDirectHessian(
@@ -61,8 +61,8 @@ MatrixXd adjointDirectHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design);
 MatrixXd directDirectHessian(
@@ -70,8 +70,8 @@ MatrixXd directDirectHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design);
 
@@ -81,8 +81,8 @@ MatrixXd getAnalyticHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {
@@ -107,8 +107,8 @@ MatrixXd directAdjointHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {
@@ -228,8 +228,8 @@ MatrixXd adjointAdjointHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {
@@ -343,8 +343,8 @@ MatrixXd adjointDirectHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {
@@ -454,8 +454,8 @@ MatrixXd directDirectHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {
@@ -614,15 +614,15 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Design<double> &design)
 {
     const int n_elem = flo_opts.n_elem;
     const int n_dvar = design.n_design_variables;
 
     struct Design<double> pert_design = design;
-    struct Flow_data<double> pert_flow = flow_data;
+    class Flow_data<double> pert_flow = flow_data;
     VectorXd W0(3 * n_elem),
              W1(3 * n_elem),
              W2(3 * n_elem),
@@ -743,8 +743,8 @@ std::vector <MatrixXd> evalddWdDesdDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {

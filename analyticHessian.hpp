@@ -2,7 +2,7 @@
 #define ANALYTICHESSIAN_H
 
 #include<Eigen/Core>
-#include"structures.h"
+#include"structures.hpp"
 // case 0: directDirectHessian
 // case 1: adjointDirectHessian
 // case 2: adjointAdjointHessian
@@ -13,8 +13,8 @@ Eigen::MatrixXd getAnalyticHessian(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
     const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design);
 #endif

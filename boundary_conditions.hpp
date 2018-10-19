@@ -2,19 +2,19 @@
 #define BOUNDARY_CONDITIONS_H
 
 #include<vector>
-#include"structures.h"
+#include"structures.hpp"
 
 template<typename dreal>
 void inletBC(
-    const Flow_options<dreal> &flo_opts,
+    const Flow_options &flo_opts,
     const dreal dt0,
 	const dreal dx0,
-    struct Flow_data<dreal>* const flow_data);
+    class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
 void outletBC(
-    const Flow_options<dreal> &flo_opts,
+    const Flow_options &flo_opts,
     const dreal dt0,
 	const dreal dx0,
-    struct Flow_data<dreal>* const flow_data);
+    class Flow_data<dreal>* const flow_data);
 #endif

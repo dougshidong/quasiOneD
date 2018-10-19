@@ -1,10 +1,10 @@
-#include "parametrization.h"
+#include "parametrization.hpp"
 #include<Eigen/Core>
 #include<vector>
 #include<iostream>
-#include"structures.h"
-#include"grid.h"
-#include"spline.h"
+#include"structures.hpp"
+#include"grid.hpp"
+#include"spline.hpp"
 
 using namespace Eigen;
 

@@ -1,15 +1,15 @@
-#include "quasiOneD.h"
-#include "structures.h"
-#include "convert.h"
+#include "quasiOneD.hpp"
+#include "structures.hpp"
+#include "convert.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <iomanip>
 #include <math.h>
 #include <vector>
-#include "grid.h"
-#include "flux.h"
-#include "timestep.h"
-#include "output.h"
+#include "grid.hpp"
+#include "flux.hpp"
+#include "timestep.hpp"
+#include "output.hpp"
 
 template<typename dreal>
 dreal isenP(const dreal gam, const dreal pt, const dreal M) {
@@ -24,8 +24,8 @@ template<typename dreal>
 int quasiOneD(
 	const std::vector<dreal> &x,
 	const std::vector<dreal> &area,
-	const Flow_options<dreal> &flo_opts,
-	struct Flow_data<dreal>* const flow_data)
+	const Flow_options &flo_opts,
+	class Flow_data<dreal>* const flow_data)
 {
 	const dreal gam = flo_opts.gam;
 	const int n_elem = flo_opts.n_elem;
@@ -115,5 +115,5 @@ int quasiOneD(
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<residual_norm<<std::endl;
     return 0;
 }
-template int quasiOneD( const std::vector<double> &x, const std::vector<double> &area, const Flow_options<double> &flo_opts, struct Flow_data<double>* const flow_data);
+template int quasiOneD( const std::vector<double> &x, const std::vector<double> &area, const Flow_options &flo_opts, class Flow_data<double>* const flow_data);
 

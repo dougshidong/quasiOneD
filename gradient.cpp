@@ -1,16 +1,19 @@
-#include "gradient.h"
-#include "structures.h"
-#include "quasiOneD.h"
-#include "fitness.h"
-#include "grid.h"
+#include "gradient.hpp"
+#include "structures.hpp"
+#include "quasiOneD.hpp"
+#include "fitness.hpp"
+#include "grid.hpp"
 #include <iomanip>
 #include <iostream>
-#include "flux.h"
-#include "residuald1.h"
-#include "parametrization.h"
-#include "cost_derivative.h"
+#include "flux.hpp"
+#include "residuald1.hpp"
 
-#include "solve_linear.h"
+#include "residual_derivatives.hpp"
+
+#include "parametrization.hpp"
+#include "cost_derivative.hpp"
+
+#include "solve_linear.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
@@ -23,8 +26,8 @@ VectorXd gradient_adjoint(
     const std::vector<double> &x,
 	const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design);
 
@@ -33,8 +36,8 @@ VectorXd gradient_directDifferentiation(
     const std::vector<double> &x,
 	const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design);
 
@@ -44,8 +47,8 @@ VectorXd gradient_FD(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design,
 	const double pert);
@@ -56,8 +59,8 @@ VectorXd getGradient(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design)
 {
@@ -82,8 +85,8 @@ VectorXd gradient_FD(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design,
 	const double pert)
@@ -95,7 +98,7 @@ VectorXd gradient_FD(
     struct Design<double> pert_design = design;
 	pert_design.design_variables = design.design_variables; 
     std::vector<double> pert_area = area;
-	struct Flow_data<double> pert_flow = flow_data;
+	class Flow_data<double> pert_flow = flow_data;
 	//pert_flow.W          = flow_data.W;
 	//pert_flow.W_stage    = flow_data.W_stage;
 	//pert_flow.fluxes     = flow_data.fluxes;
@@ -151,8 +154,8 @@ MatrixXd evaldWdDes(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
     const struct Design<double> &design,
 	const int lsolver,
 	const double tolerance)
@@ -196,8 +199,8 @@ VectorXd gradient_directDifferentiation(
     const std::vector<double> &x,
 	const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design)
 {
@@ -241,8 +244,8 @@ VectorXd gradient_adjoint(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-    const struct Flow_options<double> &flo_opts,
-    const struct Flow_data<double> &flow_data,
+    const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
     const struct Design<double> &design)
 {
@@ -287,8 +290,11 @@ VectorXd gradient_adjoint(
     SparseMatrix<double> dRdW_FD = evaldRdW(area, flo_opts, flow_data);
     SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, flow_data);
 
+    SparseMatrix<double> dRdW_AD = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+
     std::cout<<dRdW<<std::endl<<std::endl<<std::endl<<std::endl;
     std::cout<<dRdW_FD<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<dRdW_AD<<std::endl<<std::endl<<std::endl<<std::endl;
 
     // *************************************
     // Solve for Adjoint (1 Flow Eval)

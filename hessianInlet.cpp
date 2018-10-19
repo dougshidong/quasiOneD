@@ -1,15 +1,15 @@
-#include "hessianInlet.h"
+#include "hessianInlet.hpp"
 #include<Eigen/Core>
 #include<math.h>
 #include<iostream>
-#include"structures.h"
-#include"convert.h"
-//#include"residuald2.h"
+#include"structures.hpp"
+#include"convert.hpp"
+//#include"residuald2.hpp"
 
 using namespace Eigen;
 
 void HessianInlet(
-    const struct Flow_options<double> &flo_opts,
+    const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddRindWdW)
 {

@@ -1,23 +1,23 @@
-#include"fitness.h"
+#include"fitness.hpp"
 #include <vector>
 #include <iostream>
 #include <stdio.h>
-#include "structures.h"
-#include "convert.h"
+#include "structures.hpp"
+#include "convert.hpp"
 
 double TotalPressureLoss(std::vector<double> W);
 
 void ioTargetPressure(int io, std::vector<double> &p);
 
 double inverse_pressure_design(
-	const struct Flow_options<double> &flow_options,
+	const struct Flow_options &flow_options,
     const std::vector<double> &W,
     const std::vector<double> &p_target,
     const std::vector<double> &dx);
 
 double evalFitness(
     const std::vector<double> &dx,
-	const struct Flow_options<double> &flow_options,
+	const struct Flow_options &flow_options,
     const std::vector<double> &W,
 	const struct Optimization_options<double> &opt_options)
 {
@@ -84,7 +84,7 @@ double evalFitness(
 // Return Inverse Design Fitness
 
 double inverse_pressure_design(
-	const struct Flow_options<double> &flow_options,
+	const struct Flow_options &flow_options,
     const std::vector<double> &W,
     const std::vector<double> &p_target,
     const std::vector<double> &dx)

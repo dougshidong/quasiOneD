@@ -4,7 +4,7 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 #include <vector>
-#include "structures.h"
+#include "structures.hpp"
 
 using namespace Eigen;
 MatrixXd solve_linear(

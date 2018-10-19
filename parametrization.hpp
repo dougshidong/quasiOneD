@@ -1,6 +1,6 @@
 #ifndef PARAMETRIZATION_H
 #define PARAMETRIZATION_H
-#include"structures.h"
+#include"structures.hpp"
 #include<vector>
 #include<Eigen/Core>
 

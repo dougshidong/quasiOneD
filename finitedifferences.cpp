@@ -1,11 +1,11 @@
-#include"finitedifferences.h"
+#include"finitedifferences.hpp"
 #include <vector>
 #include <Eigen/Core>
-#include "structures.h"
-#include "fitness.h"
-#include "grid.h"
-#include "quasiOneD.h"
-#include "gradient.h"
+#include "structures.hpp"
+#include "fitness.hpp"
+#include "grid.hpp"
+#include "quasiOneD.hpp"
+#include "gradient.hpp"
 
 using namespace Eigen;
 
@@ -13,8 +13,8 @@ MatrixXd hessian_central_gradient(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design,
     double pert)
@@ -26,7 +26,7 @@ MatrixXd hessian_central_gradient(
     struct Design<double> pert_design = design;
 	pert_design.design_variables = design.design_variables; 
     std::vector<double> pert_area = area;
-	struct Flow_data<double> pert_flow = flow_data;
+	class Flow_data<double> pert_flow = flow_data;
 	pert_flow.W          = flow_data.W;
 	pert_flow.W_stage    = flow_data.W_stage;
 	pert_flow.fluxes     = flow_data.fluxes;
@@ -67,8 +67,8 @@ MatrixXd hessian_central(
     const std::vector<double> &x,
     const std::vector<double> &dx,
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &design,
     double pert)
@@ -80,7 +80,7 @@ MatrixXd hessian_central(
     struct Design<double> pert_design = design;
 	pert_design.design_variables = design.design_variables; 
     std::vector<double> pert_area = area;
-	struct Flow_data<double> pert_flow = flow_data;
+	class Flow_data<double> pert_flow = flow_data;
 	//pert_flow.W          = flow_data.W;
 	//pert_flow.W_stage    = flow_data.W_stage;
 	//pert_flow.fluxes     = flow_data.fluxes;

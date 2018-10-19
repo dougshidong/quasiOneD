@@ -7,21 +7,24 @@
 
 // Get pressure
 template<typename dreal>
-inline dreal get_p(const dreal gamma, const dreal rho, const dreal rho_u, const dreal e) {
+inline dreal get_p(const double gamma, const dreal rho, const dreal rho_u, const dreal e) {
 	return (gamma - 1.0) * ( e - (pow(rho_u, 2.0) / rho+1e-14) / 2.0 );
 };
 template double get_p(const double gamma, const double rho, const double rho_u, const double e);
-template adouble get_p(const adouble gamma, const adouble rho, const adouble rho_u, const adouble e);
+template adouble get_p(const double gamma, const adouble rho, const adouble rho_u, const adouble e);
 
 template<typename dreal>
-inline dreal get_c(const dreal gamma, const dreal rho, const dreal rho_u, const dreal e) {
-	dreal a =  gamma / rho * get_p(gamma, rho, rho_u, e);
-	if(a<0.0) abort();
+inline dreal get_c(const double gamma, const dreal rho, const dreal rho_u, const dreal e) {
+	const dreal p = get_p(gamma, rho, rho_u, e);
+	dreal a =  gamma / rho * p;
+	if(a<0.0) {
+		//printf("Negative radicand of sqrt. Either p: %4.2f or rho: %4.2f", p, rho)
+	}
 	return sqrt(a);
 	//return sqrt( gamma / rho * get_p(gamma, rho, rho_u, e) );
 };
 template double get_c(const double gamma, const double rho, const double rho_u, const double e);
-template adouble get_c(const adouble gamma, const adouble rho, const adouble rho_u, const adouble e);
+template adouble get_c(const double gamma, const adouble rho, const adouble rho_u, const adouble e);
 
 void get_all_p(
 	const double gam,

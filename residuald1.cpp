@@ -3,19 +3,19 @@
 #include<Eigen/Sparse>
 #include<math.h>
 #include<iostream>
-#include"convert.h"
-#include"flux.h"
-#include"quasiOneD.h"
-#include"flux.h"
-#include"boundary_gradient.h"
-#include"boundary_conditions.h"
-#include"timestep.h"
+#include"convert.hpp"
+#include"flux.hpp"
+#include"quasiOneD.hpp"
+#include"flux.hpp"
+#include"boundary_gradient.hpp"
+#include"boundary_conditions.hpp"
+#include"timestep.hpp"
 
 
 using namespace Eigen;
 
 void dFluxdW_scalard(
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector<double> &dFluxdWL,
     std::vector<double> &dFluxdWR);
@@ -32,8 +32,8 @@ std::vector<double> evaldpdW(
 // Calculates Jacobian
 SparseMatrix<double> evaldRdW(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
     // Do not use with implicit solvers
 	if (flo_opts.time_scheme > 2) abort();
@@ -375,7 +375,7 @@ std::vector<double> evaldlambdadW(
 }
 
 void dFluxdW_scalard(
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector<double> &dFluxdWL,
     std::vector<double> &dFluxdWR)
@@ -484,8 +484,8 @@ std::vector<double> evaldpdW(
 // DERIVATIVES WRT GEOMETRY
 
 MatrixXd evaldRdArea(
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
@@ -521,8 +521,8 @@ MatrixXd evaldRdArea(
 
 MatrixXd evaldRdArea_FD(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
@@ -532,8 +532,8 @@ MatrixXd evaldRdArea_FD(
 
     std::vector<double> pert_area1 = area;
     std::vector<double> pert_area2 = area;
-    struct Flow_data<double> pert_flow1 = flow_data;
-    struct Flow_data<double> pert_flow2 = flow_data;
+    class Flow_data<double> pert_flow1 = flow_data;
+    class Flow_data<double> pert_flow2 = flow_data;
 
     double dh = 1e-03;
     for (int Ri = 1; Ri < n_elem - 1; Ri++) {
@@ -564,8 +564,8 @@ MatrixXd evaldRdArea_FD(
 }
 SparseMatrix<double> evaldRdW_FD(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
@@ -575,8 +575,8 @@ SparseMatrix<double> evaldRdW_FD(
     SparseMatrix<double> dRdW(n_resi, n_resi);
     int Ri, Wi;
     int irow_glob, icol_glob;
-    struct Flow_data<double> pert_flow1 = flow_data;
-    struct Flow_data<double> pert_flow2 = flow_data;
+    class Flow_data<double> pert_flow1 = flow_data;
+    class Flow_data<double> pert_flow2 = flow_data;
     std::vector<double> dRdW_block(9, 0);
     int ki, kip;
     const double dh = 1e-07;

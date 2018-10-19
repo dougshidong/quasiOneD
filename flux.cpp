@@ -1,10 +1,10 @@
-#include "flux.h"
-#include "structures.h"
+#include "flux.hpp"
+#include "structures.hpp"
 #include<vector>
 #include<math.h>
 #include<iostream>
-#include"flux.h"
-#include"convert.h"
+#include"flux.hpp"
+#include"convert.hpp"
 #include<adolc/adolc.h>
 
 template<typename dreal>
@@ -12,14 +12,14 @@ void matrixMult(dreal A[][3], dreal B[][3], dreal result[][3]);
 
 template<typename dreal>
 void Flux_Scalar(
-	const struct Flow_options<dreal> &flow_options,
+	const struct Flow_options &flow_options,
     const std::vector<dreal> &W,
     std::vector<dreal> *const fluxes);
 
 // Get fluxes based on flux_scheme
 template<typename dreal>
 void getFlux(
-	const struct Flow_options<dreal> &flow_options,
+	const struct Flow_options &flow_options,
 	const std::vector<dreal> &W,
 	std::vector<dreal> *const fluxes)
 {
@@ -35,12 +35,12 @@ void getFlux(
     //else if (flux_scheme == 4) // Roe
     //    Flux_Roe(fluxes, W);
 }
-template void getFlux(const struct Flow_options<double> &flow_options, const std::vector<double> &W, std::vector<double> *const fluxes);
-template void getFlux(const struct Flow_options<adouble> &flow_options, const std::vector<adouble> &W, std::vector<adouble> *const fluxes);
+template void getFlux( const struct Flow_options &flow_options, const std::vector<double> &W, std::vector<double> *const fluxes);
+template void getFlux( const struct Flow_options &flow_options, const std::vector<adouble> &W, std::vector<adouble> *const fluxes);
 
 template<typename dreal>
 void Flux_Scalar(
-	const struct Flow_options<dreal> &flow_options,
+	const struct Flow_options &flow_options,
     const std::vector<dreal> &W,
     std::vector<dreal> *const fluxes)
 {
@@ -50,7 +50,7 @@ void Flux_Scalar(
     std::vector<dreal> F_m(3);
     std::vector<dreal> F_p(3);
 
-	dreal gam = flow_options.gam;
+	double gam = flow_options.gam;
 	dreal w1 = W[0*3+0], w2 = W[0*3+1], w3 = W[0*3+2];
 	dreal u_m = w2 / w1;
 	dreal c_m = get_c(gam,w1,w2,w3);

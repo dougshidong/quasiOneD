@@ -1,9 +1,9 @@
-#include "grid.h"
-#include "structures.h"
+#include "grid.hpp"
+#include "structures.hpp"
 #include <iostream>
 #include <math.h>
 #include <vector>
-#include "spline.h"
+#include "spline.hpp"
 
 template<typename dreal>
 std::vector<dreal> sinParam(

@@ -1,15 +1,15 @@
-#include "hessianOutlet.h"
+#include "hessianOutlet.hpp"
 #include<Eigen/Core>
 #include<math.h>
 #include<iostream>
-#include"convert.h"
-#include"structures.h"
-//#include"residuald2.h"
+#include"convert.hpp"
+#include"structures.hpp"
+//#include"residuald2.hpp"
 
 using namespace Eigen;
 
 void HessianOutlet(
-    const struct Flow_options<double> &flo_opts,
+    const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddRoutdWdW)
 {

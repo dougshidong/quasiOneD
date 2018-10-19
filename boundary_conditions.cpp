@@ -1,6 +1,6 @@
-#include"boundary_conditions.h"
-#include "structures.h"
-#include "convert.h"
+#include"boundary_conditions.hpp"
+#include "structures.hpp"
+#include "convert.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
@@ -9,10 +9,10 @@
 
 template<typename dreal>
 void inletBC(
-    const Flow_options<dreal> &flo_opts,
+    const Flow_options &flo_opts,
     const dreal dt0,
 	const dreal dx0,
-    struct Flow_data<dreal>* const flow_data)
+    class Flow_data<dreal>* const flow_data)
 {
 	const dreal a2  = flo_opts.a2;
 	const dreal gam = flo_opts.gam;
@@ -59,18 +59,19 @@ void inletBC(
         flow_data->residual[0 * 3 + 2] = 0;
     }
 }
-template void inletBC(const Flow_options<double> &flo_opts, const double dt0, const double dx0, struct Flow_data<double>* const flow_data);
-template void inletBC(const Flow_options<adouble> &flo_opts, const adouble dt0, const adouble dx0, struct Flow_data<adouble>* const flow_data);
+template void inletBC(const Flow_options &flo_opts, const double dt0, const double dx0, class Flow_data<double>* const flow_data);
+template void inletBC(const Flow_options &flo_opts, const adouble dt0, const adouble dx0, class Flow_data<adouble>* const flow_data);
 
 template<typename dreal>
 void outletBC(
-    const Flow_options<dreal> &flo_opts,
+    const Flow_options &flo_opts,
     const dreal dt0,
 	const dreal dx0,
-    struct Flow_data<dreal>* const flow_data)
+    class Flow_data<dreal>* const flow_data)
 {
 	//const int n_elem = flo_opts.n_elem;
-	const int n_elem_ghost = flo_opts.n_elem+2;
+	//const int n_elem_ghost = flo_opts.n_elem+2;
+	const int n_elem_ghost = flow_data->W.size()/3;
 	const dreal gam = flo_opts.gam;
     dreal avgc, avgu, dtdx, MachOut;
     dreal eigenvalues[3], Ri[3];
@@ -124,5 +125,5 @@ void outletBC(
     flow_data->W[(n_elem_ghost - 1) * 3 + 1] = rho[1] * u[1];
     flow_data->W[(n_elem_ghost - 1) * 3 + 2] = e[1];
 }
-template void outletBC( const Flow_options<double> &flo_opts, const double dt0, const double dx0, struct Flow_data<double>* const flow_data);
-template void outletBC( const Flow_options<adouble> &flo_opts, const adouble dt0, const adouble dx0, struct Flow_data<adouble>* const flow_data);
+template void outletBC( const Flow_options &flo_opts, const double dt0, const double dx0, class Flow_data<double>* const flow_data);
+template void outletBC( const Flow_options &flo_opts, const adouble dt0, const adouble dx0, class Flow_data<adouble>* const flow_data);

@@ -2,7 +2,7 @@
 #define OPTIMIZER_H
 
 #include<vector>
-#include"structures.h"
+#include"structures.hpp"
 #include<Eigen/Dense>
 using namespace Eigen;
 double linesearch_backtrack_unconstrained(
@@ -12,10 +12,10 @@ double linesearch_backtrack_unconstrained(
     const VectorXd &pk,
     const VectorXd &gradient,
     const double current_cost,
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
 	const struct Optimization_options<double> &opt_opts,
     VectorXd* const searchD,
-    struct Flow_data<double>* const flow_data,
+    class Flow_data<double>* const flow_data,
     struct Design<double>* const current_design);
 
 MatrixXd BFGS(
@@ -33,7 +33,7 @@ void optimizer(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &initial_design);
 #endif

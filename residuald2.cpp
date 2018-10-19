@@ -2,14 +2,14 @@
 #include<Eigen/Sparse>
 #include<math.h>
 #include<iostream>
-#include"convert.h"
-#include"flux.h"
-#include"quasiOneD.h"
-#include"residuald1.h"
-#include"boundary_conditions.h"
-#include"boundary_gradient.h"
-#include"hessianInlet.h"
-#include"hessianOutlet.h"
+#include"convert.hpp"
+#include"flux.hpp"
+#include"quasiOneD.hpp"
+#include"residuald1.hpp"
+#include"boundary_conditions.hpp"
+#include"boundary_gradient.hpp"
+#include"hessianInlet.hpp"
+#include"hessianOutlet.hpp"
 
 using namespace Eigen;
 
@@ -20,7 +20,7 @@ std::vector <MatrixXd> evalddFdWdW(
     const double p);
 
 void evalddFluxdWdW(
-    const struct Flow_options<double> &flo_opts,
+    const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,
@@ -36,8 +36,8 @@ std::vector <MatrixXd> evalddQdWdW(const double gam, const std::vector<double> &
 
 std::vector <SparseMatrix<double> > evalddRdWdW_FD(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     const double dt = 1.0, dx = 1.0;
@@ -48,7 +48,7 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
     for (int Ri = 0; Ri < 3 * n_elem; Ri++) {
         ddRdWdW_FD[Ri] = ddRidWdW_FD;
     }
-    struct Flow_data<double> pert_flow = flow_data;
+    class Flow_data<double> pert_flow = flow_data;
 
     std::vector<double> Q(3 * n_elem, 0);
     double h = 1e-3;
@@ -388,8 +388,8 @@ std::vector <SparseMatrix<double> > evalddRdWdW_FD(
 // Calculates Residual Hessian
 std::vector < SparseMatrix<double> > evalddRdWdW(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     std::vector <SparseMatrix<double> > ddRdWdW(3 * n_elem);
@@ -559,8 +559,8 @@ std::vector < SparseMatrix<double> > evalddRdWdW(
 
 std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     std::vector <SparseMatrix<double> > ddRdWdArea(3 * n_elem);
@@ -570,7 +570,7 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
         ddRdWdArea[Ri] = ddRidWdArea;
     }
 
-    struct Flow_data<double> pert_flow = flow_data;
+    class Flow_data<double> pert_flow = flow_data;
     std::vector<double> pertArea(n_elem + 1, 0);
     std::vector<double> Q(3 * n_elem, 0);
     double h = 1e-4;
@@ -648,8 +648,8 @@ std::vector <SparseMatrix<double> > evalddRdWdArea_FD(
 
 std::vector <SparseMatrix<double> > evalddRdWdArea(
     const std::vector<double> &area,
-	const struct Flow_options<double> &flo_opts,
-	const struct Flow_data<double> &flow_data)
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
 {
     const int n_elem = flo_opts.n_elem;
     const double gam = flo_opts.gam;
@@ -917,7 +917,7 @@ MatrixXd evalddlambdadWdW(
 //
 //}
 void evalddFluxdWdW_scalard(
-    const struct Flow_options<double> &flo_opts,
+    const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,
@@ -1007,7 +1007,7 @@ void evalddFluxdWdW_scalard(
 }
 
 void evalddFluxdWdW(
-    const struct Flow_options<double> &flo_opts,
+    const struct Flow_options &flo_opts,
     const std::vector<double> &W,
     std::vector <MatrixXd> &ddFluxdWdW1,
     std::vector <MatrixXd> &ddFluxdWdW2,

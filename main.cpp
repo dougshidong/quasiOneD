@@ -1,16 +1,16 @@
-#include "structures.h"
+#include "structures.hpp"
 #include <iostream>
 #include <vector>
 #include <fenv.h>
-#include "input.h"
-#include "grid.h"
-#include "spline.h"
-#include "quasiOneD.h"
-#include "second_order_flow.h"
-#include "convert.h"
-#include "optimizer.h"
-#include "oneshot_adjoint.h"
-#include "oneshot_dwdx.h"
+#include "input.hpp"
+#include "grid.hpp"
+#include "spline.hpp"
+#include "quasiOneD.hpp"
+#include "second_order_flow.hpp"
+#include "convert.hpp"
+#include "optimizer.hpp"
+#include "oneshot_adjoint.hpp"
+#include "oneshot_dwdx.hpp"
 #include"petsc.h"
 #include"petscsys.h"
 
@@ -19,7 +19,7 @@ int main(int argc,char **argv)
 {
     feraiseexcept(FE_INVALID | FE_OVERFLOW); // Will crash on Nan or Overflow
 	struct Constants  *const constants			        = new Constants; // Returned
-	struct Flow_options<double> *const flo_opts         = new Flow_options<double>; // Returned
+	struct Flow_options *const flo_opts         = new Flow_options; // Returned
 	struct Optimization_options<double> *const opt_opts = new Optimization_options<double>; // Returned
 	opt_opts->initial_design = new Design<double>;
 	opt_opts->target_design = new Design<double>;
@@ -47,8 +47,8 @@ int main(int argc,char **argv)
 		const struct Design<double> initial_design = *(input_data->optimization_options->initial_design); // Make a copy
         const std::vector<double> area = evalS(initial_design, x, dx);
 
-		struct Flow_options<double> flow_options = *(input_data->flow_options); // Make a copy
-		struct Flow_data<double> flow_data;
+		struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
+		class Flow_data<double> flow_data;
 		flow_data.dt.resize(n_elem_ghost);
 		flow_data.W.resize(3*n_elem_ghost);
 		flow_data.W_stage.resize(3*n_elem_ghost);
@@ -57,14 +57,9 @@ int main(int argc,char **argv)
         quasiOneD(x, area, flow_options, &flow_data);
     }
     else if (abs(input_data->optimization_options->perform_design) == 1) {
-		struct Flow_data<double> flow_data;
-		flow_data.dt.resize(n_elem_ghost);
-		flow_data.W.resize(3*n_elem_ghost);
-		flow_data.W_stage.resize(3*n_elem_ghost);
-		flow_data.residual.resize(3*n_elem_ghost);
-		flow_data.fluxes.resize(3*n_face);
+		class Flow_data<double> flow_data(n_elem);
 
-		const struct Flow_options<double> flow_options = *(input_data->flow_options); // Make a copy
+		const struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 
 		// Target design with sine parametrization
 		printf("Creating target pressure...\n");
@@ -99,14 +94,14 @@ int main(int argc,char **argv)
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);
     } else if (input_data->optimization_options->perform_design >= 2) {
-		struct Flow_data<double> flow_data;
+		class Flow_data<double> flow_data;
 		flow_data.dt.resize(n_elem_ghost);
 		flow_data.W.resize(3*n_elem_ghost);
 		flow_data.W_stage.resize(3*n_elem_ghost);
 		flow_data.residual.resize(3*n_elem_ghost);
 		flow_data.fluxes.resize(3*n_face);
 
-		const struct Flow_options<double> flow_options = *(input_data->flow_options); // Make a copy
+		const struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 
 		// Target design with sine parametrization
 		printf("Creating target pressure...\n");

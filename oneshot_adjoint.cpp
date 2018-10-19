@@ -1,5 +1,5 @@
-#include "oneshot_adjoint.h"
-#include "structures.h"
+#include "oneshot_adjoint.hpp"
+#include "structures.hpp"
 #include<iostream>
 #include<fstream>
 #include<math.h>
@@ -7,17 +7,17 @@
 #include<iomanip>
 #include<Eigen/Dense>
 #include<stdlib.h>//exit
-#include"optimizer.h"
-#include"quasiOneD.h"
-#include"timestep.h"
-#include"fitness.h"
-#include"grid.h"
-#include"gradient.h"
-#include"residuald1.h"
-#include"cost_derivative.h"
-#include"parametrization.h"
-#include"analyticHessian.h"
-#include"output.h"
+#include"optimizer.hpp"
+#include"quasiOneD.hpp"
+#include"timestep.hpp"
+#include"fitness.hpp"
+#include"grid.hpp"
+#include"gradient.hpp"
+#include"residuald1.hpp"
+#include"cost_derivative.hpp"
+#include"parametrization.hpp"
+#include"analyticHessian.hpp"
+#include"output.hpp"
 #include<time.h>
 #include<stdlib.h>     /* srand, rand */
 
@@ -26,7 +26,7 @@ void oneshot_adjoint(
 	const struct Constants &constants,
     const std::vector<double> &x,
 	const std::vector<double> &dx,
-	const struct Flow_options<double> &flo_opts,
+	const struct Flow_options &flo_opts,
 	const struct Optimization_options<double> &opt_opts,
 	const struct Design<double> &initial_design)
 {
@@ -36,7 +36,7 @@ void oneshot_adjoint(
 	int n_elem = flo_opts.n_elem;
 	if(n_elem!=x.size()) abort();
 	int n_dvar = opt_opts.n_design_variables;
-	struct Flow_data<double> flow_data;
+	class Flow_data<double> flow_data;
 	flow_data.dt.resize(n_elem);
 	flow_data.W.resize(3*n_elem);
 	flow_data.W_stage.resize(3*n_elem);
@@ -66,7 +66,7 @@ void oneshot_adjoint(
         flow_data.W[i*3+1] = rho * u;
         flow_data.W[i*3+2] = e;
     }
-	struct Flow_data<double> flow_data_linesearch = flow_data;
+	class Flow_data<double> flow_data_linesearch = flow_data;
 	// **************************************************************************************************************************************
 	// Initialize the adjoint
 	VectorXd pIpW(3*n_elem);

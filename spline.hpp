@@ -1,6 +1,6 @@
 #ifndef SPLINE_H
 #define SPLINE_H
-#include "structures.h"
+#include "structures.hpp"
 #include <vector>
 #include <Eigen/Core>
 

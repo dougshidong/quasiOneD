@@ -1,5 +1,5 @@
-#include "input.h"
-#include "structures.h"
+#include "input.hpp"
+#include "structures.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +12,7 @@
 void inputfile(std::string filename, struct Input_data* const input_data)
 {
 	struct Constants* const constants            = input_data->constants;
-	struct Flow_options<double>* const flo_opts          = input_data->flow_options;
+	struct Flow_options* const flo_opts          = input_data->flow_options;
 	struct Optimization_options<double>* const opt_opts  = input_data->optimization_options;
 
     FILE *file = fopen("input.in", "r");

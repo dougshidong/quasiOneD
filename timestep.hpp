@@ -1,12 +1,12 @@
 #ifndef TIMESTEP_H
 #define TIMESTEP_H
 
-#include "structures.h"
+#include "structures.hpp"
 #include<vector>
 
 template<typename dreal>
 void getDomainResi( 
-	const struct Flow_options<dreal> &flo_opts,
+	const struct Flow_options &flo_opts,
 	const std::vector<dreal> &area,
 	const std::vector<dreal> &W,
 	std::vector<dreal>* const fluxes,
@@ -14,9 +14,9 @@ void getDomainResi(
 
 template<typename dreal>
 void stepInTime(
-	const struct Flow_options<dreal> &flow_options,
+	const struct Flow_options &flow_options,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,
-    struct Flow_data<dreal>* const flow_data);
+    class Flow_data<dreal>* const flow_data);
 
 #endif
