@@ -66,10 +66,11 @@ VectorXd getGradient(
 {
     VectorXd grad(opt_opts.n_design_variables);
     if (gradient_type < 0) {;
-        double pert = 1e-5;
 		// -1 FFD
 		// -2 BFD
 		// -3 CFD
+        double pert = 1e-7;
+        if (gradient_type == -3) pert = 1e-5;
         grad = gradient_FD(gradient_type, cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design, pert);
     } else if (gradient_type == 1) {
         grad = gradient_adjoint(cost_function, x, dx, area, flo_opts, flow_data, opt_opts, design);
@@ -180,7 +181,8 @@ MatrixXd evaldWdDes(
     dRdDes = dRdArea * dAreadDes;
 
     // Evaluate dRdW
-    SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
+    //SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
+    SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, flow_data);
 
     // Solve DWDS
     MatrixXd dWdDes(n_resi, design.n_design_variables);
@@ -287,14 +289,20 @@ VectorXd gradient_adjoint(
     MatrixXd dRdDes(n_resi, n_design_variables);
     dRdDes = dRdArea * dAreadDes;
     // Evaluate dRdW
-    SparseMatrix<double> dRdW_FD = evaldRdW(area, flo_opts, flow_data);
-    SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, flow_data);
 
-    SparseMatrix<double> dRdW_AD = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+    SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
 
-    std::cout<<dRdW<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<dRdW_FD<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<dRdW_AD<<std::endl<<std::endl<<std::endl<<std::endl;
+    SparseMatrix<double> dRdW_AN = evaldRdW(area, flo_opts, flow_data);
+    SparseMatrix<double> dRdW_FD = evaldRdW_FD(area, flo_opts, flow_data);
+    std::cout<<MatrixXd(dRdW_AN)<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<"above is AN"<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<MatrixXd(dRdW_FD)<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<"above is FD"<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<MatrixXd(dRdW)<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<"above is AD"<<std::endl<<std::endl<<std::endl<<std::endl;
+
+    std::cout<<MatrixXd(dRdW_FD-dRdW)<<std::endl<<std::endl<<std::endl<<std::endl;
+    std::cout<<"above is FD - AD"<<std::endl<<std::endl<<std::endl<<std::endl;
 
     // *************************************
     // Solve for Adjoint (1 Flow Eval)

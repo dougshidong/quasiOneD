@@ -73,9 +73,7 @@ void outletBC(
 	//const int n_elem_ghost = flo_opts.n_elem+2;
 	const int n_elem_ghost = flow_data->W.size()/3;
 	const dreal gam = flo_opts.gam;
-    dreal avgc, avgu, dtdx, MachOut;
     dreal eigenvalues[3], Ri[3];
-    dreal dpdx, dudx, du, drho, dp, T;
     dreal rho[2], u[2], e[2], p[2], c[2];
 
     for (int i = 0; i < 2; i++) {
@@ -87,34 +85,39 @@ void outletBC(
     }
 
     // Exit boundary condition
-    avgu = (u[1] + u[0]) / 2;
-    avgc = (c[1] + c[0]) / 2;
-    dtdx = dt0 / dx0;
+    const dreal avgu = (u[1] + u[0]) / 2;
+    const dreal avgc = (c[1] + c[0]) / 2;
+    const dreal dtdx = dt0 / dx0;
     eigenvalues[0] = avgu * dtdx;
     eigenvalues[1] = (avgu + avgc) * dtdx;
     eigenvalues[2] = (avgu - avgc) * dtdx;
 
-    dpdx = p[1] - p[0];
-    dudx = u[1] - u[0];
+    const dreal dpdx = p[1] - p[0];
+    const dreal dudx = u[1] - u[0];
 
     Ri[0] = -eigenvalues[0] * ( rho[1] - rho[0] - dpdx / pow(c[1], 2) );
     Ri[1] = -eigenvalues[1] * ( dpdx + rho[1] * c[1] * dudx );
     Ri[2] = -eigenvalues[2] * ( dpdx - rho[1] * c[1] * dudx );
 
-    MachOut = avgu / avgc;
+    const dreal MachOut = avgu / avgc;
+    dreal dp;
+    //dreal zero = 0.0;
+    //dreal sonic = MachOut-1.0;
+    //dreal avgRi = 0.5*(Ri[1] + Ri[2]);
+    //condassign(dp, sonic, avgRi, zero);
     if (MachOut > 1) {
         dp = 0.5 * (Ri[1] + Ri[2]);
     } else {
         dp = 0;
     }
 
-    drho = Ri[0] + dp / (pow(c[1], 2));
-    du = (Ri[1] - dp) / (rho[1] * c[1]);
+    const dreal drho = Ri[0] + dp / (pow(c[1], 2));
+    const dreal du = (Ri[1] - dp) / (rho[1] * c[1]);
 
     u[1] = u[1] + du;
     rho[1] = rho[1] + drho;
     p[1] = p[1] + dp;
-    T = p[1] / (rho[1] * flo_opts.R);
+    const dreal T = p[1] / (rho[1] * flo_opts.R);
     e[1] = rho[1] * (flo_opts.Cv * T + 0.5 * pow(u[1], 2));
 
     flow_data->residual[(n_elem_ghost - 1) * 3 + 0] = (flow_data->W[(n_elem_ghost - 1) * 3 + 0] - rho[1]) / dtdx;

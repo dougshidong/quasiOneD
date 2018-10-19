@@ -79,7 +79,7 @@ int quasiOneD(
 
         // Calculating the norm of the density residual
         residual_norm = 0;
-        for (int i = 1; i < n_elem+1; i++) {
+        for (int i = 0; i < n_elem+2; i++) {
             residual_norm = residual_norm + pow(flow_data->residual[i*3+0], 2);
 		}
         residual_norm = sqrt(residual_norm);

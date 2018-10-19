@@ -12,7 +12,7 @@ FLOW SOLVER PARAMETERS
 time_scheme flux_scheme scalar_diss
 2           0           0.5
 cfl         flow_tol    flow_maxit
-1.00        1e-14       50000
+1.20        1e-14       50000
 print_freq  print_conv  print_sol
 10          0           0
 *******************************************
@@ -20,7 +20,7 @@ FLOW INPUTS
 gam         R
 1.4         1.0
 mach_inlet  tot_in_T    tot_in_p    out_p_ratio
-1.75        1           1           0.92
+0.75        1           1           0.92
 *******************************************
 DESIGN OPTIMIZATION PARAMETERS
 do_design   des_param   cost_func
@@ -35,4 +35,4 @@ hg          t1g         t2g
 *******************************************
 SPLINE PARAMETERS (n_control_pts = n_dvar + 2)
 n_dvar      degree
-20          4
+10          4
