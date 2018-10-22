@@ -194,7 +194,7 @@ void dWbcdW_adolc(
 	const adouble dt2 = flow_data.dt[last_cell];
 	const adouble dx  = 1.0/n_elem;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1; i++) {
         inletBC(flo_opts, dt1, dx, &aflow_data);
         outletBC(flo_opts, dt2, dx, &aflow_data);
     }
@@ -266,18 +266,25 @@ void dWbcdW_adolc(
     }
     (*dWidWd) = dBidWd;
 
-    if ((identity-dBodWo).norm() <= 1e-12) {
+
+    VectorXcd eigenvalues = (identity - dBodWo).eigenvalues();
+    double min_eig = eigenvalues.real().array().abs().minCoeff();
+    //if ((identity-dBodWo).norm() <= 1e-12) {
+    if (min_eig <= 1e-12) {
         (*dWodWd).setZero();
     } else {
         (*dWodWd) = ((identity - dBodWo).inverse())*dBodWd;
     }
-    (*dWodWd) = dBodWd;
+    std::cout<<(identity - dBodWo)<<std::endl;
+    std::cout<<(identity - dBodWo).eigenvalues()<<std::endl;
+    //(*dWodWd) = dBodWd;
+    std::cout<<(dBodWd).eigenvalues()<<std::endl;
 
     std::vector<double> dBidWi_AN(9), dBidWd_AN(9), dBodWd_AN(9), dBodWo_AN(9);
 	dRdW_BC_inlet(flo_opts, flow_data.W, dBidWi_AN, dBidWd_AN);
 	dRdW_BC_outlet(flo_opts, flow_data.W, dBodWd_AN, dBodWo_AN);
 
-    MatrixXd dBidWi_e(3,3), dBidWd_e(3,3), dBodWd_e(3,3), dBodWo_e(3,3), dWdW_e(3,3);
+    Matrix3d dBidWi_e, dBidWd_e, dBodWd_e, dBodWo_e, dWdW_e;
     for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
             const int k = row * 3 + col;
@@ -312,19 +319,20 @@ void dWbcdW_adolc(
     } else {
         dWdW_e = ((identity - dBodWo_e).inverse())*dBodWd_e;
     }
-    std::cout<<"dWo"<<std::endl<<std::endl;
+    std::cout<<"dWodWd"<<std::endl<<std::endl;
     std::cout<<*dWodWd<<std::endl<<std::endl;
     std::cout<<dWdW_e<<std::endl<<std::endl;
     std::cout<<(*dWodWd-dWdW_e)<<std::endl<<std::endl;
 
+    std::cout<<"dBodWd"<<std::endl<<std::endl;
     std::cout<<dBodWd<<std::endl<<std::endl;
     std::cout<<dBodWd_e<<std::endl<<std::endl;
     std::cout<<(dBodWd-dBodWd_e)<<std::endl<<std::endl;
 
+    std::cout<<"dBodWo"<<std::endl<<std::endl;
     std::cout<<dBodWo<<std::endl<<std::endl;
     std::cout<<dBodWo_e<<std::endl<<std::endl;
     std::cout<<(dBodWo-dBodWo_e)<<std::endl<<std::endl;
     
 
-	myfree2(jac);
 }
