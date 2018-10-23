@@ -17,9 +17,14 @@ VectorXd solve_linear(
     const VectorXd B,
 	const int linear_solver_type,
 	const double tolerance);
-VectorXd solve_linear(
+//VectorXd solve_linear(
+//    const MatrixXd A,
+//    const VectorXd rhs,
+//	const int linear_solver_type,
+//	const double tolerance);
+MatrixXd solve_dense_linear(
     const MatrixXd A,
-    const VectorXd rhs,
+    const MatrixXd rhs,
 	const int linear_solver_type,
 	const double tolerance);
 #endif

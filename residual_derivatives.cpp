@@ -1,12 +1,13 @@
+#include<math.h>
 #include<Eigen/Dense>
 #include<Eigen/Core>
 #include<Eigen/Sparse>
-#include<math.h>
+#include<adolc/adolc.h>
+#include"solve_linear.hpp"
 #include"boundary_conditions.hpp"
 #include"boundary_gradient.hpp"
 #include"timestep.hpp"
 #include"residuald1.hpp"
-#include<adolc/adolc.h>
 
 using namespace Eigen;
 
@@ -258,27 +259,29 @@ void dWbcdW_adolc(
         }
     }
 
-    MatrixXd identity = MatrixXd::Identity(3,3);
+    Matrix3d identity = MatrixXd::Identity(3,3);
     if ((identity-dBidWi).norm() == 0) {
         (*dWidWd).setZero();
     } else {
-        (*dWidWd) = ((identity - dBidWi).inverse())*dBidWd;
+        (*dWidWd) = solve_dense_linear((identity - dBidWi), dBidWd, 0, 1e-16);
     }
-    (*dWidWd) = dBidWd;
+    //(*dWidWd) = dBidWd;
 
 
-    VectorXcd eigenvalues = (identity - dBodWo).eigenvalues();
+    Vector3cd eigenvalues = (identity - dBodWo).eigenvalues();
     double min_eig = eigenvalues.real().array().abs().minCoeff();
     //if ((identity-dBodWo).norm() <= 1e-12) {
-    if (min_eig <= 1e-12) {
+    if ((identity-dBodWo).norm() == 0) {
+    //if (min_eig <= 1e-12) {
         (*dWodWd).setZero();
     } else {
-        (*dWodWd) = ((identity - dBodWo).inverse())*dBodWd;
+        (*dWodWd) = solve_dense_linear((identity - dBodWo), dBodWd, 0, 1e-16);
     }
-    std::cout<<(identity - dBodWo)<<std::endl;
-    std::cout<<(identity - dBodWo).eigenvalues()<<std::endl;
-    //(*dWodWd) = dBodWd;
-    std::cout<<(dBodWd).eigenvalues()<<std::endl;
+    //std::cout<<"(identity - dBodWo)"<<std::endl;
+    //std::cout<<(identity - dBodWo)<<std::endl;
+    //std::cout<<"(identity - dBodWo).eigenvalues())"<<std::endl;
+    //std::cout<<(identity - dBodWo).eigenvalues()<<std::endl;
+    //std::cout<<(dBodWd).eigenvalues()<<std::endl;
 
     std::vector<double> dBidWi_AN(9), dBidWd_AN(9), dBodWd_AN(9), dBodWo_AN(9);
 	dRdW_BC_inlet(flo_opts, flow_data.W, dBidWi_AN, dBidWd_AN);
@@ -300,18 +303,18 @@ void dWbcdW_adolc(
         dWdW_e = ((identity - dBidWi_e).inverse())*dBidWd_e;
     }
 
-    std::cout<<"dWi"<<std::endl<<std::endl;
-    std::cout<<*dWidWd<<std::endl<<std::endl;
-    std::cout<<dWdW_e<<std::endl<<std::endl;
-    std::cout<<(*dWidWd-dWdW_e)<<std::endl<<std::endl;
+    //std::cout<<"dWi"<<std::endl<<std::endl;
+    //std::cout<<*dWidWd<<std::endl<<std::endl;
+    //std::cout<<dWdW_e<<std::endl<<std::endl;
+    //std::cout<<(*dWidWd-dWdW_e)<<std::endl<<std::endl;
 
-    std::cout<<dBidWd<<std::endl<<std::endl;
-    std::cout<<dBidWd_e<<std::endl<<std::endl;
-    std::cout<<(dBidWd-dBidWd_e)<<std::endl<<std::endl;
+    //std::cout<<dBidWd<<std::endl<<std::endl;
+    //std::cout<<dBidWd_e<<std::endl<<std::endl;
+    //std::cout<<(dBidWd-dBidWd_e)<<std::endl<<std::endl;
 
-    std::cout<<dBidWi<<std::endl<<std::endl;
-    std::cout<<dBidWi_e<<std::endl<<std::endl;
-    std::cout<<(dBidWi-dBidWi_e)<<std::endl<<std::endl;
+    //std::cout<<dBidWi<<std::endl<<std::endl;
+    //std::cout<<dBidWi_e<<std::endl<<std::endl;
+    //std::cout<<(dBidWi-dBidWi_e)<<std::endl<<std::endl;
 
 
     if ((identity-dBodWo_e).norm() == 0) {
@@ -319,20 +322,20 @@ void dWbcdW_adolc(
     } else {
         dWdW_e = ((identity - dBodWo_e).inverse())*dBodWd_e;
     }
-    std::cout<<"dWodWd"<<std::endl<<std::endl;
-    std::cout<<*dWodWd<<std::endl<<std::endl;
-    std::cout<<dWdW_e<<std::endl<<std::endl;
-    std::cout<<(*dWodWd-dWdW_e)<<std::endl<<std::endl;
+    //std::cout<<"dWodWd"<<std::endl<<std::endl;
+    //std::cout<<*dWodWd<<std::endl<<std::endl;
+    //std::cout<<dWdW_e<<std::endl<<std::endl;
+    //std::cout<<(*dWodWd-dWdW_e)<<std::endl<<std::endl;
 
-    std::cout<<"dBodWd"<<std::endl<<std::endl;
-    std::cout<<dBodWd<<std::endl<<std::endl;
-    std::cout<<dBodWd_e<<std::endl<<std::endl;
-    std::cout<<(dBodWd-dBodWd_e)<<std::endl<<std::endl;
+    //std::cout<<"dBodWd"<<std::endl<<std::endl;
+    //std::cout<<dBodWd<<std::endl<<std::endl;
+    //std::cout<<dBodWd_e<<std::endl<<std::endl;
+    //std::cout<<(dBodWd-dBodWd_e)<<std::endl<<std::endl;
 
-    std::cout<<"dBodWo"<<std::endl<<std::endl;
-    std::cout<<dBodWo<<std::endl<<std::endl;
-    std::cout<<dBodWo_e<<std::endl<<std::endl;
-    std::cout<<(dBodWo-dBodWo_e)<<std::endl<<std::endl;
+    //std::cout<<"dBodWo"<<std::endl<<std::endl;
+    //std::cout<<dBodWo<<std::endl<<std::endl;
+    //std::cout<<dBodWo_e<<std::endl<<std::endl;
+    //std::cout<<(dBodWo-dBodWo_e)<<std::endl<<std::endl;
     
 
 }
