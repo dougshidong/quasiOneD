@@ -8,9 +8,7 @@ template<typename dreal>
 void getDomainResi( 
 	const struct Flow_options &flo_opts,
 	const std::vector<dreal> &area,
-	const std::vector<dreal> &W,
-	std::vector<dreal>* const fluxes,
-	std::vector<dreal>* const residual);
+    class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
 void stepInTime(

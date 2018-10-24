@@ -9,6 +9,7 @@
 #include<stdlib.h>//exit
 #include"optimizer.hpp"
 #include"quasiOneD.hpp"
+#include"convert.hpp"
 #include"timestep.hpp"
 #include"fitness.hpp"
 #include"grid.hpp"

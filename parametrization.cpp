@@ -14,9 +14,7 @@ MatrixXd evaldAreadDes_FD(
     const struct Design<double> &design)
 {
 	const int n_elem = x.size()-1;
-    const int n_resi = n_elem*3;
 	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
 
 	const int n_dvar = design.n_design_variables;
     MatrixXd dAreadDes(n_face, n_dvar);
@@ -48,9 +46,7 @@ MatrixXd evaldAreadDes(
     const struct Design<double> &design)
 {
 	const int n_elem = x.size()-1;
-    const int n_resi = n_elem*3;
 	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
 
 	const int n_dvar = design.n_design_variables;
     MatrixXd dAreadDes(n_face, n_dvar);
@@ -112,9 +108,7 @@ MatrixXd evalddAreadDesdDes_FD(
     const int Si)
 {
 	const int n_elem = x.size()-1;
-    const int n_resi = n_elem*3;
 	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
     double pertdi, pertdj;
     double pert = 1e-2;
     std::vector<double> area(n_face);
@@ -205,9 +199,7 @@ std::vector <MatrixXd> evalddAreadDesdDes(
 {
     const int PI = atan(1.0) * 4.0;
 	const int n_elem = x.size()-1;
-    const int n_resi = n_elem*3;
 	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
     const int n_dvar = design.n_design_variables;
     std::vector <MatrixXd> ddAreadDesdDes(n_face);
     MatrixXd ddAreaidDesdDes(n_dvar, n_dvar);

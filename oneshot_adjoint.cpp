@@ -9,11 +9,13 @@
 #include<stdlib.h>//exit
 #include"optimizer.hpp"
 #include"quasiOneD.hpp"
+#include"convert.hpp"
 #include"timestep.hpp"
 #include"fitness.hpp"
 #include"grid.hpp"
 #include"gradient.hpp"
 #include"residuald1.hpp"
+#include"residual_derivatives.hpp"
 #include"cost_derivative.hpp"
 #include"parametrization.hpp"
 #include"analyticHessian.hpp"
@@ -34,14 +36,9 @@ void oneshot_adjoint(
 	// Initialize the flow
 	const double gam = flo_opts.gam;
 	int n_elem = flo_opts.n_elem;
-	if(n_elem!=x.size()) abort();
+	if(n_elem!=x.size()-1) abort();
 	int n_dvar = opt_opts.n_design_variables;
-	class Flow_data<double> flow_data;
-	flow_data.dt.resize(n_elem);
-	flow_data.W.resize(3*n_elem);
-	flow_data.W_stage.resize(3*n_elem);
-	flow_data.fluxes.resize(3*(n_elem+1)); // At the faces
-	flow_data.residual.resize(3*n_elem);
+	class Flow_data<double> flow_data(n_elem);
     // Inlet flow properties
     double inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
     double p = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
@@ -55,7 +52,7 @@ void oneshot_adjoint(
 	flow_data.W[0*3+2] = e;
     // Flow properties initialization with outlet
     // State Vectors Initialization
-    for (int i = 1; i < n_elem; i++) {
+    for (int i = 1; i < n_elem+2; i++) {
         p = flo_opts.outlet_p;
         rho = p / (flo_opts.R * inlet_T);
         c = sqrt(gam * p / rho);
@@ -121,40 +118,33 @@ void oneshot_adjoint(
     int iteration = 0;
 
     // Design Loop
-	//quasiOneD(x, area, flo_opts, &flow_data); // Start with converged flow
+	quasiOneD(x, area, flo_opts, &flow_data); // Start with converged flow
 	// Calculating the norm of the density residual
 
-	for (int i = 1; i < flo_opts.flow_maxit && residual_norm > flo_opts.flow_tol; i++) {
-		stepInTime(flo_opts, area, dx, &flow_data);
-		residual_norm = 0;
-		for (int k = 0; k < n_elem; k++) {
-			for (int i = 0; i < n_elem; i++) {
-				residual_norm = residual_norm + pow(flow_data.residual[i*3+k], 2);
-			}
-		}
-		residual_norm = sqrt(residual_norm);
-	}
+	//for (int i = 1; i < flo_opts.flow_maxit && residual_norm > flo_opts.flow_tol; i++) {
+	//	stepInTime(flo_opts, area, dx, &flow_data);
+	//	residual_norm = 0;
+	//	for (int k = 0; k < n_elem; k++) {
+	//		for (int i = 0; i < n_elem; i++) {
+	//			residual_norm = residual_norm + pow(flow_data.residual[i*3+k], 2);
+	//		}
+	//	}
+	//	residual_norm = sqrt(residual_norm);
+	//}
 	// Get adjoint update
 	pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
 	auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-	pGpW = (*max_dt)/dx[1] *evaldRdW(area, flo_opts, flow_data);
+    SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
 	std::cout<<pGpW<<std::endl;
-	pGpW.coeffRef(0,0) = 1e-9;
-	pGpW.coeffRef(1,1) = 1e-9;
-	pGpW.coeffRef(2,2) = 1e-9;
-	std::cout<<pGpW<<std::endl;
-	pGpW = identity - pGpW;
+	// G = w - dt/dx * R
+	pGpW = identity - (*max_dt)/dx[1] * dRdW;
 	//pGpW = evaldRdW(area, flo_opts, flow_data);
-	std::cout<<pGpW<<std::endl;
-    MatrixXd pGpA = MatrixXd( pGpW.transpose() );
-    std::cout<< pGpA.eigenvalues() <<std::endl;
-    abort();
 
-	double step_size = 1.0;
 	double adjoint_update_norm = 1;
-	for (int i = 1; i < 20000 && adjoint_update_norm > 1e-12; i++) {
+	for (int i = 0; i < 10000 && adjoint_update_norm > 1e-12; i++) {
 		adjoint = pIpW + pGpW.transpose()*adjoint;
 
+		//const double step_size = 1.0;
 		//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
 		//adjoint = (1-step_size)*adjoint - step_size*adjoint_update;
 		//adjoint_update_norm = adjoint_update.norm();
@@ -163,20 +153,15 @@ void oneshot_adjoint(
 		//adjoint = pIpW + pGpW.transpose()*adjoint;
 		//adjoint_update = adjoint - old_adj;
 		//adjoint_update_norm = adjoint_update.norm();
-		//MatrixXd pGpA = MatrixXd( (1-step_size)*identity - step_size*(pGpW-identity) );
-		MatrixXd pGpA = MatrixXd( pGpW.transpose() );
-		std::cout<< pGpA.eigenvalues() <<std::endl;
-		//JacobiSVD<MatrixXd> svd(pGpA);
-		//std::cout<< svd.singularValues() <<std::endl;
 		VectorXd residual = adjoint - (adjoint.transpose()*pGpW).transpose() - pIpW;
-		printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
 		printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, residual.norm());
 	}
 	VectorXd residual = adjoint - (adjoint.transpose()*pGpW).transpose() - pIpW;
 
 	std::cout<< residual <<std::endl<<std::endl;
 
-	pGpW = identity - evaldRdW(area, flo_opts, flow_data);
+    dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+	pGpW = identity - dRdW;
 	SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver0;
 	slusolver0.compute(identity.transpose() - pGpW.transpose());
 	if (slusolver0.info() != 0)
@@ -184,14 +169,14 @@ void oneshot_adjoint(
 	VectorXd adjoint2 = slusolver0.solve(pIpW);
 
 	SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
-	slusolver1.compute(evaldRdW(area, flo_opts, flow_data).transpose());
+	slusolver1.compute(dRdW.transpose());
 	if (slusolver1.info() != 0)
 		std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
 	VectorXd psi = slusolver1.solve(pIpW);
 	std::cout<<adjoint-adjoint2<<std::endl<<std::endl;
 	std::cout<<adjoint-psi<<std::endl<<std::endl;
 	std::cout<<psi-adjoint2<<std::endl<<std::endl;
-	abort();
+
     while(
 		(iteration < opt_opts.opt_maxit) &&
 
@@ -203,7 +188,7 @@ void oneshot_adjoint(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 1; i < 20000 && residual_norm > 1e-12; i++) {
+		for (int i = 0; i < 1 && residual_norm > 1e-12; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
 			// Calculating the norm of the density residual
@@ -219,11 +204,12 @@ void oneshot_adjoint(
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
         auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-		pGpW = identity - (*max_dt)/dx[1] *evaldRdW(area, flo_opts, flow_data);
+		dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+		pGpW = identity - (*max_dt)/dx[1] * dRdW;
 
-		double step_size =0.1;// 1e-1;
+		double step_size = 1.0;// 1e-1;
 		double adjoint_update_norm = 1;
-		for (int i = 1; i < 20000 && adjoint_update_norm > 1e-12; i++) {
+		for (int i = 0; i < 1 && adjoint_update_norm > 1e-12; i++) {
 			//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
 			//adjoint = adjoint + step_size*adjoint_update;
 			//adjoint_update_norm = adjoint_update.norm();
@@ -232,20 +218,13 @@ void oneshot_adjoint(
 			//adjoint = adjoint - step_size*adjoint_update;
 			//adjoint_update_norm = adjoint_update.norm();
 
-
 			adjoint_update = pIpW + pGpW.transpose()*adjoint;
-			adjoint = adjoint - step_size*(adjoint - adjoint_update);
 			adjoint_update_norm = (adjoint_update-adjoint).norm();
+			adjoint = adjoint_update;
 			//std::cout<<MatrixXd( identity - step_size*(identity+pGpW) ).eigenvalues()<<std::endl;
 			printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
-			SparseLU <SparseMatrix<double>, COLAMDOrdering< int > > slusolver1;
-			slusolver1.compute(evaldRdW(area, flo_opts, flow_data).transpose());
-			if (slusolver1.info() != 0)
-				std::cout<<"Factorization failed. Error: "<<slusolver1.info()<<std::endl;
-			VectorXd psi = slusolver1.solve(pIpW);
-			std::cout<<adjoint+psi<<std::endl;
 		}
-		step_size = 1e+1;
+		step_size = 1e+0;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -256,7 +235,7 @@ void oneshot_adjoint(
 		gradient = pIpX - (*max_dt)/dx[1]*pGpX.transpose()*adjoint;
 
         if (opt_opts.descent_type == 1) {
-            search_direction =  -gradient;
+            search_direction =  gradient;
 			design_change = step_size*search_direction;
         } else if (opt_opts.descent_type == 2) {
             if (iteration > 1) {

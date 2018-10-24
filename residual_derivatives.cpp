@@ -33,7 +33,7 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 	int n_dep   = 0; // Expect n_elem
 
 	const int n_state = 3;
-	const int n_indep_w = n_state*(n_elem+2);
+	const int n_indep_w = n_state*(n_elem);
 	const int n_indep_area = n_face;
 	const int n_indep_expected = n_indep_w + n_indep_area;
 	const int n_dep_expected = n_state*n_elem;
@@ -41,7 +41,7 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 	double *dep = myalloc1(n_dep_expected); // freed
 
     class Flow_data<adouble> aflow_data(n_elem);
-	for (int iw_elem = 0; iw_elem < n_elem+2; iw_elem++) {
+	for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
 		for (int iw_state = 0; iw_state < n_state; iw_state++) {
 			const int ki = iw_elem*n_state + iw_state;
 			indep[n_indep] = flow_data.W[ki];
@@ -56,7 +56,7 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 		n_indep++;
     }
 
-    getDomainResi(flo_opts, aarea, aflow_data.W, &aflow_data.fluxes, &aflow_data.residual);
+    getDomainResi(flo_opts, aarea, &aflow_data);
 
 	for (int ir_elem = 1; ir_elem < n_elem+1; ir_elem++) {
 		for (int ir_state = 0; ir_state < n_state; ir_state++) {
@@ -89,8 +89,6 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 	myfree1(indep);
 	myfree1(dep);
 
-	printf("\n");
-	printf("\n");
     SparseMatrix<double> dRdW(n_resi, n_resi);
     const int n_stencil = 3;
     dRdW.reserve(n_elem*n_state*n_state*n_stencil);
@@ -101,48 +99,46 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 
 			for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
 				for (int iw_state = 0; iw_state < n_state; iw_state++) {
-					const int col_withBC = iw_elem*n_state + iw_state;
 					const int col = (iw_elem-1)*n_state + iw_state;
-					dRdW.insert(row, col) = jac[row][col_withBC];
+					dRdW.insert(row, col) = jac[row][col];
 				}
 			}
 		}
 	}
 
-    Matrix3d dWidWd, dWodWd, dRdW_block;
-    dWbcdW_adolc(flo_opts, flow_data, &dWidWd, &dWodWd);
+    //Matrix3d dWidWd, dWodWd, dRdW_block;
+    //dWbcdW_adolc(flo_opts, flow_data, &dWidWd, &dWodWd);
 
-    for (int row = 0; row < n_state; row++) {
-        for (int col = 0; col < n_state; col++) {
-            dRdW_block(row, col) = jac[row][col];
-        }
-    }
-    dRdW_block = dRdW_block * dWidWd;
-    for (int row = 0; row < n_state; row++) {
-        for (int col = 0; col < n_state; col++) {
-            dRdW.coeffRef(row, col) += dRdW_block(row, col);
-        }
-    }
+    //for (int row = 0; row < n_state; row++) {
+    //    for (int col = 0; col < n_state; col++) {
+    //        dRdW_block(row, col) = jac[row][col];
+    //    }
+    //}
+    //dRdW_block = dRdW_block * dWidWd;
+    //for (int row = 0; row < n_state; row++) {
+    //    for (int col = 0; col < n_state; col++) {
+    //        dRdW.coeffRef(row, col) += dRdW_block(row, col);
+    //    }
+    //}
 
-    const int row_offset = n_state*(n_elem-1);
-    int col_offset = n_state*(n_elem+1);
-    for (int row = 0; row < n_state; row++) {
-        for (int col = 0; col < n_state; col++) {
-            dRdW_block(row, col) = jac[row+row_offset][col+col_offset];
-        }
-    }
+    //const int row_offset = n_state*(n_elem-1);
+    //int col_offset = n_state*(n_elem+1);
+    //for (int row = 0; row < n_state; row++) {
+    //    for (int col = 0; col < n_state; col++) {
+    //        dRdW_block(row, col) = jac[row+row_offset][col+col_offset];
+    //    }
+    //}
 
-    dRdW_block = dRdW_block * dWodWd;
-    col_offset = n_state*(n_elem-1);
-    for (int row = 0; row < n_state; row++) {
-        for (int col = 0; col < n_state; col++) {
-            dRdW.coeffRef(row+row_offset, col+col_offset) += dRdW_block(row, col);
-        }
-    }
-    std::cout<<dRdW_block<<std::endl;
+    //dRdW_block = dRdW_block * dWodWd;
+    //col_offset = n_state*(n_elem-1);
+    //for (int row = 0; row < n_state; row++) {
+    //    for (int col = 0; col < n_state; col++) {
+    //        dRdW.coeffRef(row+row_offset, col+col_offset) += dRdW_block(row, col);
+    //    }
+    //}
 
 
-	myfree2(jac);
+	//myfree2(jac);
 
     return dRdW;
 }
@@ -154,8 +150,6 @@ void dWbcdW_adolc(
 	Matrix3d *const dWodWd)
 {
 	const int n_elem = flo_opts.n_elem;
-    const int n_resi = n_elem*3;
-	const int n_face = n_elem+1;
 
     const int tag = 101;
     trace_on(tag);
@@ -196,8 +190,8 @@ void dWbcdW_adolc(
 	const adouble dx  = 1.0/n_elem;
 
     for (int i = 0; i < 1; i++) {
-        inletBC(flo_opts, dt1, dx, &aflow_data);
-        outletBC(flo_opts, dt2, dx, &aflow_data);
+        inletBC(flo_opts, &aflow_data);
+        outletBC(flo_opts, &aflow_data);
     }
 
 	{  // Inlet
@@ -211,7 +205,7 @@ void dWbcdW_adolc(
 	{  // Outlet
         const int iw_elem = 1;
 		for (int iw_state = 0; iw_state < n_state; iw_state++) {
-			const int ki = (n_elem+iw_elem)*n_state + iw_state;
+			//const int ki = (n_elem+iw_elem)*n_state + iw_state;
 			const int ki2 = (2+iw_elem)*n_state + iw_state;
 			aflow_data.W[ki2] >>= dep[n_dep];
 			n_dep++;
@@ -265,43 +259,44 @@ void dWbcdW_adolc(
     } else {
         (*dWidWd) = solve_dense_linear((identity - dBidWi), dBidWd, 0, 1e-16);
     }
-    //(*dWidWd) = dBidWd;
+    (*dWidWd) = dBidWd;
 
 
-    Vector3cd eigenvalues = (identity - dBodWo).eigenvalues();
-    double min_eig = eigenvalues.real().array().abs().minCoeff();
+    //Vector3cd eigenvalues = (identity - dBodWo).eigenvalues();
+    //double min_eig = eigenvalues.real().array().abs().minCoeff();
+    //if (min_eig <= 1e-12) {
     //if ((identity-dBodWo).norm() <= 1e-12) {
     if ((identity-dBodWo).norm() == 0) {
-    //if (min_eig <= 1e-12) {
         (*dWodWd).setZero();
     } else {
         (*dWodWd) = solve_dense_linear((identity - dBodWo), dBodWd, 0, 1e-16);
     }
+	(*dWodWd) = dBodWd;
     //std::cout<<"(identity - dBodWo)"<<std::endl;
     //std::cout<<(identity - dBodWo)<<std::endl;
     //std::cout<<"(identity - dBodWo).eigenvalues())"<<std::endl;
     //std::cout<<(identity - dBodWo).eigenvalues()<<std::endl;
     //std::cout<<(dBodWd).eigenvalues()<<std::endl;
 
-    std::vector<double> dBidWi_AN(9), dBidWd_AN(9), dBodWd_AN(9), dBodWo_AN(9);
-	dRdW_BC_inlet(flo_opts, flow_data.W, dBidWi_AN, dBidWd_AN);
-	dRdW_BC_outlet(flo_opts, flow_data.W, dBodWd_AN, dBodWo_AN);
+    //std::vector<double> dBidWi_AN(9), dBidWd_AN(9), dBodWd_AN(9), dBodWo_AN(9);
+	//dRdW_BC_inlet(flo_opts, flow_data.W, dBidWi_AN, dBidWd_AN);
+	//dRdW_BC_outlet(flo_opts, flow_data.W, dBodWd_AN, dBodWo_AN);
 
-    Matrix3d dBidWi_e, dBidWd_e, dBodWd_e, dBodWo_e, dWdW_e;
-    for (int row = 0; row < 3; row++) {
-        for (int col = 0; col < 3; col++) {
-            const int k = row * 3 + col;
-            dBidWi_e(row,col) = dBidWi_AN.at(k);
-            dBidWd_e(row,col) = dBidWd_AN.at(k);
-            dBodWo_e(row,col) = dBodWo_AN.at(k);
-            dBodWd_e(row,col) = dBodWd_AN.at(k);
-        }
-    }
-    if ((identity-dBidWi_e).norm() == 0) {
-        dWdW_e.setZero();
-    } else {
-        dWdW_e = ((identity - dBidWi_e).inverse())*dBidWd_e;
-    }
+    //Matrix3d dBidWi_e, dBidWd_e, dBodWd_e, dBodWo_e, dWdW_e;
+    //for (int row = 0; row < 3; row++) {
+    //    for (int col = 0; col < 3; col++) {
+    //        const int k = row * 3 + col;
+    //        dBidWi_e(row,col) = dBidWi_AN.at(k);
+    //        dBidWd_e(row,col) = dBidWd_AN.at(k);
+    //        dBodWo_e(row,col) = dBodWo_AN.at(k);
+    //        dBodWd_e(row,col) = dBodWd_AN.at(k);
+    //    }
+    //}
+    //if ((identity-dBidWi_e).norm() == 0) {
+    //    dWdW_e.setZero();
+    //} else {
+    //    dWdW_e = ((identity - dBidWi_e).inverse())*dBidWd_e;
+    //}
 
     //std::cout<<"dWi"<<std::endl<<std::endl;
     //std::cout<<*dWidWd<<std::endl<<std::endl;
@@ -317,11 +312,11 @@ void dWbcdW_adolc(
     //std::cout<<(dBidWi-dBidWi_e)<<std::endl<<std::endl;
 
 
-    if ((identity-dBodWo_e).norm() == 0) {
-        dWdW_e.setZero();
-    } else {
-        dWdW_e = ((identity - dBodWo_e).inverse())*dBodWd_e;
-    }
+    //if ((identity-dBodWo_e).norm() == 0) {
+    //    dWdW_e.setZero();
+    //} else {
+    //    dWdW_e = ((identity - dBodWo_e).inverse())*dBodWd_e;
+    //}
     //std::cout<<"dWodWd"<<std::endl<<std::endl;
     //std::cout<<*dWodWd<<std::endl<<std::endl;
     //std::cout<<dWdW_e<<std::endl<<std::endl;

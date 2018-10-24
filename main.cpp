@@ -34,8 +34,6 @@ int main(int argc,char **argv)
 	inputfile(input_filename, input_data);
 
 	const int n_elem = input_data->flow_options->n_elem;
-	const int n_elem_ghost = n_elem+2;
-	const int n_face = input_data->flow_options->n_elem+1;
 
 
     std::vector<double> x = uniform_x(input_data->flow_options->grid_xstart, 
@@ -48,12 +46,7 @@ int main(int argc,char **argv)
         const std::vector<double> area = evalS(initial_design, x, dx);
 
 		struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
-		class Flow_data<double> flow_data;
-		flow_data.dt.resize(n_elem_ghost);
-		flow_data.W.resize(3*n_elem_ghost);
-		flow_data.W_stage.resize(3*n_elem_ghost);
-		flow_data.fluxes.resize(3*n_face);
-		flow_data.residual.resize(3*n_elem_ghost);
+		class Flow_data<double> flow_data(n_elem);
         quasiOneD(x, area, flow_options, &flow_data);
     }
     else if (abs(input_data->optimization_options->perform_design) == 1) {
@@ -94,12 +87,7 @@ int main(int argc,char **argv)
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);
     } else if (input_data->optimization_options->perform_design >= 2) {
-		class Flow_data<double> flow_data;
-		flow_data.dt.resize(n_elem_ghost);
-		flow_data.W.resize(3*n_elem_ghost);
-		flow_data.W_stage.resize(3*n_elem_ghost);
-		flow_data.residual.resize(3*n_elem_ghost);
-		flow_data.fluxes.resize(3*n_face);
+		class Flow_data<double> flow_data(n_elem);
 
 		const struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 
@@ -108,7 +96,7 @@ int main(int argc,char **argv)
         std::vector<double> area = evalS(*(input_data->optimization_options->target_design), x, dx);
         quasiOneD(x, area, flow_options, &flow_data);
 
-		input_data->optimization_options->target_pressure.resize(n_elem);
+		input_data->optimization_options->target_pressure.resize(n_elem+2);
 		get_all_p(flow_options.gam, flow_data.W, input_data->optimization_options->target_pressure);
 
 		const struct Optimization_options<double> opt_options = *(input_data->optimization_options); // Make a copy
@@ -131,7 +119,7 @@ int main(int argc,char **argv)
 
 		if (input_data->optimization_options->perform_design == 2) {
 			oneshot_adjoint(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
-		} else if (input_data->optimization_options->perform_design >= 2) {
+		} else if (input_data->optimization_options->perform_design >= 3) {
 			oneshot_dwdx(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
 		}
 

@@ -17,21 +17,21 @@ template<typename dreal>
 void getDomainResi( 
 	const struct Flow_options &flo_opts,
 	const std::vector<dreal> &area,
-	const std::vector<dreal> &W,
-	std::vector<dreal>* const fluxes,
-	std::vector<dreal>* const residual)
+    class Flow_data<dreal>* const flow_data)
 {
-	getFlux(flo_opts, W, fluxes);
+	inletBC(flo_opts, flow_data);
+	outletBC(flo_opts, flow_data);
+	getFlux(flo_opts, flow_data->W, &(flow_data->fluxes));
 	const int n_elem = flo_opts.n_elem;
     for (int i_state = 0; i_state < 3; i_state++) {
         for (int i_res = 1; i_res < n_elem+1; i_res++) {
             const int kim = (i_res - 1) * 3 + i_state;
             const int ki  = (i_res + 0) * 3 + i_state;
-            (*residual)[ki] = (*fluxes)[ki] * area[i_res] - (*fluxes)[kim] * area[i_res-1];
+            flow_data->residual[ki] = flow_data->fluxes[ki] * area[i_res] - flow_data->fluxes[kim] * area[i_res-1];
 
 			if (i_state==1) { // Source Term
-				dreal p = get_p(flo_opts.gam, W[i_res*3+0], W[i_res*3+1], W[i_res*3+2]);
-				(*residual)[ki] -= p * (area[i_res] - area[i_res-1]);
+				dreal p = get_p(flo_opts.gam, flow_data->W[i_res*3+0], flow_data->W[i_res*3+1], flow_data->W[i_res*3+2]);
+				flow_data->residual[ki] -= p * (area[i_res] - area[i_res-1]);
 			}
         }
     }
@@ -39,15 +39,11 @@ void getDomainResi(
 template void getDomainResi<double>( 
 	const struct Flow_options &flo_opts,
 	const std::vector<double> &area,
-	const std::vector<double> &W,
-	std::vector<double>* const fluxes,
-	std::vector<double>* const residual);
+    class Flow_data<double>* const flow_data);
 template void getDomainResi<adouble>( 
 	const struct Flow_options &flo_opts,
 	const std::vector<adouble> &area,
-	const std::vector<adouble> &W,
-	std::vector<adouble>* const fluxes,
-	std::vector<adouble>* const residual);
+    class Flow_data<adouble>* const flow_data);
 
 template<typename dreal>
 void EulerExplicitStep(
@@ -93,8 +89,8 @@ void stepInTime(
     } else if (flo_opts.time_scheme == 4) {
         abort();//crankNicolson(area, dx, dt, flow_data);
     }
-	inletBC(flo_opts, flow_data->dt[first_cell], dx[first_cell], flow_data);
-	outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
+	//inletBC(flo_opts, flow_data->dt[first_cell], dx[first_cell], flow_data);
+	//outletBC(flo_opts, flow_data->dt[last_cell], dx[last_cell], flow_data);
 }
 template void stepInTime(
 	const struct Flow_options &flo_opts,
@@ -146,7 +142,7 @@ void EulerExplicitStep(
     const std::vector<dreal> &dx,
     class Flow_data<dreal>* const flow_data)
 {
-    getDomainResi(flo_opts, area, flow_data->W, &flow_data->fluxes, &flow_data->residual);
+    getDomainResi(flo_opts, area, flow_data);
 
 	int n_elem = flo_opts.n_elem;
     for (int k = 0; k < 3; k++){
@@ -178,7 +174,7 @@ void jamesonrk(
     // 1-4 Stage
     for (int r = 1; r < 5; r++) {
         // Calculate Residuals
-		getDomainResi(flo_opts, area, flow_data->W_stage, &flow_data->fluxes, &flow_data->residual);
+		getDomainResi(flo_opts, area, flow_data);
         // Step in RK time
         for (int k = 0; k < 3; k++) {
             for (int i = 1; i < n_elem+1; i++) {

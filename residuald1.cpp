@@ -43,7 +43,6 @@ SparseMatrix<double> evaldRdW(
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
 	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
 
     SparseMatrix<double> dRdW(n_resi, n_resi);
     dRdW.reserve(9*n_resi);
@@ -63,7 +62,7 @@ SparseMatrix<double> evaldRdW(
 
     // Input 4 lines where BC Jacobians occur
     // psi(1), psi(2), psi(n-1), psi(n)
-    int Ri, Wi;
+    int Wi;
     for (int Ri = 1; Ri < n_elem + 1; Ri++) {
         // dR/dWLeft
         const int iFace_left = Ri-1;
@@ -156,7 +155,6 @@ SparseMatrix<double> evaldRdW(
         for (int col = 0; col < 3; col++) {
             const int irow_glob = (Ri_first-1) * 3 + row;
             const int icol_glob = (Wi_first-1) * 3 + col;
-            const int k = row * 3 + col;
             dRdW.coeffRef(irow_glob, icol_glob) += dFluxdW_dWdW_e(row, col);
         }
     }
@@ -185,7 +183,6 @@ SparseMatrix<double> evaldRdW(
         for (int col = 0; col < 3; col++) {
             const int irow_glob = (Ri_last-1) * 3 + row;
             const int icol_glob = (Wi_last-1) * 3 + col;
-            const int k = row * 3 + col;
             dRdW.coeffRef(irow_glob, icol_glob) += dFluxdW_dWdW_e(row, col);
         }
     }
@@ -381,9 +378,7 @@ void dFluxdW_scalard(
     std::vector<double> &dFluxdWR)
 {
 	const int n_elem = flo_opts.n_elem;
-    const int n_resi = n_elem*3;
 	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
 
 	const double gam = flo_opts.gam;
 	const double scalar_d_eps = flo_opts.scalar_d_eps;
@@ -497,7 +492,6 @@ MatrixXd evaldRdArea(
     MatrixXd dRdArea(n_resi, n_face);
 
     std::vector<double> Q(n_resi, 0);
-    int Si, kS;
     dRdArea.setZero();
     for (int Ri = 1; Ri < n_elem+1; Ri++)
     {
@@ -544,13 +538,15 @@ MatrixXd evaldRdArea_FD(
             pert_flow1 = flow_data;
             pert_area1.at(Si) = area.at(Si) + pertA;
 
-            getDomainResi(flo_opts, pert_area1, pert_flow1.W, &(pert_flow1.fluxes), &(pert_flow1.residual));
+            //getDomainResi(flo_opts, pert_area1, pert_flow1.W, &(pert_flow1.fluxes), &(pert_flow1.residual));
+            getDomainResi(flo_opts, pert_area1, &pert_flow1);
 
             pert_area2 = area;
             pert_flow2 = flow_data;
             pert_area2.at(Si) = area.at(Si) - pertA;
 
-            getDomainResi(flo_opts, pert_area2, pert_flow2.W, &(pert_flow2.fluxes), &(pert_flow2.residual));
+            //getDomainResi(flo_opts, pert_area2, pert_flow2.W, &(pert_flow2.fluxes), &(pert_flow2.residual));
+            getDomainResi(flo_opts, pert_area2, &pert_flow2);
 
             for (int k = 0; k < 3; k++) {
                 const int ki = Ri * 3 + k;
@@ -569,20 +565,17 @@ SparseMatrix<double> evaldRdW_FD(
 {
 	const int n_elem = flo_opts.n_elem;
     const int n_resi = n_elem*3;
-	const int n_face = n_elem+1;
-    const int n_flux = n_face*3;
 
     SparseMatrix<double> dRdW(n_resi, n_resi);
-    int Ri, Wi;
     int irow_glob, icol_glob;
     class Flow_data<double> pert_flow1 = flow_data;
     class Flow_data<double> pert_flow2 = flow_data;
     std::vector<double> dRdW_block(9, 0);
-    int ki, kip;
     const double dh = 1e-07;
     // DR/DW
     for (int Ri = 1; Ri < n_elem+1; Ri++) {
-        for (int Wi = 1; Wi < n_elem+1; Wi++) {
+        for (int Wi = Ri-1; Wi < Ri+2; Wi++) {
+			if (Wi <= 0 || Wi >= n_elem+1) continue;
             for (int istate_w = 0; istate_w < 3; istate_w++) {
 
                 const int first_cell = 1, last_cell = n_elem;
@@ -601,13 +594,14 @@ SparseMatrix<double> evaldRdW_FD(
                 pert_flow1.dt[first_cell] = pert_flow1.dt[first_cell+1];
                 pert_flow1.dt[last_cell] = pert_flow1.dt[last_cell-1];
 
-                const double dt1 = pert_flow1.dt[first_cell];
-                const double dt2 = pert_flow1.dt[last_cell];
-                for (int i = 0; i < 1000; i++) {
-                    inletBC(flo_opts, dt1, dx, &pert_flow1);
-                    outletBC(flo_opts, dt2, dx, &pert_flow1);
+                //const double dt1 = pert_flow1.dt[first_cell];
+                //const double dt2 = pert_flow1.dt[last_cell];
+                for (int i = 0; i < 1; i++) {
+                    inletBC(flo_opts, &pert_flow1);
+                    outletBC(flo_opts, &pert_flow1);
                 }
-                getDomainResi(flo_opts, area, pert_flow1.W, &(pert_flow1.fluxes), &(pert_flow1.residual));
+                //getDomainResi(flo_opts, area, pert_flow1.W, &(pert_flow1.fluxes), &(pert_flow1.residual));
+                getDomainResi(flo_opts, area, &pert_flow1);
 
                 pert_flow2.W = flow_data.W;
                 pert_flow2.W.at(Wi * 3 + istate_w) = flow_data.W.at(Wi * 3 + istate_w) - pertW;
@@ -619,14 +613,15 @@ SparseMatrix<double> evaldRdW_FD(
                 pert_flow2.dt[first_cell] = pert_flow2.dt[first_cell+1];
                 pert_flow2.dt[last_cell] = pert_flow2.dt[last_cell-1];
 
-                for (int i = 0; i < 1000; i++) {
-                    inletBC(flo_opts, dt1, dx, &pert_flow2);
-                    outletBC(flo_opts, dt2, dx, &pert_flow2);
+                for (int i = 0; i < 1; i++) {
+                    inletBC(flo_opts, &pert_flow2);
+                    outletBC(flo_opts, &pert_flow2);
                 }
-                getDomainResi(flo_opts, area, pert_flow2.W, &(pert_flow2.fluxes), &(pert_flow2.residual));
+                //getDomainResi(flo_opts, area, pert_flow2.W, &(pert_flow2.fluxes), &(pert_flow2.residual));
+                getDomainResi(flo_opts, area, &pert_flow2);
 
                 for (int istate_resi = 0; istate_resi < 3; istate_resi++) {
-                    ki = Ri * 3 + istate_resi;
+                    const int ki = Ri * 3 + istate_resi;
                     dRdW_block.at(istate_resi * 3 + istate_w) = (pert_flow1.residual.at(ki) - pert_flow2.residual.at(ki)) / (2 * pertW);
                 }
 

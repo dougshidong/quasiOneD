@@ -183,6 +183,7 @@ MatrixXd evaldWdDes(
     // Evaluate dRdW
     //SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
     SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, flow_data);
+    //SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
 
     // Solve DWDS
     MatrixXd dWdDes(n_resi, design.n_design_variables);
@@ -292,17 +293,16 @@ VectorXd gradient_adjoint(
 
     SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
 
-    SparseMatrix<double> dRdW_AN = evaldRdW(area, flo_opts, flow_data);
-    SparseMatrix<double> dRdW_FD = evaldRdW_FD(area, flo_opts, flow_data);
-    std::cout<<MatrixXd(dRdW_AN)<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<"above is AN"<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<MatrixXd(dRdW_FD)<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<"above is FD"<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<MatrixXd(dRdW)<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<"above is AD"<<std::endl<<std::endl<<std::endl<<std::endl;
-
-    std::cout<<MatrixXd(dRdW_FD-dRdW)<<std::endl<<std::endl<<std::endl<<std::endl;
-    std::cout<<"above is FD - AD"<<std::endl<<std::endl<<std::endl<<std::endl;
+    //SparseMatrix<double> dRdW_AN = evaldRdW(area, flo_opts, flow_data);
+    //SparseMatrix<double> dRdW_FD = evaldRdW_FD(area, flo_opts, flow_data);
+    //std::cout<<MatrixXd(dRdW_AN)<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<"above is AN"<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<MatrixXd(dRdW_FD)<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<"above is FD"<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<MatrixXd(dRdW)<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<"above is AD"<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<MatrixXd(dRdW_FD-dRdW)<<std::endl<<std::endl<<std::endl<<std::endl;
+    //std::cout<<"above is FD - AD"<<std::endl<<std::endl<<std::endl<<std::endl;
 
     // *************************************
     // Solve for Adjoint (1 Flow Eval)

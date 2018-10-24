@@ -330,15 +330,11 @@ MatrixXd solve_dense_linear(
         FullPivLU<MatrixXd> lu(A);
 		lu.setThreshold(1.0e-13);
         const int mrank = lu.rank();
-		std::cout<<mrank<<"    "<<A_rows<<std::endl;
-	std::cout<<A<<std::endl<<std::endl<<std::endl;
-	std::cout<<rhs<<std::endl<<std::endl<<std::endl;
 		if (mrank < A_rows) {
             std::cout<<"Dense LU failed. "<<std::endl;
 			abort();
 		} else {
 			X = lu.solve(rhs);
-	std::cout<<X<<std::endl<<std::endl<<std::endl;
 		}
     } else {
         abort();

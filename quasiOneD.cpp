@@ -12,15 +12,6 @@
 #include "output.hpp"
 
 template<typename dreal>
-dreal isenP(const dreal gam, const dreal pt, const dreal M) {
-	return pt * pow((1 + (gam - 1) / 2 * pow(M, 2)), ( - gam / (gam - 1)));
-}
-
-template<typename dreal>
-dreal isenT(const dreal gam, const dreal Tt, const dreal M) { return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
-}
-
-template<typename dreal>
 int quasiOneD(
 	const std::vector<dreal> &x,
 	const std::vector<dreal> &area,
@@ -41,7 +32,8 @@ int quasiOneD(
 
     // Inlet flow properties
     dreal inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
-    dreal p = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
+    const dreal p_inlet = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
+    dreal p = p_inlet;
     dreal rho = p / (flo_opts.R * inlet_T);
     dreal c = sqrt(gam * p / rho);
     dreal u = flo_opts.inlet_mach * c;
@@ -53,11 +45,13 @@ int quasiOneD(
     // Flow properties initialization with outlet
     // State Vectors Initialization
     for (int i = 1; i < n_elem+2; i++) {
-        p = flo_opts.outlet_p;
-        rho = p / (flo_opts.R * inlet_T);
+        p = p_inlet + (i/(n_elem+1)) * (flo_opts.outlet_p - p_inlet);
+		const dreal T = flo_opts.inlet_total_T * pow(p/flo_opts.inlet_total_p,(gam-1.0)/gam);
+        //p = flo_opts.outlet_p;
+        rho = p / (flo_opts.R * T);
         c = sqrt(gam * p / rho);
         u = c * flo_opts.inlet_mach;
-        e = rho * (flo_opts.Cv * inlet_T + 0.5 * pow(u, 2));
+        e = rho * (flo_opts.Cv * T + 0.5 * pow(u, 2));
 
         flow_data->W[i*3+0] = rho;
         flow_data->W[i*3+1] = rho * u;
@@ -107,8 +101,8 @@ int quasiOneD(
         }
     }
 
-	std::vector<dreal> p_vec(n_elem);
-	for (int i = 0; i < n_elem; i++) {
+	std::vector<dreal> p_vec(n_elem+2);
+	for (int i = 0; i < n_elem+2; i++) {
 		p_vec[i] = get_p(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
 	}
     outVec(flo_opts.case_name, "current_pressure.dat", "w", p_vec);

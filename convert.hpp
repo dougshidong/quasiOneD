@@ -26,6 +26,20 @@ inline dreal get_c(const double gamma, const dreal rho, const dreal rho_u, const
 template double get_c(const double gamma, const double rho, const double rho_u, const double e);
 template adouble get_c(const double gamma, const adouble rho, const adouble rho_u, const adouble e);
 
+template<typename dreal>
+inline dreal isenP(const double gam, const double pt, const dreal M) {
+	return pt * pow((1 + (gam - 1) / 2 * pow(M, 2)), ( - gam / (gam - 1)));
+};
+template double isenP(const double gam, const double pt, const double M);
+template adouble isenP(const double gam, const double pt, const adouble M);
+
+template<typename dreal>
+inline dreal isenT(const double gam, const double Tt, const dreal M) {
+	return Tt * pow((1 + (gam - 1) / 2 * pow(M, 2)), - 1);
+};
+template double isenT(const double gam, const double Tt, const double M);
+template adouble isenT(const double gam, const double Tt, const adouble M);
+
 void get_all_p(
 	const double gam,
     std::vector<double> const &W,
