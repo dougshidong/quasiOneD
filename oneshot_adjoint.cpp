@@ -207,7 +207,7 @@ void oneshot_adjoint(
 		dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
 		pGpW = identity - (*max_dt)/dx[1] * dRdW;
 
-		double step_size = 1.0;// 1e-1;
+		double step_size = 1e-0;
 		double adjoint_update_norm = 1;
 		for (int i = 0; i < 1 && adjoint_update_norm > 1e-12; i++) {
 			//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
@@ -219,23 +219,24 @@ void oneshot_adjoint(
 			//adjoint_update_norm = adjoint_update.norm();
 
 			adjoint_update = pIpW + pGpW.transpose()*adjoint;
-			adjoint_update_norm = (adjoint_update-adjoint).norm();
-			adjoint = adjoint_update;
+			adjoint_update = step_size*(adjoint_update-adjoint);
+			adjoint_update_norm = (adjoint_update).norm();
+			adjoint = adjoint + adjoint_update;
 			//std::cout<<MatrixXd( identity - step_size*(identity+pGpW) ).eigenvalues()<<std::endl;
-			printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
+			//printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
 		}
-		step_size = 1e+0;
+		step_size = 1e-1;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
 		//dCostdArea = evaldCostdArea(n_elem); //0
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
-		pGpX = -evaldRdArea(flo_opts, flow_data) * dAreadDes;
-		gradient = pIpX - (*max_dt)/dx[1]*pGpX.transpose()*adjoint;
+		pGpX = -(*max_dt)/dx[1]*evaldRdArea(flo_opts, flow_data) * dAreadDes;
+		gradient = pIpX + pGpX.transpose()*adjoint;
 
         if (opt_opts.descent_type == 1) {
-            search_direction =  gradient;
+            search_direction = -gradient;
 			design_change = step_size*search_direction;
         } else if (opt_opts.descent_type == 2) {
             if (iteration > 1) {

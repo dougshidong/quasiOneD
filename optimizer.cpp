@@ -108,13 +108,13 @@ void optimizer(
     VectorXd oldGrad(n_dvar); //BFGS
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
-	bool testJacobian = true;
+	bool testJacobian = false;
 	//testJacobian = false;
 	if (testJacobian) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 		return;//exit(0);
 	}
-	bool testingGradient = true;
+	bool testingGradient = false;
 	//testingGradient = false;
 	if (testingGradient) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);

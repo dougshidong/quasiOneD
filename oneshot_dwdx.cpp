@@ -15,6 +15,7 @@
 #include"grid.hpp"
 #include"gradient.hpp"
 #include"residuald1.hpp"
+#include"residual_derivatives.hpp"
 #include"cost_derivative.hpp"
 #include"parametrization.hpp"
 #include"analyticHessian.hpp"
@@ -36,14 +37,9 @@ void oneshot_dwdx(
 	// Initialize the flow
 	const double gam = flo_opts.gam;
 	int n_elem = flo_opts.n_elem;
-	if(n_elem!=x.size()) abort();
+	if(n_elem!=x.size()-1) abort();
 	int n_dvar = opt_opts.n_design_variables;
-	class Flow_data<double> flow_data;
-	flow_data.dt.resize(n_elem);
-	flow_data.W.resize(3*n_elem);
-	flow_data.W_stage.resize(3*n_elem);
-	flow_data.fluxes.resize(3*(n_elem+1)); // At the faces
-	flow_data.residual.resize(3*n_elem);
+	class Flow_data<double> flow_data(n_elem);
     // Inlet flow properties
     double inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
     double p = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
@@ -98,40 +94,36 @@ void oneshot_dwdx(
     VectorXd search_direction(n_dvar), design_change(n_dvar);
 
 
-    double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
-
-    VectorXd gradient(n_dvar);
-    VectorXd oldGrad(n_dvar); //BFGS
-    gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
-
     std::vector<double> gradient_norm_list, timeVec;
     clock_t tic = clock();
 
     // Initialize B
     H.setIdentity();
-    H = H * 1.0;
-    if (opt_opts.exact_hessian != 0) {
-        H = getAnalyticHessian(opt_opts.hessian_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
-        H = invertHessian(H);
-    }
+    //H = H * 1.0;
+    //if (opt_opts.exact_hessian != 0) {
+    //    H = getAnalyticHessian(opt_opts.hessian_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
+    //    H = invertHessian(H);
+    //}
 
-    double residual_norm = 1.0;
-    double gradient_norm = 0;
-    for (int i = 0; i < n_dvar; i++)
-        gradient_norm += pow(gradient[i], 2);
-    gradient_norm = sqrt(gradient_norm);
-    int iteration = 0;
-
-    // Design Loop
 	quasiOneD(x, area, flo_opts, &flow_data); // Start with converged flow
-	// Calculating the norm of the density residual
-	residual_norm = 0;
+    double residual_norm = 0.0;
 	for (int k = 0; k < n_elem; k++) {
 		for (int i = 0; i < n_elem; i++) {
 			residual_norm = residual_norm + pow(flow_data.residual[i*3+k], 2);
 		}
 	}
 	residual_norm = sqrt(residual_norm);
+
+    double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
+    VectorXd gradient(n_dvar);
+    VectorXd oldGrad(n_dvar); //BFGS
+    gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
+    double gradient_norm = 0;
+    for (int i = 0; i < n_dvar; i++)
+        gradient_norm += pow(gradient[i], 2);
+    gradient_norm = sqrt(gradient_norm);
+
+    int iteration = 0;
     while(
 		(iteration < opt_opts.opt_maxit) &&
 
@@ -143,7 +135,7 @@ void oneshot_dwdx(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 1; i < 2 && residual_norm > 1e-2; i++) {
+		for (int i = 0; i < 1 && residual_norm > 1e-2; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
 			// Calculating the norm of the density residual
@@ -158,19 +150,19 @@ void oneshot_dwdx(
 
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-		pGpW = evaldRdW(area, flo_opts, flow_data);
         auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-		pGpW = identity - (*max_dt)*evaldRdW(area, flo_opts, flow_data) / dx[1];
+		SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+		pGpW = identity - (*max_dt)/dx[1] * dRdW;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
 		//dCostdArea = evaldCostdArea(n_elem); //0
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
-		pGpX = -evaldRdArea(flo_opts, flow_data) * dAreadDes;
+		pGpX = -(*max_dt)/dx[1] * evaldRdArea(flo_opts, flow_data) * dAreadDes;
 
-		gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
-		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
+		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
+		gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
 
 		double step_size = 1e+2;
 
