@@ -5,6 +5,8 @@
 #include <vector>
 #include "spline.hpp"
 
+#include<adolc/adolc.h>
+
 template<typename dreal>
 std::vector<dreal> sinParam(
     const dreal h, const dreal t1, const dreal t2,
@@ -51,6 +53,7 @@ std::vector<dreal> eval_dx(std::vector<dreal> x) {
     return dx;
 }
 template std::vector<double> eval_dx(std::vector<double> x);
+template std::vector<adouble> eval_dx(std::vector<adouble> x);
 
 template<typename dreal>
 std::vector<dreal> evalS(

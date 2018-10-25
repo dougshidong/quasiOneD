@@ -3,6 +3,7 @@
 #include<Eigen/Core>
 #include<Eigen/Sparse>
 #include<adolc/adolc.h>
+#include<adolc/adolc_sparse.h>
 #include"solve_linear.hpp"
 #include"boundary_conditions.hpp"
 #include"boundary_gradient.hpp"
@@ -49,6 +50,14 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 			n_indep++;
 		}
     }
+	for (int iw_state = 0; iw_state < n_state; iw_state++) {
+		const int iw_elem_first = 0;
+		const int ki_first = iw_elem_first*n_state + iw_state;
+		aflow_data.W[ki_first] = flow_data.W[ki_first];
+		const int iw_elem_last = n_elem+1;
+		const int ki_last = iw_elem_last*n_state + iw_state;
+		aflow_data.W[ki_last] = flow_data.W[ki_last];
+	}
     std::vector<adouble> aarea(n_face);
 	for (int i = 0; i < n_face; i++) {
 		indep[n_indep] = area[i];
@@ -56,6 +65,8 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 		n_indep++;
     }
 
+	//inletBC(flo_opts, &aflow_data);
+	//outletBC(flo_opts, &aflow_data);
     getDomainResi(flo_opts, aarea, &aflow_data);
 
 	for (int ir_elem = 1; ir_elem < n_elem+1; ir_elem++) {
@@ -71,40 +82,58 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 	assert(n_dep == n_dep_expected);
 	assert(n_indep == n_indep_expected);
 
-	//unsigned int *rind  = NULL;        /* row indices    */
-	//unsigned int *cind  = NULL;        /* column indices */
-	//double       *values = NULL;       /* values         */
-    //int nnz;
-    //int options[4];
-
-    //options[0] = 0;          /* sparsity pattern by index domains (default) */ 
-    //options[1] = 0;          /*                         safe mode (default) */ 
-    //options[2] = 0;          /*              not required if options[0] = 0 */ 
-    //options[3] = 0;          /*                column compression (default) */ 
-    //sparse_jac(tag, n_dep, n_indep, 0, indep, &nnz, &rind, &cind, &values, options);
-
-	double **jac = myalloc2(n_dep, n_indep); // freed
-    jacobian(tag, n_dep, n_indep, indep, jac);
-
-	myfree1(indep);
-	myfree1(dep);
-
     SparseMatrix<double> dRdW(n_resi, n_resi);
-    const int n_stencil = 3;
-    dRdW.reserve(n_elem*n_state*n_state*n_stencil);
-	for (int ir_elem = 1; ir_elem < n_elem+1; ir_elem++) {
-		for (int ir_state = 0; ir_state < n_state; ir_state++) {
+	const int n_stencil = 3;
+	dRdW.reserve(n_elem*n_state*n_state*n_stencil);
 
-			const int row = (ir_elem-1)*n_state + ir_state;
+	bool sparse = true;
+	if (sparse) {
+		unsigned int *rind  = NULL;        /* row indices    */
+		unsigned int *cind  = NULL;        /* column indices */
+		double       *values = NULL;       /* values         */
+		int nnz;
+		int options[4];
 
-			for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
-				for (int iw_state = 0; iw_state < n_state; iw_state++) {
-					const int col = (iw_elem-1)*n_state + iw_state;
-					dRdW.insert(row, col) = jac[row][col];
+		options[0] = 0;          /* sparsity pattern by index domains (default) */ 
+		options[1] = 0;          /*                         safe mode (default) */ 
+		options[2] = 0;          /*              not required if options[0] = 0 */ 
+		options[3] = 0;          /*                column compression (default) */ 
+		sparse_jac(tag, n_dep, n_indep, 0, indep, &nnz, &rind, &cind, &values, options);
+
+		for (int i = 0; i < nnz; i++) {
+			const unsigned int row = rind[i];
+			const unsigned int col = cind[i];
+			const double val = values[i];
+			if(col < n_indep_w) {
+				printf("%3d %3d %3d %10.6f\n\n",row,col,n_indep_w,val);
+				dRdW.insert(row, col) = val;
+			}
+		}
+		free(rind); rind=NULL;
+		free(cind); cind=NULL;
+		free(values); values=NULL;
+
+	} else {
+		double **jac = myalloc2(n_dep, n_indep); // freed
+		jacobian(tag, n_dep, n_indep, indep, jac);
+		for (int ir_elem = 0; ir_elem < n_elem; ir_elem++) {
+			for (int ir_state = 0; ir_state < n_state; ir_state++) {
+
+				const int row = ir_elem*n_state + ir_state;
+
+				for (int iw_elem = ir_elem-1; iw_elem < ir_elem+2; iw_elem++) {
+					if(iw_elem < 0 || iw_elem >= n_elem) continue;
+					for (int iw_state = 0; iw_state < n_state; iw_state++) {
+						const int col = iw_elem*n_state + iw_state;
+						std::cout<<row<<" "<<col<<" "<<jac[row][col]<<std::endl;
+						dRdW.insert(row, col) = jac[row][col];
+					}
 				}
 			}
 		}
 	}
+	myfree1(indep);
+	myfree1(dep);
 
     //Matrix3d dWidWd, dWodWd, dRdW_block;
     //dWbcdW_adolc(flo_opts, flow_data, &dWidWd, &dWodWd);

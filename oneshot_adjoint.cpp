@@ -210,22 +210,15 @@ void oneshot_adjoint(
 		double step_size = 1e-0;
 		double adjoint_update_norm = 1;
 		for (int i = 0; i < 1 && adjoint_update_norm > 1e-12; i++) {
-			//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
-			//adjoint = adjoint + step_size*adjoint_update;
-			//adjoint_update_norm = adjoint_update.norm();
 
-			//adjoint_update = adjoint + pIpW + pGpW.transpose()*adjoint;
-			//adjoint = adjoint - step_size*adjoint_update;
-			//adjoint_update_norm = adjoint_update.norm();
+			//adjoint_update = pIpW + pGpW.transpose()*adjoint;
+			//adjoint_update = step_size*(adjoint_update-adjoint);
+			//adjoint_update_norm = (adjoint_update).norm();
+			//adjoint = adjoint + adjoint_update;
 
 			adjoint_update = pIpW + pGpW.transpose()*adjoint;
-			adjoint_update = step_size*(adjoint_update-adjoint);
-			adjoint_update_norm = (adjoint_update).norm();
-			adjoint = adjoint + adjoint_update;
-			//std::cout<<MatrixXd( identity - step_size*(identity+pGpW) ).eigenvalues()<<std::endl;
-			//printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update.norm());
 		}
-		step_size = 1e-1;
+		step_size = 1e+1;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -253,13 +246,12 @@ void oneshot_adjoint(
 
 		printf("%-15s %-15s %-15s\n", "Current Design", "Gradient","Search Direction");
 		int step = 1;
-		//if(n_dvar/8>=1) step = n_dvar/8;
 		if(step!=1) printf("Only printing 1 out of %d variables\n", step);
 		for (int i=0; i<n_dvar; i+=step) {
 			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], search_direction[i]);
 		}
 
-		bool do_linesearch = false;
+		bool do_linesearch = true;
 		if (do_linesearch) {
 			double c1 = 1e-4;
 			double c_pk_grad = c1 * gradient.dot(search_direction);

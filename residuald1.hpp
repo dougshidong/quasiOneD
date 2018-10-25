@@ -53,5 +53,9 @@ MatrixXd evaldRdArea_FD(
     std::vector<double> Flux,
     std::vector<double> area,
     std::vector<double> W);
+SparseMatrix<double> evaldRdW_complexStep(
+    const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data);
 
 #endif

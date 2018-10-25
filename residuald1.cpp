@@ -11,6 +11,9 @@
 #include"boundary_conditions.hpp"
 #include"timestep.hpp"
 
+#include <complex>
+
+
 
 using namespace Eigen;
 
@@ -578,51 +581,120 @@ SparseMatrix<double> evaldRdW_FD(
 			if (Wi <= 0 || Wi >= n_elem+1) continue;
             for (int istate_w = 0; istate_w < 3; istate_w++) {
 
-                const int first_cell = 1, last_cell = n_elem;
-                const double dx = 1.0/n_elem;
 
                 const double pertW = flow_data.W.at(Wi * 3 + istate_w) * dh;
 
                 pert_flow1.W = flow_data.W;
                 pert_flow1.W.at(Wi * 3 + istate_w) = flow_data.W.at(Wi * 3 + istate_w) + pertW;
 
-                for (int i = 1; i < n_elem+1; i++) {
-                    const double u = pert_flow1.W[i*3+1] / pert_flow1.W[i*3+0];
-                    const double c = get_c(flo_opts.gam, pert_flow1.W[i*3+0], pert_flow1.W[i*3+1], pert_flow1.W[i*3+2]);
-                    pert_flow1.dt[i] = (flo_opts.CFL * dx) / fabs(u + c);
-                }
-                pert_flow1.dt[first_cell] = pert_flow1.dt[first_cell+1];
-                pert_flow1.dt[last_cell] = pert_flow1.dt[last_cell-1];
+//              const int first_cell = 1, last_cell = n_elem;
+//              const double dx = 1.0/n_elem;
+//              for (int i = 1; i < n_elem+1; i++) {
+//                  const double u = pert_flow1.W[i*3+1] / pert_flow1.W[i*3+0];
+//                  const double c = get_c(flo_opts.gam, pert_flow1.W[i*3+0], pert_flow1.W[i*3+1], pert_flow1.W[i*3+2]);
+//                  pert_flow1.dt[i] = (flo_opts.CFL * dx) / fabs(u + c);
+//              }
+//              pert_flow1.dt[first_cell] = pert_flow1.dt[first_cell+1];
+//              pert_flow1.dt[last_cell] = pert_flow1.dt[last_cell-1];
 
-                //const double dt1 = pert_flow1.dt[first_cell];
-                //const double dt2 = pert_flow1.dt[last_cell];
-                for (int i = 0; i < 1; i++) {
-                    inletBC(flo_opts, &pert_flow1);
-                    outletBC(flo_opts, &pert_flow1);
-                }
+//              //const double dt1 = pert_flow1.dt[first_cell];
+//              //const double dt2 = pert_flow1.dt[last_cell];
+//              for (int i = 0; i < 1; i++) {
+//                  inletBC(flo_opts, &pert_flow1);
+//                  outletBC(flo_opts, &pert_flow1);
+//              }
                 //getDomainResi(flo_opts, area, pert_flow1.W, &(pert_flow1.fluxes), &(pert_flow1.residual));
                 getDomainResi(flo_opts, area, &pert_flow1);
 
                 pert_flow2.W = flow_data.W;
                 pert_flow2.W.at(Wi * 3 + istate_w) = flow_data.W.at(Wi * 3 + istate_w) - pertW;
-                for (int i = 1; i < n_elem+1; i++) {
-                    const double u = pert_flow2.W[i*3+1] / pert_flow2.W[i*3+0];
-                    const double c = get_c(flo_opts.gam, pert_flow2.W[i*3+0], pert_flow2.W[i*3+1], pert_flow2.W[i*3+2]);
-                    pert_flow2.dt[i] = (flo_opts.CFL * dx) / fabs(u + c);
-                }
-                pert_flow2.dt[first_cell] = pert_flow2.dt[first_cell+1];
-                pert_flow2.dt[last_cell] = pert_flow2.dt[last_cell-1];
+//              for (int i = 1; i < n_elem+1; i++) {
+//                  const double u = pert_flow2.W[i*3+1] / pert_flow2.W[i*3+0];
+//                  const double c = get_c(flo_opts.gam, pert_flow2.W[i*3+0], pert_flow2.W[i*3+1], pert_flow2.W[i*3+2]);
+//                  pert_flow2.dt[i] = (flo_opts.CFL * dx) / fabs(u + c);
+//              }
+//              pert_flow2.dt[first_cell] = pert_flow2.dt[first_cell+1];
+//              pert_flow2.dt[last_cell] = pert_flow2.dt[last_cell-1];
 
-                for (int i = 0; i < 1; i++) {
-                    inletBC(flo_opts, &pert_flow2);
-                    outletBC(flo_opts, &pert_flow2);
-                }
+//              for (int i = 0; i < 1; i++) {
+//                  inletBC(flo_opts, &pert_flow2);
+//                  outletBC(flo_opts, &pert_flow2);
+//              }
                 //getDomainResi(flo_opts, area, pert_flow2.W, &(pert_flow2.fluxes), &(pert_flow2.residual));
                 getDomainResi(flo_opts, area, &pert_flow2);
 
                 for (int istate_resi = 0; istate_resi < 3; istate_resi++) {
                     const int ki = Ri * 3 + istate_resi;
                     dRdW_block.at(istate_resi * 3 + istate_w) = (pert_flow1.residual.at(ki) - pert_flow2.residual.at(ki)) / (2 * pertW);
+                }
+
+            } // END STATEI LOOP
+
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 3; col++) {
+                    irow_glob = (Ri-1) * 3 + row;
+                    icol_glob = (Wi-1) * 3 + col;
+                    dRdW.insert(irow_glob, icol_glob) = dRdW_block.at(row * 3 + col);
+                }
+            }
+        }
+    }
+    return dRdW;
+}
+
+SparseMatrix<double> evaldRdW_complexStep(
+    const std::vector<double> &area,
+	const struct Flow_options &flo_opts,
+	const class Flow_data<double> &flow_data)
+{
+	const int n_elem = flo_opts.n_elem;
+    const int n_resi = n_elem*3;
+
+    SparseMatrix<double> dRdW(n_resi, n_resi);
+    int irow_glob, icol_glob;
+    class Flow_data<std::complex<double>> pert_flow1(n_elem);
+
+	std::vector<std::complex<double>> complex_area(n_elem+1);
+	for (int i = 0; i < n_elem+1; i++) {
+		complex_area[i] = area[i];
+	}
+    std::vector<double> dRdW_block(9, 0);
+    const double dh = 1e-16;
+	const std::complex<double> im(0.0, 1.0);
+    // DR/DW
+    for (int Ri = 1; Ri < n_elem+1; Ri++) {
+        for (int Wi = Ri-1; Wi < Ri+2; Wi++) {
+			if (Wi <= 0 || Wi >= n_elem+1) continue;
+            for (int istate_w = 0; istate_w < 3; istate_w++) {
+
+
+                const double pertW = flow_data.W.at(Wi * 3 + istate_w) * dh;
+
+                for (int i = 0; i < flow_data.W.size(); i++) {
+					pert_flow1.W[i] = flow_data.W[i];
+				}
+
+                pert_flow1.W.at(Wi * 3 + istate_w) = flow_data.W.at(Wi * 3 + istate_w) + im*pertW;
+
+//              const int first_cell = 1, last_cell = n_elem;
+//              const std::complex<double> dx(1.0/n_elem, 0.0);
+//              for (int i = 1; i < n_elem+1; i++) {
+//                  const std::complex<double> u = pert_flow1.W[i*3+1] / pert_flow1.W[i*3+0];
+//                  const std::complex<double> c = get_c(flo_opts.gam, pert_flow1.W[i*3+0], pert_flow1.W[i*3+1], pert_flow1.W[i*3+2]);
+//                  pert_flow1.dt[i] = (flo_opts.CFL * dx) / abs(u + c);
+//              }
+//              pert_flow1.dt[first_cell] = pert_flow1.dt[first_cell+1];
+//              pert_flow1.dt[last_cell] = pert_flow1.dt[last_cell-1];
+
+//              for (int i = 0; i < 1; i++) {
+//                  inletBC(flo_opts, &pert_flow1);
+//                  outletBC(flo_opts, &pert_flow1);
+//              }
+                getDomainResi(flo_opts, complex_area, &pert_flow1);
+
+                for (int istate_resi = 0; istate_resi < 3; istate_resi++) {
+                    const int ki = Ri * 3 + istate_resi;
+                    dRdW_block.at(istate_resi * 3 + istate_w) = imag(pert_flow1.residual.at(ki)) / (pertW);
                 }
 
             } // END STATEI LOOP

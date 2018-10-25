@@ -108,7 +108,7 @@ void optimizer(
     VectorXd oldGrad(n_dvar); //BFGS
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
-	bool testJacobian = false;
+	bool testJacobian = true;
 	//testJacobian = false;
 	if (testJacobian) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
@@ -168,7 +168,7 @@ void optimizer(
             //}
             //myfile << it_design << "\t" << current_cost <<"\t"<< gradient_norm << "\t" << averageerr << "\n";
             //myfile.flush();
-            pk =  -500*gradient;
+            pk =  -50*gradient;
         } else if (opt_opts.descent_type == 2) {
             if (it_design > 1) {
                 H_BFGS = BFGS(H, oldGrad, gradient, searchD);

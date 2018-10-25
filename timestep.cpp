@@ -12,6 +12,9 @@
 #include "boundary_conditions.hpp"
 #include<adolc/adolc.h>
 
+#include <cmath>
+#include <complex>
+
 // Domain Residual R = FS_i+1/2 - FS_i-1/2 - Qi
 template<typename dreal>
 void getDomainResi( 
@@ -44,6 +47,10 @@ template void getDomainResi<adouble>(
 	const struct Flow_options &flo_opts,
 	const std::vector<adouble> &area,
     class Flow_data<adouble>* const flow_data);
+template void getDomainResi<std::complex<double>>( 
+	const struct Flow_options &flo_opts,
+	const std::vector<std::complex<double>> &area,
+    class Flow_data<std::complex<double>>* const flow_data);
 
 template<typename dreal>
 void EulerExplicitStep(
@@ -97,6 +104,11 @@ template void stepInTime(
     const std::vector<double> &area,
     const std::vector<double> &dx,
     class Flow_data<double>* const flow_data);
+template void stepInTime(
+	const struct Flow_options &flo_opts,
+    const std::vector<adouble> &area,
+    const std::vector<adouble> &dx,
+    class Flow_data<adouble>* const flow_data);
 
 template<typename dreal>
 class Flow_data<dreal> stepInTime_noupdate(
@@ -158,6 +170,43 @@ void EulerExplicitStep(
 // Jameson's 4th order Runge - Kutta Stepping Scheme
 template<typename dreal>
 void jamesonrk(
+	const struct Flow_options &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<dreal> &dx,
+    class Flow_data<dreal>* const flow_data)
+{
+	int n_elem = flo_opts.n_elem;
+    // Initialize First Stage
+    for (int k = 0; k < 3; k++) {
+        for (int i = 0; i < n_elem+2; i++) {
+            const int ki = i * 3 + k;
+            flow_data->W_stage[ki] = flow_data->W[ki];
+        }
+    }
+    // 1-4 Stage
+    for (int r = 1; r < 5; r++) {
+        // Calculate Residuals
+		getDomainResi(flo_opts, area, flow_data);
+        // Step in RK time
+        for (int k = 0; k < 3; k++) {
+            for (int i = 1; i < n_elem+1; i++) {
+                const int ki = i * 3 + k;
+                flow_data->W_stage[ki] = flow_data->W[ki] - (flow_data->dt[i-1] / (5 - r)) * flow_data->residual[ki] / dx[i-1];
+            }
+        }
+    }
+
+    for (int k = 0; k < 3; k++) {
+        for (int i = 1; i < n_elem+1; i++) {
+            const int ki = i * 3 + k;
+            flow_data->residual[ki] = (flow_data->W_stage[ki] - flow_data->W[ki]) * dx[i] / flow_data->dt[i];
+            flow_data->W[ki] = flow_data->W_stage[ki];
+        }
+    }
+}
+
+template<typename dreal>
+void lusgs(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<dreal> &dx,

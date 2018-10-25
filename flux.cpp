@@ -6,6 +6,7 @@
 #include"flux.hpp"
 #include"convert.hpp"
 #include<adolc/adolc.h>
+#include <complex>
 
 template<typename dreal>
 void matrixMult(dreal A[][3], dreal B[][3], dreal result[][3]);
@@ -37,6 +38,7 @@ void getFlux(
 }
 template void getFlux( const struct Flow_options &flow_options, const std::vector<double> &W, std::vector<double> *const fluxes);
 template void getFlux( const struct Flow_options &flow_options, const std::vector<adouble> &W, std::vector<adouble> *const fluxes);
+template void getFlux( const struct Flow_options &flow_options, const std::vector<std::complex<double>> &W, std::vector<std::complex<double>> *const fluxes);
 
 template<typename dreal>
 void Flux_Scalar(
@@ -55,8 +57,8 @@ void Flux_Scalar(
 	dreal u_m = w2 / w1;
 	dreal c_m = get_c(gam,w1,w2,w3);
 	F_m[0] = w2;
-	F_m[1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
-	F_m[2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
+	F_m[1] = w2 * w2 / w1 + (gam - 1.0) * ( w3 - w2 * w2 / (2.0 * w1) );
+	F_m[2] = ( w3 + (gam - 1.0) * (w3 - w2 * w2 / (2.0 * w1)) ) * w2 / w1;
 
     for (int i_face = 0; i_face < n_face; i_face++) {
         const int i_cell = i_face+1;
@@ -72,8 +74,8 @@ void Flux_Scalar(
         dreal lambda = avgu + avgc;
 
 		F_p[0] = w2;
-		F_p[1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
-		F_p[2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
+		F_p[1] = w2 * w2 / w1 + (gam - 1.0) * ( w3 - w2 * w2 / (2.0 * w1) );
+		F_p[2] = ( w3 + (gam - 1.0) * (w3 - w2 * w2 / (2.0 * w1)) ) * w2 / w1;
 
         for (int i_state = 0; i_state < 3; i_state++) {
             const int kip = (i_face + 1) * 3 + i_state;
@@ -162,7 +164,7 @@ void Flux_Scalar(
 //        rho = W[i * 3 + 0];
 //        u = W[i * 3 + 1] / rho;
 //        e = W[i * 3 + 2];
-//        c = sqrt( gam / rho * (gam - 1) * ( e - rho * u * u / 2 ) );
+//        c = sqrt( gam / rho * (gam - 1.0) * ( e - rho * u * u / 2 ) );
 //        S[0][0] = 1.0;
 //        S[1][0] = -u / rho;
 //        S[2][0] = 0.5 * u * u * beta;
@@ -182,10 +184,10 @@ void Flux_Scalar(
 //        C[1][2] = 1.0;
 //        C[2][2] = 1.0;
 //        Cinv[0][0] = 1.0;
-//        Cinv[0][1] = 1.0 / (2 * c * c);
-//        Cinv[0][2] = 1.0 / (2 * c * c);
-//        Cinv[1][1] = 1.0 / (2 * rho * c);
-//        Cinv[1][2] = -1.0 / (2 * rho * c);
+//        Cinv[0][1] = 1.0 / (2.0 * c * c);
+//        Cinv[0][2] = 1.0 / (2.0 * c * c);
+//        Cinv[1][1] = 1.0 / (2.0 * rho * c);
+//        Cinv[1][2] = -1.0 / (2.0 * rho * c);
 //        Cinv[2][1] = 0.5;
 //        Cinv[2][2] = 0.5;
 //        evalLambda(lambdaa, u, c);

@@ -164,7 +164,7 @@ void oneshot_dwdx(
 		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
 		gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
 
-		double step_size = 1e+2;
+		double step_size = 1e+1;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;
