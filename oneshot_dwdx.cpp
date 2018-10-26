@@ -144,7 +144,7 @@ void oneshot_dwdx(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 0; i < 1 && residual_norm > 1e-2; i++) {
+		for (int i = 0; i < 1 && residual_norm > 1e-6; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
 			// Calculating the norm of the density residual
@@ -176,7 +176,7 @@ void oneshot_dwdx(
 		gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
 		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
 
-		double step_size = 1e+0;
+		double step_size = 1e+2;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;

@@ -14,21 +14,17 @@ void inletBC(
     class Flow_data<dreal>* const flow_data)
 {
 	const double gam = flo_opts.gam;
-    dreal rho[2], u[2], e[2], p[2], c[2];
-    for (int i = 0; i < 2; i++) {
-        rho[i] = flow_data->W[i*3+0];
-        u[i] = flow_data->W[i*3+1] / rho[i];
-        e[i] = flow_data->W[i*3+2];
-        p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2.0 );
-        c[i] = sqrt( gam * p[i] / rho[i] );
-    }
-    if (u[1] < c[1]) {
+	const int i_d = 1;
+	const dreal rho_d = flow_data->W[i_d*3+0];
+	const dreal u_d   = flow_data->W[i_d*3+1] / rho_d;
+	const dreal e_d   = flow_data->W[i_d*3+2];
+	const dreal p_d   = (gam - 1) * ( e_d - rho_d * u_d * u_d / 2.0 );
+	const dreal c_d   = sqrt( gam * p_d / rho_d );
+    if (u_d < c_d) {
 		const dreal normal = 1.0;
-		const dreal U_i    = u[1] * normal;
-		//const dreal total_enthalpy = p[1]/rho[1] * (gam/(gam-1.0)) + 0.5*u[1]*u[1];
-		const dreal total_enthalpy = (e[1] + p[1])/rho[1];
-		//const dreal riemman_plus   = -U_i - 2.0*c[1]/(gam-1.0);
-		const dreal riemman_plus   = U_i + 2.0*c[1]/(gam-1.0);
+		const dreal U_i    = u_d * normal;
+		const dreal total_enthalpy = (e_d + p_d)/rho_d;
+		const dreal riemman_plus   = U_i + 2.0*c_d/(gam-1.0);
 
 		const dreal a = 1.0+2.0/(gam-1.0);
 		const dreal b = -2.0*riemman_plus;
@@ -45,21 +41,14 @@ void inletBC(
 
 		const dreal T_b = flo_opts.inlet_total_T / (1.0+0.5*(gam-1.0)*M_b*M_b);
 		const dreal p_b = flo_opts.inlet_total_p * pow(T_b / flo_opts.inlet_total_T, gam/(gam-1.0));
-		//const dreal p_b = flo_opts.inlet_total_p * pow(1.0 + 0.5*(gam-1.0) * M_b*M_b, gam/(gam-1.0));
-		//const dreal T_b = flo_opts.inlet_total_T * pow(p_b / flo_opts.inlet_total_p, (gam-1.0)/gam);
 
 		const dreal rho_b = p_b/(flo_opts.R * T_b);
 		const dreal u_b   = U;//*normal;
+		const dreal e_b = p_b/(gam - 1.0) + rho_b * u_b * u_b / 2.0;
 
-        rho[0] = rho_b;
-        u[0] = u_b;
-        p[0] = p_b;
-
-		e[0] = p[0]/(gam - 1.0) + rho[0] * u[0] * u[0] / 2.0;
-
-        flow_data->W[0 * 3 + 0] = rho[0];
-        flow_data->W[0 * 3 + 1] = rho[0] * u[0];
-        flow_data->W[0 * 3 + 2] = e[0];
+        flow_data->W[0 * 3 + 0] = rho_b;
+        flow_data->W[0 * 3 + 1] = rho_b * u_b;
+        flow_data->W[0 * 3 + 2] = e_b;
     } else {
 		dreal inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
 		const dreal p_inlet = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
@@ -82,39 +71,33 @@ void outletBC(
     const Flow_options &flo_opts,
     class Flow_data<dreal>* const flow_data)
 {
-	//const int n_elem = flo_opts.n_elem;
-	//const int n_elem_ghost = flo_opts.n_elem+2;
-	const int n_elem_ghost = flow_data->W.size()/3;
+	const int n_elem = flo_opts.n_elem;
 	const double gam = flo_opts.gam;
-    dreal rho[2], u[2], e[2], p[2], c[2];
+	const int i_b = n_elem+1;
+	const int i_d = n_elem;
 
-    for (int i = 0; i < 2; i++) {
-        rho[i] = flow_data->W[(i + (n_elem_ghost - 2)) * 3 + 0];
-        u[i] = flow_data->W[(i + (n_elem_ghost - 2)) * 3 + 1] / rho[i];
-        e[i] = flow_data->W[(i + (n_elem_ghost - 2)) * 3 + 2];
-        p[i] = (gam - 1) * ( e[i] - rho[i] * u[i] * u[i] / 2.0 );
-        c[i] = sqrt( gam * p[i] / rho[i] );
-    }
+    const dreal rho_d = flow_data->W[i_d*3+0];
+    const dreal u_d = flow_data->W[i_d*3+1] / rho_d;
+    const dreal e_d = flow_data->W[i_d*3+2];
+    const dreal p_d = (gam - 1.0) * ( e_d - rho_d * u_d * u_d / 2.0 );
+    const dreal c_d = sqrt( gam * p_d / rho_d );
 
-    // Exit boundary condition
-    const dreal avgu = (u[1] + u[0]) / 2.0;
-    const dreal avgc = (c[1] + c[0]) / 2.0;
-    const dreal MachOut = avgu / avgc;
-    if (MachOut > 1.0) {
-		flow_data->W[(n_elem_ghost - 1) * 3 + 0] = flow_data->W[(n_elem_ghost - 2) * 3 + 0];
-		flow_data->W[(n_elem_ghost - 1) * 3 + 1] = flow_data->W[(n_elem_ghost - 2) * 3 + 1];
-		flow_data->W[(n_elem_ghost - 1) * 3 + 2] = flow_data->W[(n_elem_ghost - 2) * 3 + 2];
+	const dreal mach_d = u_d + c_d;
+    if (mach_d > 1.0) {
+		flow_data->W[i_b*3+0] = flow_data->W[i_d*3+0];
+		flow_data->W[i_b*3+1] = flow_data->W[i_d*3+1];
+		flow_data->W[i_b*3+2] = flow_data->W[i_d*3+2];
 		return;
     } else {
-		const dreal T_domain = p[0] / (rho[0] * flo_opts.R); // Extrapolate
-        rho[1] = gam * flo_opts.outlet_p / T_domain;
-        u[1] = u[0]; // Extrapolate
-        p[1] = flo_opts.outlet_p; // Specify
-		e[1] = p[1]/(gam - 1) + rho[1] * u[1] * u[1] / 2.0;
+		const dreal T_domain = p_d / (rho_d * flo_opts.R); // Extrapolate
+        const dreal rho_b = gam * flo_opts.outlet_p / T_domain;
+        const dreal u_b = u_d; // Extrapolate
+        const dreal p_b = flo_opts.outlet_p; // Specify
+		const dreal e_b = p_b/(gam - 1) + rho_b * u_b * u_b / 2.0;
 
-		flow_data->W[(n_elem_ghost - 1) * 3 + 0] = rho[1];
-		flow_data->W[(n_elem_ghost - 1) * 3 + 1] = rho[1] * u[1];
-		flow_data->W[(n_elem_ghost - 1) * 3 + 2] = e[1];
+		flow_data->W[i_b*3+0] = rho_b;
+		flow_data->W[i_b*3+1] = rho_b * u_b;
+		flow_data->W[i_b*3+2] = e_b;
     }
 
 	return;

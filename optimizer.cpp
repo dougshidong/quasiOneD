@@ -173,7 +173,7 @@ void optimizer(
             if (it_design > 1) {
                 H_BFGS = BFGS(H, oldGrad, gradient, searchD);
                 H = H_BFGS;
-				std::cout<<H.eigenvalues()<<std::endl;
+				//std::cout<<H.eigenvalues()<<std::endl;
             }
             pk = -H * gradient;
         } else if (opt_opts.descent_type == 3) {

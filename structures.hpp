@@ -15,8 +15,13 @@ class Flow_data {
 		std::vector<dreal> dt;
 		std::vector<dreal> W;
 		std::vector<dreal> W_stage;
+		std::vector<dreal> W_stage2;
 		std::vector<dreal> fluxes;
 		std::vector<dreal> residual;
+
+		dreal current_CFL;
+		dreal old_residual_norm;
+		dreal current_residual_norm;
 
 		Flow_data() {}
 		Flow_data(const int n_elem_input) {
@@ -30,6 +35,7 @@ class Flow_data {
 			dt.resize(n_elem_ghost);
 			W.resize(n_resi_alloc);
 			W_stage.resize(n_resi_alloc);
+			W_stage2.resize(n_resi_alloc);
 			fluxes.resize(n_flux);
 			residual.resize(n_resi_alloc);
 		};
@@ -46,7 +52,7 @@ struct Flow_options {
 	double grid_xstart, grid_xend;
 
 	int flow_maxit;
-	double CFL;
+	double CFL_min, CFL_max, CFL_ramp;
 	double flow_tol;
 
 	int time_scheme, flux_scheme;

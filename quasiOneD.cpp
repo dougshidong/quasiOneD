@@ -63,25 +63,19 @@ int quasiOneD(
     clock_t toc;
     dreal elapsed;
 
-    dreal residual_norm = 1.0;
+    getDomainResi(flo_opts, area, flow_data);
+    flow_data->current_residual_norm = 1.0;
     int iterations = 0;
-    while(residual_norm > flo_opts.flow_tol && iterations < flo_opts.flow_maxit) {
+    while(flow_data->current_residual_norm > flo_opts.flow_tol && iterations < flo_opts.flow_maxit) {
         iterations++;
 
         // Step in Time
         stepInTime(flo_opts, area, dx, flow_data);
 
-        // Calculating the norm of the density residual
-        residual_norm = 0;
-        for (int i = 0; i < n_elem+2; i++) {
-            residual_norm = residual_norm + pow(flow_data->residual[i*3+0], 2);
-		}
-        residual_norm = sqrt(residual_norm);
-
         // Monitor Convergence
         if (iterations%flo_opts.print_freq == 0) {
             if (flo_opts.print_conv == 1) {
-                std::cout<<"Iteration "<<iterations <<"   NormR "<<std::setprecision(15)<<residual_norm<<std::endl;
+                std::cout<<"Iteration "<<iterations <<"   NormR "<<std::setprecision(15)<<flow_data->current_residual_norm<<std::endl;
             }
             //itV[iterations / flo_opts.print_freq - 1] = iterations;
             //normV[iterations / flo_opts.print_freq - 1] = residual_norm;
@@ -106,7 +100,7 @@ int quasiOneD(
 		p_vec[i] = get_p(flo_opts.gam, flow_data->W[i*3+0], flow_data->W[i*3+1], flow_data->W[i*3+2]);
 	}
     outVec(flo_opts.case_name, "current_pressure.dat", "w", p_vec);
-    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<residual_norm<<std::endl;
+    std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<flow_data->current_residual_norm<<std::endl;
     return 0;
 }
 template int quasiOneD( const std::vector<double> &x, const std::vector<double> &area, const Flow_options &flo_opts, class Flow_data<double>* const flow_data);

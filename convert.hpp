@@ -5,6 +5,15 @@
 #include<Eigen/Core>
 #include<adolc/adolc.h>
 
+template<typename dreal>
+inline dreal norm2 (std::vector<dreal> vec) {
+	dreal norm_val = 0;
+	for (int i = 0; i < vec.size(); i++) { norm_val = norm_val + vec[i]*vec[i]; }
+	return sqrt(norm_val);
+}
+template double norm2 (std::vector<double> vec);
+template adouble norm2 (std::vector<adouble> vec);
+
 // Get pressure
 template<typename dreal>
 inline dreal get_p(const double gamma, const dreal rho, const dreal rho_u, const dreal e) {

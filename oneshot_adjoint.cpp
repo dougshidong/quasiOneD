@@ -198,17 +198,10 @@ void oneshot_adjoint(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 0; i < 1 && residual_norm > 1e-12; i++) {
+		for (int i = 0; i < 100000 && residual_norm > 1e-12; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
-			// Calculating the norm of the density residual
-			residual_norm = 0;
-			for (int k = 0; k < 1; k++) {
-				for (int i = 0; i < n_elem; i++) {
-					residual_norm = residual_norm + pow(flow_data.residual[i*3+k], 2);
-				}
-			}
-			residual_norm = sqrt(residual_norm);
+			residual_norm = norm2(flow_data.residual);
 		}
 
 		// Get adjoint update
@@ -221,7 +214,7 @@ void oneshot_adjoint(
 
 		double step_size = 1e-0;
 		double adjoint_update_norm = 1;
-		for (int i = 0; i < 1 && adjoint_update_norm > 1e-12; i++) {
+		for (int i = 0; i < 100000 && adjoint_update_norm > 1e-10; i++) {
 
 			//adjoint_update = pIpW + pGpW.transpose()*adjoint;
 			//adjoint_update = step_size*(adjoint_update-adjoint);
@@ -229,6 +222,8 @@ void oneshot_adjoint(
 			//adjoint = adjoint + adjoint_update;
 
 			adjoint_update = pIpW + pGpW.transpose()*adjoint;
+			adjoint_update_norm = (adjoint_update - adjoint).norm();
+			adjoint = adjoint_update;
 		}
 		step_size = 1e+1;
 
@@ -263,7 +258,7 @@ void oneshot_adjoint(
 			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], search_direction[i]);
 		}
 
-		bool do_linesearch = true;
+		bool do_linesearch = false;
 		if (do_linesearch) {
 			double c1 = 1e-4;
 			double c_pk_grad = c1 * gradient.dot(search_direction);
@@ -302,15 +297,8 @@ void oneshot_adjoint(
 		}
 		area = evalS(current_design, x, dx);
         oldGrad = gradient;
-		//gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
-		printf("Iteration: %d, Flow Residual %23.14e Cost Function %23.14e Gradient Norm: %23.14e Adjoint_update norm %23.14e\n",
-			iteration, residual_norm, current_cost, gradient_norm, adjoint_update.norm());
 
-        gradient_norm = 0;
-        for (int i = 0; i < n_dvar; i++) {
-            gradient_norm += pow(gradient[i], 2);
-		}
-        gradient_norm = sqrt(gradient_norm);
+        gradient_norm = gradient.norm();
         gradient_norm_list.push_back(gradient_norm);
 
 
@@ -319,7 +307,8 @@ void oneshot_adjoint(
         timeVec.push_back(elapsed);
         std::cout<<"Time: "<<elapsed<<std::endl;
 
-		printf("Iteration: %d, Flow Residual %23.14e Cost Function %23.14e Gradient Norm: %23.14e \n", iteration, residual_norm, current_cost, gradient_norm);
+		printf("Iteration: %d, Flow Residual %23.14e Cost Function %23.14e Gradient Norm: %23.14e Adjoint_update norm %23.14e\n",
+			iteration, residual_norm, current_cost, gradient_norm, adjoint_update_norm);
         std::cout<<"End of Design Iteration: "<<iteration<<std::endl<<std::endl<<std::endl;
     }
 

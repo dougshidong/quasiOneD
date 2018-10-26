@@ -57,7 +57,7 @@ void inputfile(std::string filename, struct Input_data* const input_data)
     // Flow Convergence
     if (fgets(buf, sizeof(buf), file) == NULL) {abort();} // Skip Line
     if (fgets(buf, sizeof(buf), file) == NULL) {abort();} // Read
-    sscanf(buf, "%lf %lf %d", &flo_opts->CFL, &flo_opts->flow_tol, &flo_opts->flow_maxit);
+    sscanf(buf, "%lf %lf %lf %lf %d", &flo_opts->CFL_min, &flo_opts->CFL_max, &flo_opts->CFL_ramp, &flo_opts->flow_tol, &flo_opts->flow_maxit);
 
     // Printing Flow Stuff for Debugging
     if (fgets(buf, sizeof(buf), file) == NULL) {abort();} // Skip Line
