@@ -16,6 +16,7 @@
 #include"gradient.hpp"
 #include"residuald1.hpp"
 #include"residual_derivatives.hpp"
+#include"fixed_point_derivatives.hpp"
 #include"cost_derivative.hpp"
 #include"parametrization.hpp"
 #include"analyticHessian.hpp"
@@ -36,9 +37,12 @@ void oneshot_dwdx(
 	// **************************************************************************************************************************************
 	// Initialize the flow
 	const double gam = flo_opts.gam;
-	int n_elem = flo_opts.n_elem;
+	const int n_dvar = opt_opts.n_design_variables;
+	const int n_elem = flo_opts.n_elem;
+	const int n_resi = 3*n_elem;
+	const int n_face = n_elem+1;
+
 	if(n_elem!=x.size()-1) abort();
-	int n_dvar = opt_opts.n_design_variables;
 	class Flow_data<double> flow_data(n_elem);
     // Inlet flow properties
     double inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
@@ -66,12 +70,18 @@ void oneshot_dwdx(
     }
 	// **************************************************************************************************************************************
 	// Initialize the adjoint
-	VectorXd pIpW(3*n_elem);
-	SparseMatrix<double> pGpW;
-	VectorXd adjoint(3*n_elem);
-	VectorXd adjoint_update(3*n_elem);
+	VectorXd pIpW(n_resi);
+
+    SparseMatrix<double> pGpW(n_resi, n_resi);
+    SparseMatrix<double> pGpX(n_resi, n_dvar);
+	const int n_stencil = 3;
+	const int n_state = 3;
+	pGpW.reserve(n_elem*n_state*n_state*n_stencil);
+
+	VectorXd adjoint(n_resi);
+	VectorXd adjoint_update(n_resi);
 	adjoint.setZero();
-	SparseMatrix<double> identity(3*n_elem, 3*n_elem);
+	SparseMatrix<double> identity(n_resi, n_resi);
     identity.setIdentity();
 	// **************************************************************************************************************************************
 	// Initialize the design
@@ -79,14 +89,13 @@ void oneshot_dwdx(
 	current_design.design_variables = initial_design.design_variables;
     std::vector<double> area = evalS(current_design, x, dx);
 
-    MatrixXd dAreadDes(n_elem + 1, n_dvar);
-	VectorXd dCostdArea(n_elem + 1);
+    MatrixXd dAreadDes(n_face, n_dvar);
+	VectorXd dCostdArea(n_face);
 	dCostdArea = evaldCostdArea(n_elem);
     VectorXd dCostdDes(n_dvar);
 	dCostdDes.setZero();
     VectorXd pIpX(n_dvar);
 	pIpX.setZero();
-    MatrixXd pGpX(3*n_elem, n_dvar);
 
 
     MatrixXd H(n_dvar, n_dvar),
@@ -150,21 +159,24 @@ void oneshot_dwdx(
 
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-        auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-		SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
-		pGpW = identity - (*max_dt)/dx[1] * dRdW;
+		pIpX = dCostdDes;
+
+        //auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
+		//SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+		//pGpW = identity - (*max_dt)/dx[1] * dRdW;
+
 
 		// Get design update
-		dAreadDes = evaldAreadDes(x, dx, current_design);
+		//dAreadDes = evaldAreadDes(x, dx, current_design);
 		//dCostdArea = evaldCostdArea(n_elem); //0
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
-		pIpX = dCostdDes;
-		pGpX = -(*max_dt)/dx[1] * evaldRdArea(flo_opts, flow_data) * dAreadDes;
+		//pGpX = -(*max_dt)/dx[1] * evaldRdArea(flo_opts, flow_data) * dAreadDes;
 
-		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
-		gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
+		eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
+		gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
+		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
 
-		double step_size = 1e+1;
+		double step_size = 1e+0;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;

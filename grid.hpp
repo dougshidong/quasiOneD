@@ -18,8 +18,8 @@ std::vector<dreal> eval_dx(std::vector<dreal> x);
 template<typename dreal>
 std::vector<dreal> evalS(
 	const struct Design<dreal> &design,
-    const std::vector<dreal> &x,
-    const std::vector<dreal> &dx);
+    const std::vector<double> &x,
+    const std::vector<double> &dx);
 
 #endif
 

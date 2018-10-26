@@ -14,7 +14,7 @@ template<typename dreal>
 void stepInTime(
 	const struct Flow_options &flow_options,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data);
 
 #endif

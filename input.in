@@ -2,7 +2,7 @@ temp
 *******************************************
 GRID SIZE
 n_elem      xend        xstart
-50          0.0         1.0
+100         0.0         1.0
 *******************************************
 INITIAL GEOMETRY
 hg          t1g         t2g
@@ -10,9 +10,9 @@ hg          t1g         t2g
 *******************************************
 FLOW SOLVER PARAMETERS
 time_scheme flux_scheme scalar_diss
-2           0           0.5
+0           0           0.5
 cfl         flow_tol    flow_maxit
-0.2         1e-14       50000
+0.70        1e-14       50000
 print_freq  print_conv  print_sol
 10          0           0
 *******************************************
@@ -24,9 +24,9 @@ mach_inlet  tot_in_T    tot_in_p    out_p_ratio
 *******************************************
 DESIGN OPTIMIZATION PARAMETERS
 do_design   des_param   cost_func
-1           2           1
+0           2           1
 descent     grad_type   hess_type   hess_exact   dwdx_tol
-1           1           3           0            1.0e-16
+2           1           3           0            1.0e-16
 opt_tol     opt_maxit
 1e-8        3000000
 TARGET GEOMETRY
@@ -35,4 +35,4 @@ hg          t1g         t2g
 *******************************************
 SPLINE PARAMETERS (n_control_pts = n_dvar + 2)
 n_dvar      degree
-20          4
+50          4

@@ -6,31 +6,33 @@
 #include <Eigen/Core>
 #include <Eigen/SVD>
 
+#include<adolc/adolc.h>
+
 using namespace Eigen;
 
-template<typename dreal>
-std::vector<dreal> getKnots(
+std::vector<double> getKnots(
 	const int nknots,
 	const int spline_degree,
-    const dreal grid_xstart,
-    const dreal grid_xend);
+    const double grid_xstart,
+    const double grid_xend);
 
-template<typename dreal>
-dreal getbij(dreal x, int i, int j, std::vector<dreal> t);
+double getbij(double x, int i, int j, std::vector<double> t);
 
 template<typename dreal>
 std::vector<dreal> evalSpline(
 	const int n_control_pts,
 	const int spline_degree,
 	const std::vector<dreal> &control_points,
-    const std::vector<dreal> &x,
-    const std::vector<dreal> &dx)
+    const std::vector<double> &x,
+    const std::vector<double> &dx)
 {
 	const int n_face = x.size();
     // Get Knot Vector
     int nknots = n_control_pts + spline_degree + 1;
-    std::vector<dreal> knots(nknots);
-    knots = getKnots(nknots, spline_degree, 0.0, 1.0);
+    std::vector<double> knots(nknots);
+	const double x_start = 0.0;
+	const double x_end = 1.0;
+    knots = getKnots(nknots, spline_degree, x_start, x_end);
 
     // Define Area at i+1/2
     std::vector<dreal> area(n_face, 0);
@@ -43,6 +45,7 @@ std::vector<dreal> evalSpline(
     return area;
 }
 template std::vector<double> evalSpline( const int n_control_pts, const int spline_degree, const std::vector<double> &control_points, const std::vector<double> &x, const std::vector<double> &dx);
+template std::vector<adouble> evalSpline( const int n_control_pts, const int spline_degree, const std::vector<adouble> &control_points, const std::vector<double> &x, const std::vector<double> &dx);
 
 
 MatrixXd evalSplineDerivative( // now returns dSdCtl instead of dSdDesign (nctl = ndes+2)
@@ -59,7 +62,9 @@ MatrixXd evalSplineDerivative( // now returns dSdCtl instead of dSdDesign (nctl 
     // Get Knot Vector
     int nknots = n_control_pts + spline_degree + 1;
     std::vector<double> knots(nknots);
-    knots = getKnots(nknots, spline_degree, 0.0, 1.0);
+	const double x_start = 0.0;
+	const double x_end = 1.0;
+    knots = getKnots(nknots, spline_degree, x_start, x_end);
 
     // Define Area at i+1/2
     for (int Si = 0; Si < n_face; Si++) {
@@ -76,8 +81,8 @@ MatrixXd evalSplineDerivative( // now returns dSdCtl instead of dSdDesign (nctl 
 template<typename dreal>
 MatrixXd eval_dArea_dDesign(
 	const struct Design<dreal> &design,
-    std::vector<dreal> x,
-    std::vector<dreal> dx)
+    std::vector<double> x,
+    std::vector<double> dx)
 {
 	int n_face = x.size();
 
@@ -90,8 +95,10 @@ MatrixXd eval_dArea_dDesign(
 
     // Get Knot Vector
     int nknots = n_control_pts + spline_degree + 1;
-    std::vector<dreal> knots(nknots);
-    knots = getKnots(nknots, spline_degree, 0.0, 1.0);
+    std::vector<double> knots(nknots);
+	const double x_start = 0.0;
+	const double x_end = 1.0;
+    knots = getKnots(nknots, spline_degree, x_start, x_end);
 
 	MatrixXd dArea_dSpline = evalSplineDerivative(n_control_pts, spline_degree, control_points, x, dx);
 
@@ -104,8 +111,8 @@ MatrixXd eval_dArea_dDesign(
 
 template<typename dreal>
 std::vector<dreal> fit_bspline(
-    const std::vector<dreal> &x,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &x,
+    const std::vector<double> &dx,
     const std::vector<dreal> &area,
 	const int n_control_pts,
 	const int spline_degree)
@@ -113,18 +120,20 @@ std::vector<dreal> fit_bspline(
 	int n_face = x.size();
     // Get Knot Vector
     int nknots = n_control_pts + spline_degree + 1;
-    std::vector<dreal> knots(nknots);
-    knots = getKnots(nknots, spline_degree, 0.0, 1.0);
+    std::vector<double> knots(nknots);
+	const double x_start = 0.0;
+	const double x_end = 1.0;
+    knots = getKnots(nknots, spline_degree, x_start, x_end);
 
     VectorXd ctl_pts(n_control_pts), s_eig(n_face);
     MatrixXd A(n_face, n_control_pts);
     A.setZero();
     
-	//dreal xend = 1.0;
+	//double xend = 1.0;
     for (int iface = 0; iface < n_face; iface++) {
         //if (iface < n_elem) xh = x[iface] - dx[iface] / 2.0;
         //else xh = xend;
-        const dreal xh = x[iface];
+        const double xh = x[iface];
         s_eig(iface) = area[iface];
         for (int ictl = 0; ictl < n_control_pts; ictl++)
         {
@@ -151,17 +160,16 @@ template std::vector<double> fit_bspline(
 	const int n_control_pts,
 	const int spline_degree);
 
-template<typename dreal>
-dreal getbij(dreal x, int i, int j, std::vector<dreal> t) {
+double getbij(double x, int i, int j, std::vector<double> t) {
     if (j==0) {
         if (t[i] <= x && x < t[i+1]) return 1;
         else return 0;
     }
 
-    dreal h = getbij(x, i,   j-1, t);
-    dreal k = getbij(x, i+1, j-1, t);
+    double h = getbij(x, i,   j-1, t);
+    double k = getbij(x, i+1, j-1, t);
 
-    dreal bij = 0;
+    double bij = 0;
 
     if (h!=0) bij += (x        - t[i]) / (t[i+j]   - t[i]  ) * h;
     if (k!=0) bij += (t[i+j+1] - x   ) / (t[i+j+1] - t[i+1]) * k;
@@ -169,27 +177,24 @@ dreal getbij(dreal x, int i, int j, std::vector<dreal> t) {
     return bij;
 }
 
-template<typename dreal>
-std::vector<dreal> getKnots(
+std::vector<double> getKnots(
 	const int nknots,
 	const int spline_degree,
-    dreal grid_xstart,
-    dreal grid_xend)
+    double grid_xstart,
+    double grid_xend)
 {
-    std::vector<dreal> knots(nknots);
+    std::vector<double> knots(nknots);
     int nb_outer = 2 * (spline_degree + 1);
     int nb_inner = nknots - nb_outer;
-    dreal eps = 2e-15; // Allow Spline Definition at End Point
+    double eps = 2e-15; // Allow Spline Definition at End Point
     // Clamped Open-Ended
-    for (int iknot = 0; iknot < spline_degree + 1; iknot++)
-    {
+    for (int iknot = 0; iknot < spline_degree + 1; iknot++) {
         knots[iknot] = grid_xstart;
         knots[nknots - iknot - 1] = grid_xend + eps;
     }
     // Uniform Knot Vector
-    dreal knot_dx = (grid_xend + eps - grid_xstart) / (nb_inner + 1);
-    for (int iknot = 1; iknot < nb_inner+1; iknot++)
-    {
+    double knot_dx = (grid_xend + eps - grid_xstart) / (nb_inner + 1);
+    for (int iknot = 1; iknot < nb_inner+1; iknot++) {
         knots[iknot + spline_degree] = iknot * knot_dx;
     }
     return knots;

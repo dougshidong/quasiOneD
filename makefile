@@ -1,8 +1,8 @@
 CXX	= mpicxx
 #CXX	= gcc-8
 #DEBUG	= -pg
-#DEBUG	= -g -Wall -Werror -Warray-bounds -march=native
-DEBUG	= -O3
+DEBUG	= -g -Wall -Werror -Warray-bounds -march=native
+#DEBUG	= -O3
 OBJDIR  = ./obj
 CPP_FILES	=	$(wildcard *.cpp)
 OBJ_FILES	=	$(addprefix	$(OBJDIR)/,	$(notdir	$(CPP_FILES:.cpp=.o)))

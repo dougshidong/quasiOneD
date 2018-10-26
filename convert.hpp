@@ -70,7 +70,7 @@ void dWdWp(
     std::vector<double> const &W,
     int k);
 
-void WtoF(
+void WtoF_all(
 	const double gam,
     std::vector<double> const &W,
     std::vector<double> &F);
@@ -85,4 +85,9 @@ std::vector <Eigen::Matrix3d> ddWpdWdWp(
     const double gam,
     const std::vector<double> &W,
     const int i);
+
+template<typename dreal> Eigen::Matrix<dreal, 3, 3> analytical_flux_jacobian( const double gam, const Eigen::Matrix<dreal, 3, 1> &W);
+template<typename dreal> Eigen::Matrix<dreal, 3, 1> VectorToEigen3(const dreal w1, const dreal w2, const dreal w3);
+template<typename dreal> Eigen::Matrix<dreal, 3, 1> WtoF( const double gam, const Eigen::Matrix<dreal, 3, 1> &W);
+
 #endif

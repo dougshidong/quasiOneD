@@ -105,7 +105,6 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 			const unsigned int col = cind[i];
 			const double val = values[i];
 			if(col < n_indep_w) {
-				printf("%3d %3d %3d %10.6f\n\n",row,col,n_indep_w,val);
 				dRdW.insert(row, col) = val;
 			}
 		}

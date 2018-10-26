@@ -5,12 +5,14 @@
 #include<math.h>
 #include<iostream>
 #include<Eigen/Core>
+#include<Eigen/LU>
 #include<Eigen/Sparse>
 #include "flux.hpp"
 #include "convert.hpp"
 //#include "residuald1.hpp"
 #include "boundary_conditions.hpp"
 #include<adolc/adolc.h>
+#include"adolc_eigen.hpp"
 
 #include <cmath>
 #include <complex>
@@ -56,21 +58,28 @@ template<typename dreal>
 void EulerExplicitStep(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
+    class Flow_data<dreal>* const flow_data);
+
+template<typename dreal>
+void lusgs(
+	const struct Flow_options &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
 void jamesonrk(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
 void stepInTime(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data)
 {
 	// Calculate Time Step
@@ -88,7 +97,7 @@ void stepInTime(
     if (flo_opts.time_scheme == 0) {
         EulerExplicitStep(flo_opts, area, dx, flow_data);
     } else if (flo_opts.time_scheme == 1) {
-        abort();//rk4(area, dx, dt, flow_data);
+		lusgs(flo_opts, area, dx, flow_data);
     } else if (flo_opts.time_scheme == 2) {
         jamesonrk(flo_opts, area, dx, flow_data);
     } else if (flo_opts.time_scheme == 3) {
@@ -107,14 +116,14 @@ template void stepInTime(
 template void stepInTime(
 	const struct Flow_options &flo_opts,
     const std::vector<adouble> &area,
-    const std::vector<adouble> &dx,
+    const std::vector<double> &dx,
     class Flow_data<adouble>* const flow_data);
 
 template<typename dreal>
 class Flow_data<dreal> stepInTime_noupdate(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     const class Flow_data<dreal> &flow_data)
 {
     class Flow_data<dreal> new_flow = flow_data;
@@ -151,7 +160,7 @@ template<typename dreal>
 void EulerExplicitStep(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data)
 {
     getDomainResi(flo_opts, area, flow_data);
@@ -172,7 +181,7 @@ template<typename dreal>
 void jamesonrk(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data)
 {
 	int n_elem = flo_opts.n_elem;
@@ -209,38 +218,120 @@ template<typename dreal>
 void lusgs(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
-    const std::vector<dreal> &dx,
+    const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data)
 {
 	int n_elem = flo_opts.n_elem;
-    // Initialize First Stage
-    for (int k = 0; k < 3; k++) {
-        for (int i = 0; i < n_elem+2; i++) {
-            const int ki = i * 3 + k;
-            flow_data->W_stage[ki] = flow_data->W[ki];
-        }
-    }
-    // 1-4 Stage
-    for (int r = 1; r < 5; r++) {
-        // Calculate Residuals
-		getDomainResi(flo_opts, area, flow_data);
-        // Step in RK time
-        for (int k = 0; k < 3; k++) {
-            for (int i = 1; i < n_elem+1; i++) {
-                const int ki = i * 3 + k;
-                flow_data->W_stage[ki] = flow_data->W[ki] - (flow_data->dt[i-1] / (5 - r)) * flow_data->residual[ki] / dx[i-1];
-            }
-        }
-    }
 
-    for (int k = 0; k < 3; k++) {
-        for (int i = 1; i < n_elem+1; i++) {
-            const int ki = i * 3 + k;
-            flow_data->residual[ki] = (flow_data->W_stage[ki] - flow_data->W[ki]) * dx[i] / flow_data->dt[i];
-            flow_data->W[ki] = flow_data->W_stage[ki];
-        }
-    }
+	const double gam = flo_opts.gam;
+
+	using Matrix3 = Eigen::Matrix<dreal, 3, 3>;
+	using Vector3 = Eigen::Matrix<dreal, 3, 1>;
+
+	getDomainResi(flo_opts, area, flow_data);
+
+	Vector3 rhs;
+	for (int row = 1; row < n_elem; row++) {
+
+		dreal w1 = flow_data->W[row*3+0];
+		dreal w2 = flow_data->W[row*3+1];
+		dreal w3 = flow_data->W[row*3+2];
+		Vector3 W1 = VectorToEigen3(w1,w2,w3);
+		const Matrix3 diagonal_block = analytical_flux_jacobian(gam, W1);
+
+		const dreal u_i = w2 / w1;
+		const dreal c_i = get_c(gam,w1,w2,w3);
+
+		// Forward sweep
+		for (int i_state = 0; i_state < 3; i_state++) {
+			rhs(i_state) = flow_data->residual[row*3+i_state];
+		}
+		//for (int col = 1; col < row; col++) {
+		for (int col = row-1; col < row; col++) {
+			if (col < 1) continue;
+
+			w1 = flow_data->W[col*3+0] + flow_data->W_stage[col*3+0];
+			w2 = flow_data->W[col*3+1] + flow_data->W_stage[col*3+1];
+			w3 = flow_data->W[col*3+2] + flow_data->W_stage[col*3+2];
+			W1 = VectorToEigen3(w1,w2,w3);
+
+			rhs = rhs - 0.5*area[col]*WtoF(gam,W1);
+
+			w1 = flow_data->W[col*3+0];
+			w2 = flow_data->W[col*3+1];
+			w3 = flow_data->W[col*3+2];
+			W1 = VectorToEigen3(w1,w2,w3);
+
+			rhs = rhs + 0.5*area[col]*WtoF(gam,W1);
+
+			const dreal u_j = w2 / w1;
+			const dreal c_j = get_c(gam,w1,w2,w3);
+			const dreal lambda = (u_i+c_i + u_j+c_j)/2.0;
+
+			for (int i_state = 0; i_state < 3; i_state++) {
+				rhs(i_state) = rhs(i_state) + 0.5*lambda*flow_data->W_stage[col*3+i_state]*area[col];
+			}
+			Vector3 dW = diagonal_block.fullPivLu().solve(rhs);
+			for (int i_state = 0; i_state < 3; i_state++) {
+				flow_data->W_stage[col*3+i_state] = dW[i_state];
+			}
+		}
+	}
+	for (int row = 1; row < n_elem; row++) {
+
+		dreal w1 = flow_data->W[row*3+0];
+		dreal w2 = flow_data->W[row*3+1];
+		dreal w3 = flow_data->W[row*3+2];
+		Vector3 W1 = VectorToEigen3(w1,w2,w3);
+		const Matrix3 diagonal_block = analytical_flux_jacobian(gam, W1);
+
+		const dreal u_i = w2 / w1;
+		const dreal c_i = get_c(gam,w1,w2,w3);
+		// Backward sweep
+		//for (int col = row+1; col < n_elem; col++) {
+		for (int i_state = 0; i_state < 3; i_state++) {
+			rhs(i_state) = flow_data->W_stage[row*3+i_state];
+		}
+		for (int col = row+1; col < row+2; col++) {
+			if (col > n_elem) continue;
+
+			w1 = flow_data->W[col*3+0] + flow_data->W_stage[col*3+0];
+			w2 = flow_data->W[col*3+1] + flow_data->W_stage[col*3+1];
+			w3 = flow_data->W[col*3+2] + flow_data->W_stage[col*3+2];
+			W1 = VectorToEigen3(w1,w2,w3);
+
+			rhs = rhs - 0.5*area[col]*WtoF(gam,W1);
+
+			w1 = flow_data->W[col*3+0];
+			w2 = flow_data->W[col*3+1];
+			w3 = flow_data->W[col*3+2];
+			W1 = VectorToEigen3(w1,w2,w3);
+
+			rhs = rhs + 0.5*area[col]*WtoF(gam,W1);
+
+			const dreal u_j = w2 / w1;
+			const dreal c_j = get_c(gam,w1,w2,w3);
+			const dreal lambda = (u_i+c_i + u_j+c_j)/2.0;
+
+			for (int i_state = 0; i_state < 3; i_state++) {
+				rhs(i_state) = rhs(i_state) + 0.5*lambda*flow_data->W_stage[col*3+i_state]*area[col];
+			}
+
+			Vector3 dW = diagonal_block.fullPivLu().solve(rhs);
+
+			for (int i_state = 0; i_state < 3; i_state++) {
+				flow_data->W_stage[col*3+i_state] = flow_data->W_stage[col*3+i_state] - dW[i_state];
+			}
+			
+
+		}
+		for (int i_state = 0; i_state < 3; i_state++) {
+			flow_data->W[row*3+i_state] = flow_data->W[row*3+i_state] + flow_data->W_stage[row*3+i_state];
+		}
+	} // Row loop
 }
+template void lusgs( const struct Flow_options &flo_opts, const std::vector<double> &area, const std::vector<double> &dx, class Flow_data<double>* const flow_data);
+template void lusgs( const struct Flow_options &flo_opts, const std::vector<adouble> &area, const std::vector<double> &dx, class Flow_data<adouble>* const flow_data);
 
 //void dFdW(
 //    std::vector<dreal> &J,

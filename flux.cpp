@@ -328,7 +328,7 @@ void Flux_Scalar(
 //    std::vector<dreal> const &W)
 //{
 //    // Get Convective Variables
-//    WtoF(W, F);
+//    WtoF_all(W, F);
 //
 //    dreal beta = gam - 1.0;
 //    dreal rH, uH, hH, cH;

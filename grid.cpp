@@ -10,7 +10,7 @@
 template<typename dreal>
 std::vector<dreal> sinParam(
     const dreal h, const dreal t1, const dreal t2,
-    std::vector<dreal> x)
+    std::vector<double> x)
 {
 	const dreal PI = atan(1.0) * 4.0;
 	const int n_face = x.size();
@@ -22,7 +22,6 @@ std::vector<dreal> sinParam(
 
     return area;
 }
-
 
 // Evaluate X
 template<typename dreal>
@@ -58,8 +57,8 @@ template std::vector<adouble> eval_dx(std::vector<adouble> x);
 template<typename dreal>
 std::vector<dreal> evalS(
 	const struct Design<dreal> &design,
-    const std::vector<dreal> &x,
-    const std::vector<dreal> &dx)
+    const std::vector<double> &x,
+    const std::vector<double> &dx)
 {
 	int n_face = x.size();
     std::vector<dreal> area(n_face);
@@ -82,3 +81,4 @@ std::vector<dreal> evalS(
     return area;
 }
 template std::vector<double> evalS( const struct Design<double> &design, const std::vector<double> &x, const std::vector<double> &dx);
+template std::vector<adouble> evalS( const struct Design<adouble> &design, const std::vector<double> &x, const std::vector<double> &dx);

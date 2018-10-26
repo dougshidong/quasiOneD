@@ -4,6 +4,10 @@
 #include<math.h>
 #include"convert.hpp"
 
+#include<adolc/adolc.h>
+#include"adolc_eigen.hpp"
+
+
 // Get pressure vector
 void get_all_p(
 	const double gam,
@@ -17,8 +21,61 @@ void get_all_p(
     }
 }
 
+template<typename dreal>
+Eigen::Matrix<dreal, 3, 3> analytical_flux_jacobian(
+	const double gam,
+	const Eigen::Matrix<dreal, 3, 1> &W)
+{
+	Eigen::Matrix<dreal, 3, 3> dFdW;
+	const dreal w1 = W(0);
+	const dreal w2 = W(1);
+	const dreal w3 = W(2);
+	dFdW(0,0) = 0.0;
+	dFdW(0,1) = 1.0;
+	dFdW(0,2) = 0.0;
+	dFdW(1,0) = 0.5 * w2*w2 * (gam-3.0) / (w1*w1);
+	dFdW(1,0) = -w2*(gam-3.0)/w1;
+	dFdW(1,0) = (gam-1.0);
+	dFdW(2,0) = (w2*w2*w2*(gam-1.0) - w1*w2*w3*gam) / (w1*w1*w1);
+	dFdW(2,0) = w3*gam/w1 - 3.0*w2*w2*(gam-1.0) / (2.0*w1*w1);
+	dFdW(2,2) = w2*gam/w1;
 
-void WtoF(
+	return dFdW;
+}
+template Eigen::Matrix<double, 3, 3> analytical_flux_jacobian( const double gam, const Eigen::Matrix<double, 3, 1> &W);
+template Eigen::Matrix<adouble, 3, 3> analytical_flux_jacobian( const double gam, const Eigen::Matrix<adouble, 3, 1> &W);
+
+
+template<typename dreal>
+Eigen::Matrix<dreal, 3, 1> VectorToEigen3(const dreal w1, const dreal w2, const dreal w3) {
+	Eigen::Matrix<dreal, 3, 1> W;
+	W(0) = w1;
+	W(1) = w2;
+	W(2) = w3;
+	return W;
+}
+template Eigen::Matrix<double, 3, 1> VectorToEigen3(const double w1, const double w2, const double w3);
+template Eigen::Matrix<adouble, 3, 1> VectorToEigen3(const adouble w1, const adouble w2, const adouble w3);
+
+template<typename dreal>
+Eigen::Matrix<dreal, 3, 1> WtoF(
+	const double gam,
+	const Eigen::Matrix<dreal, 3, 1> &W)
+{
+	const dreal w1 = W(0);
+	const dreal w2 = W(1);
+	const dreal w3 = W(2);
+
+	Eigen::Matrix<dreal, 3, 1> F;
+	F(0) = w2;
+	F(1) = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
+	F(2) = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
+	return F;
+}
+template Eigen::Matrix<double, 3, 1> WtoF( const double gam, const Eigen::Matrix<double, 3, 1> &W);
+template Eigen::Matrix<adouble, 3, 1> WtoF( const double gam, const Eigen::Matrix<adouble, 3, 1> &W);
+
+void WtoF_all(
 	const double gam,
     std::vector<double> const &W,
     std::vector<double> &F)
