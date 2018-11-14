@@ -100,8 +100,9 @@ void eval_dGdW_dGdX_adolc(
 		int nnz;
 		int options[4];
 
+		// CFL computation results in non-sparse due to the 'fmax'
 		options[0] = 0;          /* sparsity pattern by index domains (default) */ 
-		options[1] = 0;          /*                         safe mode (default) */ 
+		options[1] = 1;          /*                         safe mode (default) */ 
 		options[2] = 0;          /*              not required if options[0] = 0 */ 
 		options[3] = 0;          /*                column compression (default) */ 
 		sparse_jac(tag, n_dep, n_indep, 0, indep, &nnz, &rind, &cind, &values, options);
@@ -110,6 +111,7 @@ void eval_dGdW_dGdX_adolc(
 			const unsigned int row = rind[i];
 			const unsigned int col = cind[i];
 			const double val = values[i];
+			//std::cout<<row<<" "<<col<<" "<<val<<std::endl;
 			if(col < n_indep_w) {
 				(*dGdW).insert(row, col) = val;
 			} else {

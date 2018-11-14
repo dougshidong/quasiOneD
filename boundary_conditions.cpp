@@ -50,13 +50,13 @@ void inletBC(
         flow_data->W[0 * 3 + 1] = rho_b * u_b;
         flow_data->W[0 * 3 + 2] = e_b;
     } else {
-		dreal inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
+		const dreal inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
 		const dreal p_inlet = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
-		dreal p = p_inlet;
-		dreal rho = p / (flo_opts.R * inlet_T);
-		dreal c = sqrt(gam * p / rho);
-		dreal u = flo_opts.inlet_mach * c;
-		dreal e = rho * (flo_opts.Cv * inlet_T + 0.5 * pow(u, 2));
+		const dreal p = p_inlet;
+		const dreal rho = p / (flo_opts.R * inlet_T);
+		const dreal c = sqrt(gam * p / rho);
+		const dreal u = flo_opts.inlet_mach * c;
+		const dreal e = rho * (flo_opts.Cv * inlet_T + 0.5 * pow(u, 2));
 
 		flow_data->W[0*3+0] = rho;
 		flow_data->W[0*3+1] = rho * u;

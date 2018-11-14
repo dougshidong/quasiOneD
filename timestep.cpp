@@ -11,6 +11,7 @@
 #include "convert.hpp"
 //#include "residuald1.hpp"
 #include "boundary_conditions.hpp"
+#include "boundary_gradient2.hpp"
 #include<adolc/adolc.h>
 #include"adolc_eigen.hpp"
 
@@ -213,7 +214,8 @@ void lusgs(
 	evaluate_dt(flo_opts, dx, flow_data);
 
 	Vector3 rhs;
-	for (int sweeps = 0; sweeps < 2; sweeps++) {
+	const int n_sweeps = 1;
+	for (int sweeps = 0; sweeps < n_sweeps; sweeps++) {
 		for (int row = 1; row < n_elem+1; row++) {
 
 			const dreal u_i = flow_data->W[row*3+1] / flow_data->W[row*3+0];
@@ -243,6 +245,16 @@ void lusgs(
 
 			dreal diag_identity = dx[row]/flow_data->dt[row] + 0.5*(lambda_p*area_p + lambda_n*area_n);
 			jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
+
+			//if (row == 1) { // Add boundary contribution
+			//	Vector3 W2;
+			//	W2(0) = flow_data->W[(row-1)*3+0];
+			//	W2(1) = flow_data->W[(row-1)*3+1];
+			//	W2(2) = flow_data->W[(row-1)*3+2];
+			//	Matrix3 dWidWd = inletBC_gradient(flo_opts, flow_data);
+			//	Matrix3 dRddWi = -0.5*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity()
+			//	jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
+			//}
 
 
 			// Forward sweep

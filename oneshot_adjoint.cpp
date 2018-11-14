@@ -111,7 +111,7 @@ void oneshot_adjoint(
 
     // Initialize B
     H.setIdentity();
-    H = H * 1.0e-3;
+    H = H * 1.0e-0;
     //if (opt_opts.exact_hessian != 0) {
     //    H = getAnalyticHessian(x, dx, flow_data.W, area, designVar, hessian_type);
     //    H = invertHessian(H);
@@ -151,7 +151,7 @@ void oneshot_adjoint(
 	eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
 
 	double adjoint_update_norm = 1;
-	for (int i = 0; i < 100 && adjoint_update_norm > 1e-12; i++) {
+	for (int i = 0; i < 1 && adjoint_update_norm > 1e-12; i++) {
 		adjoint = pIpW + pGpW.transpose()*adjoint;
 
 		//const double step_size = 1.0;
@@ -198,7 +198,7 @@ void oneshot_adjoint(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 0; i < 100000 && residual_norm > 1e-12; i++) {
+		for (int i = 0; i < 10000 && residual_norm > 1e-12; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
 			residual_norm = norm2(flow_data.residual);
@@ -206,15 +206,15 @@ void oneshot_adjoint(
 
 		// Get adjoint update
 		pIpW = evaldCostdW(opt_opts, flo_opts, flow_data.W, dx);
-        auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
-		dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
-		pGpW = identity - (*max_dt)/dx[1] * dRdW;
+        //auto max_dt = max_element(std::begin(flow_data.dt), std::end(flow_data.dt));
+		//dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+		//pGpW = identity - (*max_dt)/dx[1] * dRdW;
 
 		eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
 
 		double step_size = 1e-0;
 		double adjoint_update_norm = 1;
-		for (int i = 0; i < 100000 && adjoint_update_norm > 1e-10; i++) {
+		for (int i = 0; i < 10000 && adjoint_update_norm > 1e-5; i++) {
 
 			//adjoint_update = pIpW + pGpW.transpose()*adjoint;
 			//adjoint_update = step_size*(adjoint_update-adjoint);
@@ -224,8 +224,9 @@ void oneshot_adjoint(
 			adjoint_update = pIpW + pGpW.transpose()*adjoint;
 			adjoint_update_norm = (adjoint_update - adjoint).norm();
 			adjoint = adjoint_update;
+			//std::cout<<i<<" "<<adjoint_update_norm<<std::endl<<std::endl;
 		}
-		step_size = 1e+1;
+		step_size = 1e+0;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -316,8 +317,10 @@ void oneshot_adjoint(
     std::cout<<gradient<<std::endl;
 
     std::cout<<std::endl<<"Final Design:"<<std::endl;
-    for (int i = 0; i < n_dvar; i++)
+    for (int i = 0; i < n_dvar; i++) {
         std::cout<<current_design.design_variables[i]<<std::endl;
+	}
+    outVec(constants.case_name, "final_design.dat", "w", gradient_norm_list);
 
 
     double final_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);

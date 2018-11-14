@@ -71,15 +71,8 @@ void optimizer(
 {
 	int n_elem = flo_opts.n_elem;
 	int n_dvar = opt_opts.n_design_variables;
-	class Flow_data<double> flow_data;
 
-    const int n_face = n_elem + 1;
-    const int n_elem_ghost = n_elem + 2;
-    flow_data.dt.resize(n_elem_ghost);
-    flow_data.W.resize(3*n_elem_ghost);
-    flow_data.W_stage.resize(3*n_elem_ghost);
-    flow_data.residual.resize(3*n_elem_ghost);
-    flow_data.fluxes.resize(3*n_face);
+	class Flow_data<double> flow_data(n_elem);
 
 	struct Design<double> current_design = initial_design;
 	current_design.design_variables = initial_design.design_variables;
@@ -108,7 +101,7 @@ void optimizer(
     VectorXd oldGrad(n_dvar); //BFGS
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
-	bool testJacobian = false;
+	bool testJacobian = true;
 	//testJacobian = false;
 	if (testJacobian) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);

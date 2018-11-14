@@ -173,10 +173,25 @@ void oneshot_dwdx(
 		//pGpX = -(*max_dt)/dx[1] * evaldRdArea(flo_opts, flow_data) * dAreadDes;
 
 		eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
-		gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
+		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
 		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
+		gradient = pIpW;
+		VectorXd Ab = pIpW;
+		//std::cout<<gradient.rows()<<" "<<gradient.cols()<<std::endl;
+		//std::cout<<Ab.rows()<<" "<<Ab.cols()<<std::endl;
+		//std::cout<<pGpW.rows()<<" "<<pGpW.cols()<<std::endl;
+		//std::cout<<pIpX.rows()<<" "<<pIpX.cols()<<std::endl;
+		//std::cout<<MatrixXd(pGpW).eigenvalues()<<std::endl;
+		for (int i = 0; i < 0; i++) {
+			Ab = pGpW.transpose() * Ab;
+			gradient = gradient + Ab;
+			std::cout<<i<<" "<<Ab.norm()<<std::endl<<std::endl;
+			if (Ab.norm() < 1e-5) break;
+		}
+		gradient = pGpX.transpose()*gradient;
+		gradient = gradient + pIpX;
 
-		double step_size = 1e+2;
+		double step_size = 1e+0;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;
