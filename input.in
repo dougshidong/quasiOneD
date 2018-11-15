@@ -12,7 +12,7 @@ FLOW SOLVER PARAMETERS
 time_scheme flux_scheme scalar_diss
 1           0           0.5
 cfl_min     cfl_max     cfl_ramp    flow_tol    flow_maxit
-0.1         200.        0.4         1e-10       50000
+1.0         200000000.  0.4         1e-10       50000
 print_freq  print_conv  print_sol
 50          1           0
 *******************************************

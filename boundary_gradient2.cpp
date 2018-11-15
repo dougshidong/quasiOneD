@@ -167,17 +167,17 @@ Eigen::Matrix<dreal,3,3> inletBC_gradient(
         //flow_data->W[0 * 3 + 1] = rho_b * u_b;
         //flow_data->W[0 * 3 + 2] = e_b;
 
-		dWbdWd(1,1) = d_rho_b_dw1;
-		dWbdWd(1,2) = d_rho_b_dw2;
-		dWbdWd(1,3) = d_rho_b_dw3;
+		dWbdWd(0,0) = d_rho_b_dw1;
+		dWbdWd(0,1) = d_rho_b_dw2;
+		dWbdWd(0,2) = d_rho_b_dw3;
                  
-		dWbdWd(2,1) = d_rho_b_dw1 * u_b + rho_b * d_u_b_dw1;
-		dWbdWd(2,2) = d_rho_b_dw2 * u_b + rho_b * d_u_b_dw2;
-		dWbdWd(2,3) = d_rho_b_dw3 * u_b + rho_b * d_u_b_dw3;
+		dWbdWd(1,0) = d_rho_b_dw1 * u_b + rho_b * d_u_b_dw1;
+		dWbdWd(1,1) = d_rho_b_dw2 * u_b + rho_b * d_u_b_dw2;
+		dWbdWd(1,2) = d_rho_b_dw3 * u_b + rho_b * d_u_b_dw3;
                  
-		dWbdWd(3,1) = d_e_b_dw1;
-		dWbdWd(3,2) = d_e_b_dw2;
-		dWbdWd(3,3) = d_e_b_dw3;
+		dWbdWd(2,0) = d_e_b_dw1;
+		dWbdWd(2,1) = d_e_b_dw2;
+		dWbdWd(2,2) = d_e_b_dw3;
 
 		//const dreal dWb1dWd1 = d_rho_b_dw1;
 		//const dreal dWb1dWd2 = d_rho_b_dw2;
@@ -217,17 +217,17 @@ Eigen::Matrix<dreal,3,3> inletBC_gradient(
 		//const dreal dWb3dWd2 = 0.0;
 		//const dreal dWb3dWd3 = 0.0;
 
+		dWbdWd(0,0) = 0.0; 
+		dWbdWd(0,1) = 0.0; 
+		dWbdWd(0,2) = 0.0; 
+                 
+		dWbdWd(1,0) = 0.0; 
 		dWbdWd(1,1) = 0.0; 
 		dWbdWd(1,2) = 0.0; 
-		dWbdWd(1,3) = 0.0; 
                  
+		dWbdWd(2,0) = 0.0; 
 		dWbdWd(2,1) = 0.0; 
 		dWbdWd(2,2) = 0.0; 
-		dWbdWd(2,3) = 0.0; 
-                 
-		dWbdWd(3,1) = 0.0; 
-		dWbdWd(3,2) = 0.0; 
-		dWbdWd(3,3) = 0.0; 
     }
 	return dWbdWd;
 }
@@ -330,15 +330,15 @@ Eigen::Matrix<dreal,3,3> outletBC_gradient(
 	condassign(dWbdWd32, mach_d-1.0, zero, d_e_b_dw2);
 	condassign(dWbdWd33, mach_d-1.0, one, d_e_b_dw3);
 
-	dWbdWd(1,1) = dWbdWd11;
-	dWbdWd(1,2) = dWbdWd12;
-	dWbdWd(1,3) = dWbdWd13;
-	dWbdWd(2,1) = dWbdWd21;
-	dWbdWd(2,2) = dWbdWd22;
-	dWbdWd(2,3) = dWbdWd23;
-	dWbdWd(3,1) = dWbdWd31;
-	dWbdWd(3,2) = dWbdWd32;
-	dWbdWd(3,3) = dWbdWd33;
+	dWbdWd(0,0) = dWbdWd11;
+	dWbdWd(0,1) = dWbdWd12;
+	dWbdWd(0,2) = dWbdWd13;
+	dWbdWd(1,0) = dWbdWd21;
+	dWbdWd(1,1) = dWbdWd22;
+	dWbdWd(1,2) = dWbdWd23;
+	dWbdWd(2,0) = dWbdWd31;
+	dWbdWd(2,1) = dWbdWd32;
+	dWbdWd(2,2) = dWbdWd33;
 
 	return dWbdWd;
 }

@@ -34,10 +34,10 @@ Eigen::Matrix<dreal, 3, 3> analytical_flux_jacobian(
 	dFdW(0,1) = 1.0;
 	dFdW(0,2) = 0.0;
 	dFdW(1,0) = 0.5 * w2*w2 * (gam-3.0) / (w1*w1);
-	dFdW(1,0) = -w2*(gam-3.0)/w1;
-	dFdW(1,0) = (gam-1.0);
+	dFdW(1,1) = -w2*(gam-3.0)/w1;
+	dFdW(1,2) = (gam-1.0);
 	dFdW(2,0) = (w2*w2*w2*(gam-1.0) - w1*w2*w3*gam) / (w1*w1*w1);
-	dFdW(2,0) = w3*gam/w1 - 3.0*w2*w2*(gam-1.0) / (2.0*w1*w1);
+	dFdW(2,1) = w3*gam/w1 - 3.0*w2*w2*(gam-1.0) / (2.0*w1*w1);
 	dFdW(2,2) = w2*gam/w1;
 
 	return dFdW;

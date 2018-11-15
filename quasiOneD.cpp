@@ -75,7 +75,7 @@ int quasiOneD(
         // Monitor Convergence
         if (iterations%flo_opts.print_freq == 0) {
             if (flo_opts.print_conv == 1) {
-                std::cout<<"Iteration "<<iterations <<"   NormR "<<std::setprecision(15)<<flow_data->current_residual_norm<<std::endl;
+                std::cout<<"Iteration "<<iterations<<"    CFL "<<flow_data->current_CFL<<"   NormR "<<std::setprecision(15)<<flow_data->current_residual_norm<<std::endl;
             }
             //itV[iterations / flo_opts.print_freq - 1] = iterations;
             //normV[iterations / flo_opts.print_freq - 1] = residual_norm;

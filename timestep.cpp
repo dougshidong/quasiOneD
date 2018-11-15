@@ -216,7 +216,103 @@ void lusgs(
 	Vector3 rhs;
 	const int n_sweeps = 1;
 	for (int sweeps = 0; sweeps < n_sweeps; sweeps++) {
+
+		// Forward sweep
 		for (int row = 1; row < n_elem+1; row++) {
+
+			const dreal u_i = flow_data->W[row*3+1] / flow_data->W[row*3+0];
+			const dreal c_i = get_c(gam,flow_data->W[row*3+0],flow_data->W[row*3+1],flow_data->W[row*3+2]);
+
+			const int i_w_p = row+1;
+			const int i_w_n = row-1;
+			const dreal u_p = flow_data->W[i_w_p*3+1] / flow_data->W[i_w_p*3+0];
+			const dreal c_p = get_c(gam,flow_data->W[i_w_p*3+0],flow_data->W[i_w_p*3+1],flow_data->W[i_w_p*3+2]);
+			const dreal lambda_p = (u_p+c_p + u_i+c_i)/2.0;
+
+			const dreal u_n = flow_data->W[i_w_n*3+1] / flow_data->W[i_w_n*3+0];
+			const dreal c_n = get_c(gam,flow_data->W[i_w_n*3+0],flow_data->W[i_w_n*3+1],flow_data->W[i_w_n*3+2]);
+			const dreal lambda_n = (u_n+c_n + u_i+c_i)/2.0;
+
+
+			const int i_face_p = row;
+			const int i_face_n = row-1;
+			const dreal area_p = area[i_face_p];
+			const dreal area_n = area[i_face_n];
+
+			Vector3 W1;
+			W1(0) = flow_data->W[row*3+0];
+			W1(1) = flow_data->W[row*3+1];
+			W1(2) = flow_data->W[row*3+2];
+			Matrix3 jacobian_diag = analytical_flux_jacobian(gam, W1);
+			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			jacobian_diag = 0.5*(area_p-area_n)*jacobian_diag;
+			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+
+			dreal diag_identity = dx[row]/flow_data->dt[row] + 0.5*(lambda_p*area_p - lambda_n*area_n);
+			std::cout<<"lambda_p and lambda_n "<<lambda_p<<" "<<lambda_n<<std::endl;
+			std::cout<<"dx/dt "<<dx[row]/flow_data->dt[row]<<std::endl;
+			std::cout<<"diag_identity "<<diag_identity<<std::endl;
+			jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
+			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+
+			if (row == 1) { // Add boundary contribution
+				Vector3 W2;
+				W2(0) = flow_data->W[(row-1)*3+0];
+				W2(1) = flow_data->W[(row-1)*3+1];
+				W2(2) = flow_data->W[(row-1)*3+2];
+				Matrix3 dWidWd = inletBC_gradient(flo_opts, flow_data);
+				Matrix3 dRddWi = -0.5*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity());
+				jacobian_diag = jacobian_diag + dRddWi*dWidWd;
+			}
+			if (row == n_elem) { // Add boundary contribution
+				Vector3 W2;
+				W2(0) = flow_data->W[(row+1)*3+0];
+				W2(1) = flow_data->W[(row+1)*3+1];
+				W2(2) = flow_data->W[(row+1)*3+2];
+				Matrix3 dWodWd = outletBC_gradient(flo_opts, flow_data);
+				Matrix3 dRddWo = 0.5*(area_p) * (analytical_flux_jacobian(gam, W2) + lambda_p*Matrix3::Identity());
+				jacobian_diag = jacobian_diag + dRddWo*dWodWd;
+			}
+
+			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			if(row==2) abort();
+
+
+			for (int i_state = 0; i_state < 3; i_state++) {
+				rhs(i_state) = -flow_data->residual[row*3+i_state];
+			}
+			for (int col = row-1; col < row; col++) {
+				if (col < 1) continue;
+
+				const dreal normal = -1.0;
+				W1(0) = flow_data->W[col*3+0] + flow_data->W_stage2[col*3+0];
+				W1(1) = flow_data->W[col*3+1] + flow_data->W_stage2[col*3+1];
+				W1(2) = flow_data->W[col*3+2] + flow_data->W_stage2[col*3+2];
+
+				rhs = rhs - 0.5*area[col]*normal*WtoF(gam,W1);
+
+				W1(0) = flow_data->W[col*3+0];
+				W1(1) = flow_data->W[col*3+1];
+				W1(2) = flow_data->W[col*3+2];
+
+				rhs = rhs + 0.5*area[col]*normal*WtoF(gam,W1);
+
+				const dreal u_j = W1(1)/W1(0);
+				const dreal c_j = get_c(gam,W1(0),W1(1),W1(2));
+				const dreal lambda = (u_i+c_i + u_j+c_j)/2.0;
+
+				for (int i_state = 0; i_state < 3; i_state++) {
+					rhs(i_state) = rhs(i_state) + 0.5*lambda*flow_data->W_stage[col*3+i_state]*area[col];
+				}
+			}
+			Vector3 dW = jacobian_diag.fullPivLu().solve(rhs);
+			for (int i_state = 0; i_state < 3; i_state++) {
+				flow_data->W_stage[row*3+i_state] = dW[i_state];
+			}
+		} // Row loop
+
+		// Backward sweep
+		for (int row = n_elem; row > 0; row--) {
 
 			const dreal u_i = flow_data->W[row*3+1] / flow_data->W[row*3+0];
 			const dreal c_i = get_c(gam,flow_data->W[row*3+0],flow_data->W[row*3+1],flow_data->W[row*3+2]);
@@ -246,88 +342,29 @@ void lusgs(
 			dreal diag_identity = dx[row]/flow_data->dt[row] + 0.5*(lambda_p*area_p + lambda_n*area_n);
 			jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
 
-			//if (row == 1) { // Add boundary contribution
-			//	Vector3 W2;
-			//	W2(0) = flow_data->W[(row-1)*3+0];
-			//	W2(1) = flow_data->W[(row-1)*3+1];
-			//	W2(2) = flow_data->W[(row-1)*3+2];
-			//	Matrix3 dWidWd = inletBC_gradient(flo_opts, flow_data);
-			//	Matrix3 dRddWi = -0.5*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity()
-			//	jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
-			//}
-
-
-			// Forward sweep
-			for (int i_state = 0; i_state < 3; i_state++) {
-				rhs(i_state) = -flow_data->residual[row*3+i_state];
+			if (row == 1) { // Add boundary contribution
+				Vector3 W2;
+				W2(0) = flow_data->W[(row-1)*3+0];
+				W2(1) = flow_data->W[(row-1)*3+1];
+				W2(2) = flow_data->W[(row-1)*3+2];
+				Matrix3 dWidWd = inletBC_gradient(flo_opts, flow_data);
+				Matrix3 dRddWi = -0.5*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity());
+				jacobian_diag = jacobian_diag + dRddWi*dWidWd;
 			}
-			//for (int col = 1; col < row; col++) {
-			//  	if (row-col>1) continue;
-			for (int col = row-1; col < row; col++) {
-				if (col < 1) continue;
-
-				const dreal normal = -1.0;
-				W1(0) = flow_data->W[col*3+0] + flow_data->W_stage2[col*3+0];
-				W1(1) = flow_data->W[col*3+1] + flow_data->W_stage2[col*3+1];
-				W1(2) = flow_data->W[col*3+2] + flow_data->W_stage2[col*3+2];
-
-				rhs = rhs - 0.5*area[col]*normal*WtoF(gam,W1);
-
-				W1(0) = flow_data->W[col*3+0];
-				W1(1) = flow_data->W[col*3+1];
-				W1(2) = flow_data->W[col*3+2];
-
-				rhs = rhs + 0.5*area[col]*normal*WtoF(gam,W1);
-
-				const dreal u_j = W1(1)/W1(0);
-				const dreal c_j = get_c(gam,W1(0),W1(1),W1(2));
-				const dreal lambda = (u_i+c_i + u_j+c_j)/2.0;
-
-				for (int i_state = 0; i_state < 3; i_state++) {
-					rhs(i_state) = rhs(i_state) + 0.5*lambda*flow_data->W_stage[col*3+i_state]*area[col];
-				}
+			if (row == n_elem) { // Add boundary contribution
+				Vector3 W2;
+				W2(0) = flow_data->W[(row+1)*3+0];
+				W2(1) = flow_data->W[(row+1)*3+1];
+				W2(2) = flow_data->W[(row+1)*3+2];
+				Matrix3 dWodWd = outletBC_gradient(flo_opts, flow_data);
+				Matrix3 dRddWo = 0.5*(area_p) * (analytical_flux_jacobian(gam, W2) + lambda_p*Matrix3::Identity());
+				jacobian_diag = jacobian_diag + dRddWo*dWodWd;
 			}
-			Vector3 dW = jacobian_diag.fullPivLu().solve(rhs);
-			for (int i_state = 0; i_state < 3; i_state++) {
-				flow_data->W_stage[row*3+i_state] = dW[i_state];
-			}
-		}
-		for (int row = n_elem; row > 0; row--) {
-
-			dreal w1 = flow_data->W[row*3+0];
-			dreal w2 = flow_data->W[row*3+1];
-			dreal w3 = flow_data->W[row*3+2];
-			Vector3 W1 = VectorToEigen3(w1,w2,w3);
-
-			const dreal u_i = w2 / w1;
-			const dreal c_i = get_c(gam,w1,w2,w3);
-
-			const int i_w_p = row+1;
-			const int i_w_n = row-1;
-			const dreal u_p = flow_data->W[i_w_p*3+1] / flow_data->W[i_w_p*3+0];
-			const dreal c_p = get_c(gam,flow_data->W[i_w_p*3+0],flow_data->W[i_w_p*3+1],flow_data->W[i_w_p*3+2]);
-			const dreal lambda_p = (u_p+c_p + u_i+c_i)/2.0;
-
-			const dreal u_n = flow_data->W[i_w_n*3+1] / flow_data->W[i_w_n*3+0];
-			const dreal c_n = get_c(gam,flow_data->W[i_w_n*3+0],flow_data->W[i_w_n*3+1],flow_data->W[i_w_n*3+2]);
-			const dreal lambda_n = (u_n+c_n + u_i+c_i)/2.0;
-
-
-			const int i_face_p = row;
-			const int i_face_n = row-1;
-			const dreal area_p = area[i_face_p];
-			const dreal area_n = area[i_face_n];
-			Matrix3 jacobian_diag = 0.5*(area_p-area_n)*analytical_flux_jacobian(gam, W1);
-
-			dreal diag_identity = dx[row]/flow_data->dt[row] + 0.5*(lambda_p*area_p + lambda_n*area_n);
-			jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
 
 			// Backward sweep
 			rhs.setZero();
 			for (int col = row+1; col < row+2; col++) {
 				if (col > n_elem) continue;
-			//for (int col = row+1; col < n_elem+1; col++) {
-			//  	if (col-row>1) continue;
 
 				const dreal normal = 1.0;
 				W1(0) = flow_data->W[col*3+0] + flow_data->W_stage2[col*3+0];
