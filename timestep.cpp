@@ -12,6 +12,7 @@
 //#include "residuald1.hpp"
 #include "boundary_conditions.hpp"
 #include "boundary_gradient2.hpp"
+#include "derivatives.hpp"
 #include<adolc/adolc.h>
 #include"adolc_eigen.hpp"
 
@@ -203,6 +204,7 @@ void lusgs(
 	int n_elem = flo_opts.n_elem;
 
 	const double gam = flo_opts.gam;
+	const dreal half = 0.5;
 
 	using Matrix3 = Eigen::Matrix<dreal, 3, 3>;
 	using Vector3 = Eigen::Matrix<dreal, 3, 1>;
@@ -243,17 +245,21 @@ void lusgs(
 			W1(0) = flow_data->W[row*3+0];
 			W1(1) = flow_data->W[row*3+1];
 			W1(2) = flow_data->W[row*3+2];
-			Matrix3 jacobian_diag = analytical_flux_jacobian(gam, W1);
-			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
-			jacobian_diag = 0.5*(area_p-area_n)*jacobian_diag;
-			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			Matrix3 jacobian_diag = (analytical_flux_jacobian(gam, W1))*half;
+			//std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			jacobian_diag(1,0) = jacobian_diag(1,0) + get_dpdw1(gam, W1(0), W1(1), W1(2));
+			jacobian_diag(1,1) = jacobian_diag(1,1) + get_dpdw2(gam, W1(0), W1(1), W1(2));
+			jacobian_diag(1,2) = jacobian_diag(1,2) + get_dpdw3(gam, W1(0), W1(1), W1(2));
+			//std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			jacobian_diag = (area_p-area_n)*jacobian_diag;
+			//std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
 
-			dreal diag_identity = dx[row]/flow_data->dt[row] + 0.5*(lambda_p*area_p - lambda_n*area_n);
-			std::cout<<"lambda_p and lambda_n "<<lambda_p<<" "<<lambda_n<<std::endl;
-			std::cout<<"dx/dt "<<dx[row]/flow_data->dt[row]<<std::endl;
-			std::cout<<"diag_identity "<<diag_identity<<std::endl;
+			dreal diag_identity = dx[row]/flow_data->dt[row] + half*(lambda_p*area_p - lambda_n*area_n);
+			//std::cout<<"lambda_p and lambda_n "<<lambda_p<<" "<<lambda_n<<std::endl;
+			//std::cout<<"dx/dt "<<dx[row]/flow_data->dt[row]<<std::endl;
+			//std::cout<<"diag_identity "<<diag_identity<<std::endl;
 			jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
-			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			//std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
 
 			if (row == 1) { // Add boundary contribution
 				Vector3 W2;
@@ -261,7 +267,7 @@ void lusgs(
 				W2(1) = flow_data->W[(row-1)*3+1];
 				W2(2) = flow_data->W[(row-1)*3+2];
 				Matrix3 dWidWd = inletBC_gradient(flo_opts, flow_data);
-				Matrix3 dRddWi = -0.5*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity());
+				Matrix3 dRddWi = -half*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity());
 				jacobian_diag = jacobian_diag + dRddWi*dWidWd;
 			}
 			if (row == n_elem) { // Add boundary contribution
@@ -270,12 +276,14 @@ void lusgs(
 				W2(1) = flow_data->W[(row+1)*3+1];
 				W2(2) = flow_data->W[(row+1)*3+2];
 				Matrix3 dWodWd = outletBC_gradient(flo_opts, flow_data);
-				Matrix3 dRddWo = 0.5*(area_p) * (analytical_flux_jacobian(gam, W2) + lambda_p*Matrix3::Identity());
+				Matrix3 dRddWo = half*(area_p) * (analytical_flux_jacobian(gam, W2) + lambda_p*Matrix3::Identity());
 				jacobian_diag = jacobian_diag + dRddWo*dWodWd;
 			}
 
-			std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
-			if(row==2) abort();
+			//std::cout<<"Row "<<row<<std::endl<<jacobian_diag<<std::endl;
+			//if(row==2) abort();
+
+			//jacobian_diag = 100*diag_identity*Matrix3::Identity();
 
 
 			for (int i_state = 0; i_state < 3; i_state++) {
@@ -289,20 +297,20 @@ void lusgs(
 				W1(1) = flow_data->W[col*3+1] + flow_data->W_stage2[col*3+1];
 				W1(2) = flow_data->W[col*3+2] + flow_data->W_stage2[col*3+2];
 
-				rhs = rhs - 0.5*area[col]*normal*WtoF(gam,W1);
+				rhs = rhs - half*area[col]*normal*WtoF(gam,W1);
 
 				W1(0) = flow_data->W[col*3+0];
 				W1(1) = flow_data->W[col*3+1];
 				W1(2) = flow_data->W[col*3+2];
 
-				rhs = rhs + 0.5*area[col]*normal*WtoF(gam,W1);
+				rhs = rhs + half*area[col]*normal*WtoF(gam,W1);
 
 				const dreal u_j = W1(1)/W1(0);
 				const dreal c_j = get_c(gam,W1(0),W1(1),W1(2));
 				const dreal lambda = (u_i+c_i + u_j+c_j)/2.0;
 
 				for (int i_state = 0; i_state < 3; i_state++) {
-					rhs(i_state) = rhs(i_state) + 0.5*lambda*flow_data->W_stage[col*3+i_state]*area[col];
+					rhs(i_state) = rhs(i_state) + half*lambda*flow_data->W_stage[col*3+i_state]*area[col];
 				}
 			}
 			Vector3 dW = jacobian_diag.fullPivLu().solve(rhs);
@@ -337,9 +345,13 @@ void lusgs(
 			W1(0) = flow_data->W[row*3+0];
 			W1(1) = flow_data->W[row*3+1];
 			W1(2) = flow_data->W[row*3+2];
-			Matrix3 jacobian_diag = 0.5*(area_p-area_n)*analytical_flux_jacobian(gam, W1);
+			Matrix3 jacobian_diag = analytical_flux_jacobian(gam, W1) * half;
+			jacobian_diag(1,0) = jacobian_diag(1,0) + get_dpdw1(gam, W1(0), W1(1), W1(2));
+			jacobian_diag(1,1) = jacobian_diag(1,1) + get_dpdw2(gam, W1(0), W1(1), W1(2));
+			jacobian_diag(1,2) = jacobian_diag(1,2) + get_dpdw3(gam, W1(0), W1(1), W1(2));
+			jacobian_diag = (area_p-area_n)*jacobian_diag;
 
-			dreal diag_identity = dx[row]/flow_data->dt[row] + 0.5*(lambda_p*area_p + lambda_n*area_n);
+			dreal diag_identity = dx[row]/flow_data->dt[row] + half*(lambda_p*area_p + lambda_n*area_n);
 			jacobian_diag = jacobian_diag + diag_identity*Matrix3::Identity();
 
 			if (row == 1) { // Add boundary contribution
@@ -348,7 +360,7 @@ void lusgs(
 				W2(1) = flow_data->W[(row-1)*3+1];
 				W2(2) = flow_data->W[(row-1)*3+2];
 				Matrix3 dWidWd = inletBC_gradient(flo_opts, flow_data);
-				Matrix3 dRddWi = -0.5*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity());
+				Matrix3 dRddWi = -half*(area_n) * (analytical_flux_jacobian(gam, W2) - lambda_n*Matrix3::Identity());
 				jacobian_diag = jacobian_diag + dRddWi*dWidWd;
 			}
 			if (row == n_elem) { // Add boundary contribution
@@ -357,9 +369,11 @@ void lusgs(
 				W2(1) = flow_data->W[(row+1)*3+1];
 				W2(2) = flow_data->W[(row+1)*3+2];
 				Matrix3 dWodWd = outletBC_gradient(flo_opts, flow_data);
-				Matrix3 dRddWo = 0.5*(area_p) * (analytical_flux_jacobian(gam, W2) + lambda_p*Matrix3::Identity());
+				Matrix3 dRddWo = half*(area_p) * (analytical_flux_jacobian(gam, W2) + lambda_p*Matrix3::Identity());
 				jacobian_diag = jacobian_diag + dRddWo*dWodWd;
 			}
+
+			//jacobian_diag = 100*diag_identity*Matrix3::Identity();
 
 			// Backward sweep
 			rhs.setZero();
@@ -371,20 +385,20 @@ void lusgs(
 				W1(1) = flow_data->W[col*3+1] + flow_data->W_stage2[col*3+1];
 				W1(2) = flow_data->W[col*3+2] + flow_data->W_stage2[col*3+2];
 
-				rhs = rhs - 0.5*area[col]*normal*WtoF(gam,W1);
+				rhs = rhs - half*area[col]*normal*WtoF(gam,W1);
 
 				W1(0) = flow_data->W[col*3+0];
 				W1(1) = flow_data->W[col*3+1];
 				W1(2) = flow_data->W[col*3+2];
 
-				rhs = rhs + 0.5*area[col]*normal*WtoF(gam,W1);
+				rhs = rhs + half*area[col]*normal*WtoF(gam,W1);
 
 				const dreal u_j = W1(1)/W1(0);
 				const dreal c_j = get_c(gam,W1(0),W1(1),W1(2));
 				const dreal lambda = (u_i+c_i + u_j+c_j)/2.0;
 
 				for (int i_state = 0; i_state < 3; i_state++) {
-					rhs(i_state) = rhs(i_state) + 0.5*lambda*flow_data->W_stage2[col*3+i_state]*area[col];
+					rhs(i_state) = rhs(i_state) + half*lambda*flow_data->W_stage2[col*3+i_state]*area[col];
 				}
 			}
 			Vector3 dW = jacobian_diag.fullPivLu().solve(rhs);
@@ -396,6 +410,11 @@ void lusgs(
 				//std::cout<<flow_data->W[row*3+i_state]<<std::endl;
 			}
 		} // Row loop
+	}
+	for (int row = 0; row < n_elem+1; row++) {
+		for (int i_state = 0; i_state < 3; i_state++) {
+			flow_data->W_stage2[row*3+i_state] = 0.0;
+		}
 	}
 }
 template void lusgs( const struct Flow_options &flo_opts, const std::vector<double> &area, const std::vector<double> &dx, class Flow_data<double>* const flow_data);
