@@ -80,6 +80,20 @@ int quasiOneD(
             //itV[iterations / flo_opts.print_freq - 1] = iterations;
             //normV[iterations / flo_opts.print_freq - 1] = residual_norm;
 
+			double max_res = 0;
+			int max_loc = 0;
+			for (int i = 1; i < n_elem+1; i++) {
+				for (int istate = 1; istate < 3; istate++) {
+					if (abs(flow_data->residual[i*3+istate]) > abs(max_res)) {
+						max_res = flow_data->residual[i*3+istate];
+						max_loc = i;
+					}
+				}
+			}
+            if (flo_opts.print_conv == 1) {
+				std::cout<<"Max loc and residual "<<max_loc<<" "<<max_res<<std::endl;
+            }
+
             toc = clock();
             elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;
             //timeVec[iterations / flo_opts.print_freq - 1] = elapsed;

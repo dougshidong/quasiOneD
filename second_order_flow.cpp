@@ -46,7 +46,7 @@ void second_order_flow(
 	class Flow_data<double> flow_data;
 	flow_data.dt.resize(n_elem);
 	flow_data.W.resize(3*n_elem);
-	flow_data.W_stage.resize(3*n_elem);
+	flow_data.W_stage1.resize(3*n_elem);
 	flow_data.fluxes.resize(3*(n_elem+1)); // At the faces
 	flow_data.residual.resize(3*n_elem);
     // Inlet flow properties

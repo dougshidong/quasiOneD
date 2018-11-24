@@ -7,6 +7,8 @@
 #include<adolc/adolc.h>
 #include"adolc_eigen.hpp"
 
+#include<complex>
+
 
 // Get pressure vector
 void get_all_p(
@@ -68,12 +70,13 @@ Eigen::Matrix<dreal, 3, 1> WtoF(
 
 	Eigen::Matrix<dreal, 3, 1> F;
 	F(0) = w2;
-	F(1) = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
-	F(2) = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
+	F(1) = w2 * w2 / w1 + (gam - 1.0) * ( w3 - w2 * w2 / (2.0 * w1) );
+	F(2) = ( w3 + (gam - 1.0) * (w3 - w2 * w2 / (2.0 * w1)) ) * w2 / w1;
 	return F;
 }
 template Eigen::Matrix<double, 3, 1> WtoF( const double gam, const Eigen::Matrix<double, 3, 1> &W);
 template Eigen::Matrix<adouble, 3, 1> WtoF( const double gam, const Eigen::Matrix<adouble, 3, 1> &W);
+template Eigen::Matrix<std::complex<double>, 3, 1> WtoF( const double gam, const Eigen::Matrix<std::complex<double>, 3, 1> &W);
 
 void WtoF_all(
 	const double gam,
@@ -87,8 +90,8 @@ void WtoF_all(
         double w2 = W[i*3+1];
         double w3 = W[i*3+2];
         F[i*3+0] = w2;
-        F[i*3+1] = w2 * w2 / w1 + (gam - 1) * ( w3 - w2 * w2 / (2 * w1) );
-        F[i*3+2] = ( w3 + (gam - 1) * (w3 - w2 * w2 / (2 * w1)) ) * w2 / w1;
+        F[i*3+1] = w2 * w2 / w1 + (gam - 1.0) * ( w3 - w2 * w2 / (2.0 * w1) );
+        F[i*3+2] = ( w3 + (gam - 1.0) * (w3 - w2 * w2 / (2.0 * w1)) ) * w2 / w1;
     }
 }
 

@@ -28,7 +28,7 @@ MatrixXd hessian_central_gradient(
     std::vector<double> pert_area = area;
 	class Flow_data<double> pert_flow = flow_data;
 	pert_flow.W          = flow_data.W;
-	pert_flow.W_stage    = flow_data.W_stage;
+	pert_flow.W_stage1    = flow_data.W_stage1;
 	pert_flow.fluxes     = flow_data.fluxes;
 	pert_flow.residual   = flow_data.residual;
 
@@ -82,7 +82,7 @@ MatrixXd hessian_central(
     std::vector<double> pert_area = area;
 	class Flow_data<double> pert_flow = flow_data;
 	//pert_flow.W          = flow_data.W;
-	//pert_flow.W_stage    = flow_data.W_stage;
+	//pert_flow.W_stage1    = flow_data.W_stage1;
 	//pert_flow.fluxes     = flow_data.fluxes;
 	//pert_flow.residual   = flow_data.residual;
 

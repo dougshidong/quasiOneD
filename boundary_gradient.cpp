@@ -4,6 +4,8 @@
 #include <vector>
 #include "structures.hpp"
 #include "convert.hpp"
+
+#include "derivatives.hpp"
 // Jacobian at the Boundaries
 void dRdW_BC_inlet(
 	const struct Flow_options &flow_options,

@@ -6,16 +6,14 @@
 #include"flux.hpp"
 #include"convert.hpp"
 #include<adolc/adolc.h>
+#include"adolc_eigen.hpp"
 #include <complex>
 
 template<typename dreal>
 void matrixMult(dreal A[][3], dreal B[][3], dreal result[][3]);
 
-template<typename dreal>
-void Flux_Scalar(
-	const struct Flow_options &flow_options,
-    const std::vector<dreal> &W,
-    std::vector<dreal> *const fluxes);
+template<typename dreal> void Flux_Scalar( const struct Flow_options &flow_options, const std::vector<dreal> &W, std::vector<dreal> *const fluxes);
+template<typename dreal> void Flux_VanLeer_all( const struct Flow_options &flow_options, const std::vector<dreal> &W, std::vector<dreal> *const fluxes);
 
 // Get fluxes based on flux_scheme
 template<typename dreal>
@@ -24,8 +22,11 @@ void getFlux(
 	const std::vector<dreal> &W,
 	std::vector<dreal> *const fluxes)
 {
-    if (flow_options.flux_scheme == 0)      // Scalar
+    if (flow_options.flux_scheme == 0) {     // Scalar
         Flux_Scalar(flow_options, W, fluxes);
+	} else if (flow_options.flux_scheme == 1) { // VanLeer
+        Flux_VanLeer_all(flow_options, W, fluxes);
+	}
 	else abort();
     //else if (flux_scheme == 1) // SW
     //    Flux_SW(fluxes, W);
@@ -81,12 +82,174 @@ void Flux_Scalar(
             const int kip = (i_face + 1) * 3 + i_state;
             const int ki  = (i_face - 0) * 3 + i_state;
             (*fluxes)[ki] = 0.5 * (F_m[i_state] + F_p[i_state]) - 0.5 * flow_options.scalar_d_eps * lambda * (W[kip] - W[ki]);
+            //(*fluxes)[ki] = (F_m[i_state]);
         }
 		F_m = F_p;
 		u_m = u_p;
 		c_m = c_p;
     }
     return;
+}
+
+template<typename dreal>
+Vector3<dreal> Flux_VanLeer(
+	const double gam,
+    Vector3<dreal> WL,
+    Vector3<dreal> WR);
+
+Vector3<std::complex<double>> Flux_VanLeer(
+	const double gam,
+    Vector3<std::complex<double>> WL,
+    Vector3<std::complex<double>> WR);
+
+template<typename dreal>
+void Flux_VanLeer_all(
+	const struct Flow_options &flow_options,
+    const std::vector<dreal> &W,
+    std::vector<dreal> *const fluxes)
+{
+	const int n_face = flow_options.n_elem+1;
+	double gam = flow_options.gam;
+    assert(n_face == (*fluxes).size()/3);
+
+	Vector3<dreal> WL, WR;
+	WR(0) = W[0*3+0];
+	WR(1) = W[0*3+1];
+	WR(2) = W[0*3+2];
+    for (int i_face = 0; i_face < n_face; i_face++) {
+		WL = WR;
+		WR(0) = W[(i_face+1)*3+0];
+		WR(1) = W[(i_face+1)*3+1];
+		WR(2) = W[(i_face+1)*3+2];
+		Vector3<dreal> flux = Flux_VanLeer(gam, WL, WR);
+		//flux = WtoF(gam,WL);
+		(*fluxes)[i_face*3+0] = flux(0);
+		(*fluxes)[i_face*3+1] = flux(1);
+		(*fluxes)[i_face*3+2] = flux(2);
+		//std::cout<<flux<<std::endl;
+    }
+    return;
+}
+template<typename dreal>
+Vector3<dreal> Flux_VanLeer2(
+	const double gam,
+    Vector3<dreal> WL,
+    Vector3<dreal> WR)
+{
+	Vector3<dreal> flux;
+
+	const dreal gm1 = gam-1.0;
+
+	const dreal rhoL = WL(0);
+	const dreal uL = WL(1)/WL(0);
+	const dreal cL = get_c(gam, WL(0), WL(1), WL(2));
+	const dreal ML = uL/cL;
+
+	const dreal rhoR = WR(0);
+	const dreal uR = WR(1)/WR(0);
+	const dreal cR = get_c(gam, WR(0), WR(1), WR(2));
+	const dreal MR = uR/cR;
+
+	// f+(WL)
+	const dreal mass_flux_L = 0.25*rhoL*cL*(ML+1.0)*(ML+1.0);
+	const dreal one_plus_mach = 1.0 + 0.5*gm1*ML;
+	const dreal fp1 = mass_flux_L * (1.0);
+	const dreal fp2 = mass_flux_L * (2.0*cL/gam * one_plus_mach);
+	const dreal fp3 = mass_flux_L * (2.0*cL*cL/(gam*gam-1.0) * one_plus_mach * one_plus_mach);
+
+	// f-(WR)
+	const dreal mass_flux_R = 0.25*rhoR*cR*(MR-1.0)*(MR-1.0);
+	const dreal one_minus_mach = 1.0 - 0.5*gm1*MR;
+	const dreal fm1 = mass_flux_R * (1.0);
+	const dreal fm2 = mass_flux_R * (-2.0*cR/gam * one_minus_mach);
+	const dreal fm3 = mass_flux_R * (2.0*cR*cR/(gam*gam-1.0) * one_minus_mach * one_minus_mach);
+
+	flux(0) = fp1 - fm1;
+	flux(1) = fp2 - fm2;
+	flux(2) = fp3 - fm3;
+
+
+	return flux;
+}
+
+template<typename dreal>
+Vector3<dreal> Flux_VanLeer(
+	const double gam,
+    Vector3<dreal> WL,
+    Vector3<dreal> WR)
+{
+	Vector3<dreal> flux;
+
+	const dreal gm1 = gam-1.0;
+
+	const dreal rhoL = WL(0);
+	const dreal uL = WL(1)/WL(0);
+	const dreal cL = get_c(gam, WL(0), WL(1), WL(2));
+	const dreal ML = uL/cL;
+
+	const dreal rhoR = WR(0);
+	const dreal uR = WR(1)/WR(0);
+	const dreal cR = get_c(gam, WR(0), WR(1), WR(2));
+	const dreal MR = uR/cR;
+	
+	dreal zero = 0.0;
+
+	dreal MLplus = zero;
+	if(ML > zero) MLplus = ML;
+	if(fabs(ML) < 1) MLplus = pow(0.5*(ML+1.0),2);
+
+	dreal MRminus = MR;
+	if(MR > zero) MRminus = zero;
+	if(fabs(MR) < 1) MRminus = -pow(0.5*(ML-1.0),2);
+
+	const dreal M = MLplus + MRminus;
+
+	dreal fp1, fp2, fp3, fm1, fm2, fm3;
+	// f+(WL)
+	flux = WtoF(gam, WL);
+	fp1 = flux(0);
+	fp2 = flux(1);
+	fp3 = flux(2);
+	if(M < 0) fp1 = 0.0;
+	if(M < 0) fp2 = 0.0;
+	if(M < 0) fp3 = 0.0;
+	const dreal mass_flux_L = 0.25*rhoL*cL*(ML+1.0)*(ML+1.0);
+	//const dreal mass_flux_L = rhoL*cL*MLplus;//0.25*rhoL*cL*(ML+1.0)*(ML+1.0);
+	if(fabs(M) < 1) fp1 = mass_flux_L * (1.0);
+	if(fabs(M) < 1) fp2 = mass_flux_L * (gm1*uL+2.0*cL)/gam;
+	if(fabs(M) < 1) fp3 = mass_flux_L * pow(gm1*uL+2.0*cL,2)/(2.0*(gam+1.0)*gm1);
+
+	flux = WtoF(gam, WR);
+	fm1 = 0.0;
+	fm2 = 0.0;
+	fm3 = 0.0;
+	if(M < 0) fm1 = flux(0);
+	if(M < 0) fm2 = flux(1);
+	if(M < 0) fm3 = flux(2);
+	const dreal mass_flux_R = -0.25*rhoR*cR*(MR-1.0)*(MR-1.0);
+	//const dreal mass_flux_R = rhoR*cR*MRminus;//-0.25*rhoR*cR*(MR-1.0)*(MR-1.0);
+	if(fabs(M) < 1) fm1 = mass_flux_R * (1.0);
+	if(fabs(M) < 1) fm2 = mass_flux_R * (gm1*uR-2.0*cR)/gam;
+	if(fabs(M) < 1) fm3 = mass_flux_R * pow(gm1*uR-2.0*cR,2)/(2.0*(gam+1.0)*gm1);
+
+	//std::cout<<"fp1="<<fp1;
+	//std::cout<<" fp2="<<fp2;
+	//std::cout<<" fp3="<<fp3;
+	//std::cout<<std::endl;
+	flux(0) = fp1 + fm1;
+	flux(1) = fp2 + fm2;
+	flux(2) = fp3 + fm3;
+
+
+	return flux;
+}
+Vector3<std::complex<double>> Flux_VanLeer(
+	const double gam,
+    Vector3<std::complex<double>> WL,
+    Vector3<std::complex<double>> WR)
+{
+	Vector3<std::complex<double>> A;
+	return A;
 }
 
 //void initializeFlux(int n_elem)

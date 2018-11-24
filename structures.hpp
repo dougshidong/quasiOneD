@@ -4,8 +4,12 @@
 #include <string>
 #include <vector>
 #include <complex>
+#include <Eigen/Core>
 
 template<class T> void UNUSED( const T& ) { }
+
+template<typename dreal> using Matrix3 = Eigen::Matrix<dreal, 3, 3>;
+template<typename dreal> using Vector3 = Eigen::Matrix<dreal, 3, 1>;
 
 template<typename dreal>
 class Flow_data {
@@ -14,7 +18,7 @@ class Flow_data {
 		int n_elem, n_face, n_resi, n_flux;
 		std::vector<dreal> dt;
 		std::vector<dreal> W;
-		std::vector<dreal> W_stage;
+		std::vector<dreal> W_stage1;
 		std::vector<dreal> W_stage2;
 		std::vector<dreal> fluxes;
 		std::vector<dreal> residual;
@@ -34,7 +38,7 @@ class Flow_data {
 
 			dt.resize(n_elem_ghost);
 			W.resize(n_resi_alloc);
-			W_stage.resize(n_resi_alloc);
+			W_stage1.resize(n_resi_alloc);
 			W_stage2.resize(n_resi_alloc);
 			fluxes.resize(n_flux);
 			residual.resize(n_resi_alloc);
