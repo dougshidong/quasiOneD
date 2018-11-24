@@ -16,8 +16,8 @@ void get_all_p(
 	std::vector<double> const &W,
 	std::vector<double> &p)
 {
-	int n_elem = p.size();
-    assert(n_elem == W.size()/3);
+	int n_elem = (int)p.size();
+    assert(n_elem == (int)W.size()/3);
     for (int i = 0; i < n_elem; i++) {
 		p[i] = get_p(gam, W[i*3+0], W[i*3+1], W[i*3+2]);
     }
@@ -83,7 +83,7 @@ void WtoF_all(
     std::vector<double> const &W,
     std::vector<double> &F)
 {
-	int n_elem = W.size()/3;
+	int n_elem = (int)W.size()/3;
     for (int i = 0; i < n_elem; i++)
     {
         double w1 = W[i*3+0];
@@ -102,7 +102,7 @@ void WtoQ(
     const std::vector<double> &W,
     std::vector<double> &Q)
 {
-	int n_elem = W.size()/3;
+	int n_elem = (int)W.size()/3;
     for (int i = 0; i < n_elem; i++)
     {
 		double p = get_p(gam,W[i*3+0], W[i*3+1], W[i*3+2]);

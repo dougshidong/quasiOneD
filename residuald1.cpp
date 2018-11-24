@@ -442,7 +442,7 @@ void dFluxdW_scalard(
 //    std::vector<double> area)
 //{
 //    double dpdw.at(3), rho, u, dArea;
-//	int n_elem = W.size()/3;
+//	int n_elem = (int)W.size()/3;
 //    std::vector<double> dQdW(n_resi);
 //    for (int i = 0; i < n_elem; i++)
 //    {
@@ -466,7 +466,7 @@ std::vector<double> evaldpdW(
 	const double gam,
     const std::vector<double> &W)
 {
-	const int n_w = W.size()/3;
+	const int n_w = (int)W.size()/3;
     std::vector<double> dpdW(W.size());
     for (int i = 0; i < n_w; i++)
     {
@@ -670,7 +670,7 @@ SparseMatrix<double> evaldRdW_complexStep(
 
                 const double pertW = flow_data.W.at(Wi * 3 + istate_w) * dh;
 
-                for (int i = 0; i < flow_data.W.size(); i++) {
+                for (int i = 0; i < (int)flow_data.W.size(); i++) {
 					pert_flow1.W[i] = flow_data.W[i];
 				}
 

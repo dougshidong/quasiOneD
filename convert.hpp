@@ -8,7 +8,7 @@
 template<typename dreal>
 inline dreal norm2 (std::vector<dreal> vec) {
 	dreal norm_val = 0;
-	for (int i = 0; i < vec.size(); i++) { norm_val = norm_val + vec[i]*vec[i]; }
+	for (int i = 0; i < (int)vec.size(); i++) { norm_val = norm_val + vec[i]*vec[i]; }
 	return sqrt(norm_val);
 }
 template double norm2 (std::vector<double> vec);

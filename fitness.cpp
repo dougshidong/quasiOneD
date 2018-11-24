@@ -91,7 +91,7 @@ double inverse_pressure_design(
 {
     double fit = 0;
     const int n_elem = flow_options.n_elem;
-    assert(p_target.size() == n_elem+2);
+    assert((int)p_target.size() == n_elem+2);
     for (int i = 1; i < n_elem+1; i++) {
 		double p_current = get_p(flow_options.gam, W[i*3+0], W[i*3+1], W[i*3+2]);
         fit += pow(p_current / flow_options.inlet_total_p - p_target[i], 2) * dx[i];

@@ -112,7 +112,7 @@ void eval_dGdW_dGdX_adolc(
 			const unsigned int col = cind[i];
 			const double val = values[i];
 			//std::cout<<row<<" "<<col<<" "<<val<<std::endl;
-			if(col < n_indep_w) {
+			if((int)col < n_indep_w) {
 				(*dGdW).insert(row, col) = val;
 			} else {
 				(*dGdX).insert(row, col-n_indep_w) = val;

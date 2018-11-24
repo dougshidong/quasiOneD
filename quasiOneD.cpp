@@ -21,7 +21,7 @@ int quasiOneD(
 	const dreal gam = flo_opts.gam;
 	const int n_elem = flo_opts.n_elem;
 
-	if(n_elem+1 != x.size()) abort();
+	if(n_elem+1 != (int)x.size()) abort();
 
     std::vector<dreal> dx = eval_dx(x);
 
@@ -59,9 +59,9 @@ int quasiOneD(
     }
 
 
-    clock_t tic = clock();
-    clock_t toc;
-    dreal elapsed;
+    //clock_t tic = clock();
+    //clock_t toc;
+    //dreal elapsed;
 
     getDomainResi(flo_opts, area, flow_data);
     flow_data->current_residual_norm = 1.0;
@@ -94,8 +94,8 @@ int quasiOneD(
 				std::cout<<"Max loc and residual "<<max_loc<<" "<<max_res<<std::endl;
             }
 
-            toc = clock();
-            elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;
+            //toc = clock();
+            //elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;
             //timeVec[iterations / flo_opts.print_freq - 1] = elapsed;
 
 			if (flo_opts.print_solution == 1) {

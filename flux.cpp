@@ -48,7 +48,7 @@ void Flux_Scalar(
     std::vector<dreal> *const fluxes)
 {
 	const int n_face = flow_options.n_elem+1;
-    assert(n_face == (*fluxes).size()/3);
+    assert(n_face == (int)(*fluxes).size()/3);
 
     std::vector<dreal> F_m(3);
     std::vector<dreal> F_p(3);
@@ -110,7 +110,7 @@ void Flux_VanLeer_all(
 {
 	const int n_face = flow_options.n_elem+1;
 	double gam = flow_options.gam;
-    assert(n_face == (*fluxes).size()/3);
+    assert(n_face == (int)(*fluxes).size()/3);
 
 	Vector3<dreal> WL, WR;
 	WR(0) = W[0*3+0];

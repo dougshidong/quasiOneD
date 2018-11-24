@@ -39,7 +39,7 @@ void oneshot_adjoint(
 	const int n_elem = flo_opts.n_elem;
 	const int n_resi = 3*n_elem;
 	const int n_face = n_elem+1;
-	if(n_elem!=x.size()-1) abort();
+	if(n_elem!=(int)x.size()-1) abort();
 	const int n_dvar = opt_opts.n_design_variables;
 	class Flow_data<double> flow_data(n_elem);
     // Inlet flow properties

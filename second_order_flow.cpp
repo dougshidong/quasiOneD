@@ -28,7 +28,7 @@ void second_order_flow(
 {
 	const double gam = flo_opts.gam;
 	int n_elem = flo_opts.n_elem;
-	if(n_elem!=x.size()) abort();
+	if(n_elem!=(int)x.size()) abort();
     std::vector<double> dx(n_elem);
     for (int i = 1; i < n_elem-1; i++) {
         dx[i] =  (x[i] - x[i-1])/2  +  (x[i+1] - x[i])/2 ;

@@ -3,6 +3,7 @@
 #include <Eigen/Sparse>
 #include <Eigen/LU>
 #include"petscksp.h"
+#include"petscsys.h"
 #include<vector>
 
 using namespace Eigen;

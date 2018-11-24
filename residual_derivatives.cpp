@@ -104,7 +104,7 @@ SparseMatrix<double> eval_dRdW_dRdX_adolc(
 			const unsigned int row = rind[i];
 			const unsigned int col = cind[i];
 			const double val = values[i];
-			if(col < n_indep_w) {
+			if((int)col < n_indep_w) {
 				dRdW.insert(row, col) = val;
 			}
 		}
