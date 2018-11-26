@@ -41,6 +41,7 @@ int main(int argc,char **argv)
 				  input_data->flow_options->n_elem);
     std::vector<double> dx = eval_dx(x);
 
+    PetscInitialize(&argc, &argv, (char*)0,help);
     if (input_data->optimization_options->perform_design == 0) {
 		const struct Design<double> initial_design = *(input_data->optimization_options->initial_design); // Make a copy
         const std::vector<double> area = evalS(initial_design, x, dx);
@@ -80,9 +81,7 @@ int main(int argc,char **argv)
 		// Re-evaluate the are based on the B-spline-parametrization
 		initial_design->parametrization = 2;
 
-        PetscInitialize(&argc, &argv, (char*)0,help);
 		optimizer(*constants, x, dx, *flo_opts, *opt_opts, *initial_design);
-        PetscFinalize();
 
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);
@@ -126,6 +125,7 @@ int main(int argc,char **argv)
         //area = evalS(*initial_design, x, dx);
         //quasiOneD(x, area, flow_options, &flow_data);
     }
+    PetscFinalize();
 
 	delete opt_opts->initial_design;
 	delete opt_opts->target_design;

@@ -7,7 +7,7 @@ filename = 'current_pressure.dat'
 p = np.loadtxt('./Results/'+case_name+filename)
 
 plt.figure()
-plt.plot(p)
+plt.plot(p,marker='o',ms=1)
 plt.draw()
 plt.pause(1)
 input('enter to close')

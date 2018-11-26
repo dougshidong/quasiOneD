@@ -144,7 +144,7 @@ MatrixXd solve_linear(
 		MatDestroy(&A_petsc);
 
 		KSPDestroy(&ksp);
-	}
+    } else { abort();}
 
     return X;
 }
@@ -284,6 +284,127 @@ VectorXd solve_linear(
 
 		KSPDestroy(&ksp);
 
+	} else if (linear_solver_type == 4) {
+
+		Vec         x_petsc, b_petsc;
+		Mat         A_petsc;
+		KSP         ksp;
+		PC          pc;
+		PetscInt    m = A.rows(), n = A.cols();
+		PetscScalar v[3][3];
+		PetscInt    *indices;
+		PetscScalar *values;
+
+	//  MatCreate(PETSC_COMM_SELF,&A);
+	//  MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
+	//  MatSetFromOptions(A);
+	//  MatSetUp(A);
+        PetscInt block_size = 3;
+		MatCreateSeqBAIJ(PETSC_COMM_SELF, block_size, m, n, 3, NULL, &A_petsc);
+
+		PetscInt n_elem = m/3;
+        for (int row_block = 0; row_block<n_elem-1; row_block++) {
+            PetscInt ir, jr;
+            ir = row_block;
+            jr = row_block;
+            for (int row=0;row<3;row++) {
+                for (int col=0;col<3;col++) {
+                    v[row][col] = A.coeff(ir*3+row, jr*3+col);
+                }
+            }
+            MatSetValuesBlocked(A_petsc, 1, &ir, 1, &jr, &v[0][0], INSERT_VALUES);
+
+            ir = row_block+1;
+            jr = row_block;
+            for (int row=0;row<3;row++) {
+                for (int col=0;col<3;col++) {
+                    v[row][col] = A.coeff(ir*3+row, jr*3+col);
+                }
+            }
+            MatSetValuesBlocked(A_petsc, 1, &ir, 1, &jr, &v[0][0], INSERT_VALUES);
+            ir = row_block;
+            jr = row_block+1;
+            for (int row=0;row<3;row++) {
+                for (int col=0;col<3;col++) {
+                    v[row][col] = A.coeff(ir*3+row, jr*3+col);
+                }
+            }
+            MatSetValuesBlocked(A_petsc, 1, &ir, 1, &jr, &v[0][0], INSERT_VALUES);
+        }
+        PetscInt ir, jr;
+        ir = n_elem-1;
+        jr = n_elem-1;
+        for (int row=0;row<3;row++) {
+            for (int col=0;col<3;col++) {
+                v[row][col] = A.coeff(ir*3+row, jr*3+col);
+            }
+        }
+        MatSetValuesBlocked(A_petsc, 1, &ir, 1, &jr, &v[0][0], INSERT_VALUES);
+
+		MatAssemblyBegin(A_petsc,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(A_petsc,MAT_FINAL_ASSEMBLY);
+
+        //MatView(A_petsc,PETSC_VIEWER_STDOUT_SELF);
+
+
+		KSPCreate(PETSC_COMM_SELF,&ksp);
+
+		KSPSetOperators(ksp,A_petsc,A_petsc);
+		KSPGetPC(ksp,&pc);
+		PCSetType(pc,PCSOR);
+		//PCSetType(pc,PCSOR);
+		//PCSetType(pc,PCJACOBI);
+		//PCSetType(pc,PCILU);
+
+		KSPSetType(ksp, KSPRICHARDSON);
+		//KSPGMRESSetRestart(ksp, 300);
+	//  KSPSetTolerances(ksp,1.e-1,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+		KSPSetTolerances(ksp,tolerance,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+	//  KSPSetMonitor(ksp,KSPDefaultMonitor,PETSC_NULL,PETSC_NULL);
+		PetscViewerAndFormat *vf;
+		PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,PETSC_VIEWER_DEFAULT,&vf);
+		KSPMonitorSet(ksp,(PetscErrorCode (*)(KSP,PetscInt,PetscReal,void*))KSPMonitorTrueResidualNorm,vf,(PetscErrorCode (*)(void**))PetscViewerAndFormatDestroy);
+		KSPSetFromOptions(ksp);
+
+
+		PetscMalloc1(rhs.rows() * sizeof(PetscScalar), &values);
+		PetscMalloc1(rhs.rows() * sizeof(PetscInt), &indices);
+		VecCreate(PETSC_COMM_SELF, &b_petsc);
+		VecSetSizes(b_petsc,PETSC_DECIDE, rhs.rows());
+		VecSetFromOptions(b_petsc);
+		VecDuplicate(b_petsc, &x_petsc);
+		for (int bcol = 0; bcol < rhs.cols(); bcol++)
+		{
+
+			for (int brow = 0; brow < rhs.rows(); brow++)
+			{
+				PetscScalar v = rhs(brow, bcol);
+				VecSetValue(b_petsc, brow, v, INSERT_VALUES);
+			}
+
+			KSPSolve(ksp,b_petsc,x_petsc);
+
+
+			for (PetscInt brow = 0; brow < rhs.rows(); brow++)
+			{
+				values[brow] = -1.0;
+				indices[brow] = brow;
+			}
+			VecGetValues(x_petsc, rhs.rows(), indices, values);
+
+			for (int brow = 0; brow < rhs.rows(); brow++)
+			{
+				X(brow, bcol) = values[brow];
+			}
+
+		}
+		PetscFree(values);
+		PetscFree(indices);
+		VecDestroy(&x_petsc);
+		VecDestroy(&b_petsc);
+		MatDestroy(&A_petsc);
+
+		KSPDestroy(&ksp);
 	}
 
     return X;

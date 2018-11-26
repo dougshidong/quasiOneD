@@ -8,6 +8,7 @@
 #include<adolc/adolc.h>
 #include"adolc_eigen.hpp"
 #include <complex>
+#include <cmath>
 
 template<typename dreal>
 void matrixMult(dreal A[][3], dreal B[][3], dreal result[][3]);
@@ -103,6 +104,12 @@ Vector3<std::complex<double>> Flux_VanLeer(
     Vector3<std::complex<double>> WR);
 
 template<typename dreal>
+Vector3<dreal> Flux_Roe(
+	const double gam,
+    Vector3<dreal> WL,
+    Vector3<dreal> WR);
+
+template<typename dreal>
 void Flux_VanLeer_all(
 	const struct Flow_options &flow_options,
     const std::vector<dreal> &W,
@@ -122,6 +129,7 @@ void Flux_VanLeer_all(
 		WR(1) = W[(i_face+1)*3+1];
 		WR(2) = W[(i_face+1)*3+2];
 		Vector3<dreal> flux = Flux_VanLeer(gam, WL, WR);
+		flux = Flux_Roe(gam, WL, WR);
 		//flux = WtoF(gam,WL);
 		(*fluxes)[i_face*3+0] = flux(0);
 		(*fluxes)[i_face*3+1] = flux(1);
@@ -252,6 +260,110 @@ Vector3<std::complex<double>> Flux_VanLeer(
 	return A;
 }
 
+
+template<typename dreal>
+Vector3<dreal> Flux_Roe(
+	const double gam,
+    Vector3<dreal> WL,
+    Vector3<dreal> WR)
+{
+    // Get Convective Variables
+    Vector3<dreal> FL = WtoF(gam, WL);
+    Vector3<dreal> FR = WtoF(gam, WR);
+
+    dreal gm1 = gam - 1.0;
+    dreal rH, uH, hH, cH;
+    dreal rL, uL, eL, pL, cL;
+    dreal rR, uR, eR, pR, cR;
+    dreal srL, srR;
+    Vector3<dreal> epsilon;
+    Vector3<dreal> lambdaL, lambdaR, lambdaH;
+    Matrix3<dreal> S, C, Cinv, Sinv, Ap, An;
+    Matrix3<dreal> lambdaP, lambdaN;
+    lambdaP.setZero();
+    lambdaN.setZero();
+
+    rL = WL[0];
+    uL = WL[1] / rL;
+    eL = WL[2];
+    pL = get_p(gam, WL(0), WL(1), WL(2));
+    cL = get_c(gam, WL(0), WL(1), WL(2));
+
+    rR = WR[0];
+    uR = WR[1] / rR;
+    eR = WR[2];
+    pR = get_p(gam, WR(0), WR(1), WR(2));
+    cR = get_c(gam, WR(0), WR(1), WR(2));
+
+    srL = sqrt(rL);
+    srR = sqrt(rR);
+
+    rH = srL * srR;
+    uH = (srL * uL + srR * uR) / (srL + srR);
+    hH = (srL * (eL + pL) / rL + srR * (eR + pR) / rR) / (srL + srR);
+    cH = sqrt((gam - 1.0) * (hH - uH * uH / 2.0));
+
+    dreal zero = 0.0, one = 1.0, two = 2.0;
+
+    S(0,0) = one;              S(0,1) = zero;                     S(0,2) = zero;
+    S(1,0) = -uH / rH;         S(1,1) = one / rH;                 S(1,2) = zero;
+    S(2,1) = -uH * gm1;        S(2,0) = 0.5 * uH * uH * gm1;      S(2,2) = gm1;
+
+    Sinv(0,0) = one;           Sinv(1,0) = zero;                  Sinv(2,0) = zero;
+    Sinv(1,0) = uH;            Sinv(1,1) = rH;                    Sinv(1,2) = zero;
+    Sinv(2,0) = 0.5 * uH * uH; Sinv(2,1) = uH * rH;               Sinv(2,2) = one / gm1;
+
+    C(0,0) = one;              C(0,1) = zero;                     C(0,2) = -one / (cH * cH);
+    C(1,0) = zero;             C(1,1) = rH * cH;                  C(1,2) = one;
+    C(2,0) = zero;             C(2,1) = -rH * cH;                 C(2,2) = one;
+
+    Cinv(0,0) = one;           Cinv(0,1) = one / (two * cH * cH); Cinv(0,2) = one / (two * cH * cH);
+    Cinv(1,0) = zero;          Cinv(1,1) = one / (two * rH * cH); Cinv(1,2) = -one / (two * rH * cH);
+    Cinv(2,0) = zero;          Cinv(2,1) = one/two;               Cinv(2,2) = one/two;
+
+    lambdaL(0) = uL; lambdaL(1) = uL + cL; lambdaL(2) = uL - cL;
+    lambdaR(0) = uR; lambdaR(1) = uR + cR; lambdaR(2) = uR - cR;
+    lambdaH(0) = uH; lambdaH(1) = uH + cH; lambdaH(2) = uH - cH;
+    for (int k = 0; k < 3; k++) {
+        epsilon(k) = fmax( fmax( zero, lambdaH(k) - lambdaL(k) ),
+                           lambdaR(k) - lambdaH(k) );
+        if (fabs(lambdaH(k)) <= epsilon(k)) {
+            lambdaH(k) = 0.5 * (lambdaH(k) * lambdaH(k) / epsilon(k) + epsilon(k));
+        }
+
+        if (lambdaH(k) > zero) {
+            lambdaP(k,k) = lambdaH(k);
+        } else {
+            lambdaN(k,k) = lambdaH(k);
+        }
+    }
+
+    Ap   = Sinv*Cinv*lambdaP*C*S;
+    An   = Sinv*Cinv*lambdaN*C*S;
+
+    Vector3<dreal> flux = 0.5*(FL+FR) - 0.5* (Ap-An) * (WR-WL);
+
+    return flux;
+}
+template<>
+Vector3<std::complex<double>> Flux_Roe(
+	const double gam,
+    Vector3<std::complex<double>> WL,
+    Vector3<std::complex<double>> WR)
+{
+    Vector3<std::complex<double>> f;
+    return f;
+}
+template<>
+Vector3<adouble> Flux_Roe(
+	const double gam,
+    Vector3<adouble> WL,
+    Vector3<adouble> WR)
+{
+    Vector3<adouble> f;
+    return f;
+}
+
 //void initializeFlux(int n_elem)
 //{
 //    if (flux_scheme == 0)
@@ -306,7 +418,7 @@ Vector3<std::complex<double>> Flux_VanLeer(
 //
 //    dreal Ap[3][3], An[3][3], tempP[3][3], tempN[3][3], prefix[3][3], suffix[3][3];
 //
-//    dreal beta = 0.4;//gam-1;
+//    dreal gm1 = 0.4;//gam-1;
 //    dreal rho, u, e, c;
 //
 //    for (int i = 0; i < n_elem; i++)
@@ -330,16 +442,16 @@ Vector3<std::complex<double>> Flux_VanLeer(
 //        c = sqrt( gam / rho * (gam - 1.0) * ( e - rho * u * u / 2 ) );
 //        S[0][0] = 1.0;
 //        S[1][0] = -u / rho;
-//        S[2][0] = 0.5 * u * u * beta;
+//        S[2][0] = 0.5 * u * u * gm1;
 //        S[1][1] = 1.0 / rho;
-//        S[2][1] = -u * beta;
-//        S[2][2] = beta;
+//        S[2][1] = -u * gm1;
+//        S[2][2] = gm1;
 //        Sinv[0][0] = 1.0;
 //        Sinv[1][0] = u;
 //        Sinv[2][0] = 0.5 * u * u;
 //        Sinv[1][1] = rho;
 //        Sinv[2][1] = u * rho;
-//        Sinv[2][2] = 1.0 / beta;
+//        Sinv[2][2] = 1.0 / gm1;
 //        C[0][0] = 1.0;
 //        C[1][1] = rho * c;
 //        C[2][1] = -rho * c;
@@ -493,7 +605,7 @@ Vector3<std::complex<double>> Flux_VanLeer(
 //    // Get Convective Variables
 //    WtoF_all(W, F);
 //
-//    dreal beta = gam - 1.0;
+//    dreal gm1 = gam - 1.0;
 //    dreal rH, uH, hH, cH;
 //    dreal r1, u1, e1, p1, c1;
 //    dreal r2, u2, e2, p2, c2;
@@ -562,16 +674,16 @@ Vector3<std::complex<double>> Flux_VanLeer(
 //
 //        S[0][0] = 1.0;
 //        S[1][0] = -uH / rH;
-//        S[2][0] = 0.5 * uH * uH * beta;
+//        S[2][0] = 0.5 * uH * uH * gm1;
 //        S[1][1] = 1.0 / rH;
-//        S[2][1] = -uH * beta;
-//        S[2][2] = beta;
+//        S[2][1] = -uH * gm1;
+//        S[2][2] = gm1;
 //        Sinv[0][0] = 1.0;
 //        Sinv[1][0] = uH;
 //        Sinv[2][0] = 0.5 * uH * uH;
 //        Sinv[1][1] = rH;
 //        Sinv[2][1] = uH * rH;
-//        Sinv[2][2] = 1.0 / beta;
+//        Sinv[2][2] = 1.0 / gm1;
 //        C[0][0] = 1.0;
 //        C[1][1] = rH * cH;
 //        C[2][1] = -rH * cH;

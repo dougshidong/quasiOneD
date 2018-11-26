@@ -82,7 +82,7 @@ void outletBC(
     const dreal p_d = (gam - 1.0) * ( e_d - rho_d * u_d * u_d / 2.0 );
     const dreal c_d = sqrt( gam * p_d / rho_d );
 
-	const dreal mach_d = u_d + c_d;
+	const dreal mach_d = u_d / c_d;
     if (mach_d > 1.0) {
 		flow_data->W[i_b*3+0] = flow_data->W[i_d*3+0];
 		flow_data->W[i_b*3+1] = flow_data->W[i_d*3+1];

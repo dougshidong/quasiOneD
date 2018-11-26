@@ -17,6 +17,8 @@
 #include<adolc/adolc.h>
 #include"adolc_eigen.hpp"
 #include"residual_derivatives.hpp"
+#include"residuald1.hpp"
+#include"solve_linear.hpp"
 
 #include <cmath>
 #include <complex>
@@ -98,12 +100,25 @@ void jamesonrk(
     class Flow_data<dreal>* const flow_data);
 
 template<typename dreal>
+void BackwardEuler(
+	const struct Flow_options &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<double> &dx,
+    class Flow_data<dreal>* const flow_data);
+
+template<typename dreal>
 void stepInTime(
 	const struct Flow_options &flo_opts,
     const std::vector<dreal> &area,
     const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data)
 {
+    //if (flow_data->current_residual_norm > 1e-5) {
+    //    BackwardEuler(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
+    //} else {
+	//	lusgs(flo_opts, area, dx, flow_data);
+    //}
+    //return;
     if (flo_opts.time_scheme == 0) {
         EulerExplicitStep(flo_opts, area, dx, flow_data);
     } else if (flo_opts.time_scheme == 1) {
@@ -111,7 +126,7 @@ void stepInTime(
     } else if (flo_opts.time_scheme == 2) {
         jamesonrk(flo_opts, area, dx, flow_data);
     } else if (flo_opts.time_scheme == 3) {
-        abort();//eulerImplicit(area, dx, dt, flow_data);
+        BackwardEuler(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
     } else if (flo_opts.time_scheme == 4) {
         abort();//crankNicolson(area, dx, dt, flow_data);
     }
@@ -178,6 +193,49 @@ void EulerExplicitStep(
 	}
     return;
 }
+
+template<>
+void BackwardEuler(
+	const struct Flow_options &flo_opts,
+    const std::vector<double> &area,
+    const std::vector<double> &dx,
+    class Flow_data<double>* const flow_data)
+{
+	int n_elem = flo_opts.n_elem;
+
+    getDomainResi(flo_opts, area, flow_data);
+	flow_data->old_residual_norm = flow_data->current_residual_norm;
+	flow_data->current_residual_norm = norm2(flow_data->residual);
+	evaluate_dt(flo_opts, dx, flow_data);
+
+	//Eigen::SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, *flow_data);
+	Eigen::SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, *flow_data);
+    Eigen::VectorXd minusR(n_elem*3);
+    for (int k = 0; k < 3; k++){
+		for (int i = 1; i < n_elem+1; i++) {
+			const int ki = i * 3 + k;
+			const int kim = (i-1) * 3 + k;
+			minusR(kim) = -flow_data->residual[ki];
+            dRdW.coeffRef(kim,kim) += dx[i]/flow_data->dt[i];
+		}
+	}
+    Eigen::VectorXd dW = solve_linear(dRdW, minusR, 0, 1e-9);
+
+    for (int k = 0; k < 3; k++){
+		for (int i = 1; i < n_elem+1; i++) {
+			const int ki = i * 3 + k;
+			const int kim = (i-1) * 3 + k;
+			flow_data->W[ki] = flow_data->W[ki] + dW[kim];
+		}
+	}
+    return;
+}
+void BackwardEuler(
+	const struct Flow_options &flo_opts,
+    const std::vector<adouble> &area,
+    const std::vector<double> &dx,
+    class Flow_data<adouble>* const flow_data)
+{return;}
 
 
 // Jameson's 4th order Runge - Kutta Stepping Scheme
@@ -260,14 +318,19 @@ void lusgs(
 	flow_data->current_residual_norm = norm2(flow_data->residual);
 	evaluate_dt(flo_opts, dx, flow_data);
 
+    VectorXd dW_total(3*n_elem);
+    VectorXd residual(3*n_elem);
+
 	Vector3<dreal> rhs;
-	for (int row = 0; row < n_elem+1; row++) {
+	for (int row = 1; row < n_elem+1; row++) {
 		for (int i_state = 0; i_state < 3; i_state++) {
 			flow_data->W_stage1[row*3+i_state] = 0.0; // dW_forward
 			flow_data->W_stage2[row*3+i_state] = 0.0; // dW_backward
+
+            residual((row-1)*3+i_state) = flow_data->residual[row*3+i_state];
 		}
 	}
-	const int n_sweeps = 10;
+	const int n_sweeps = 20;
 	int print_row = -1;
 	for (int i_sweep = 0; i_sweep < n_sweeps; i_sweep++) {
 
@@ -407,6 +470,7 @@ void lusgs(
 			for (int i_state = 0; i_state < 3; i_state++) {
 				flow_data->W_stage1[row*3+i_state] = dW[i_state];
 				normdw += dW.dot(dW);
+                dW_total((row-1)*3+i_state) = dW[i_state];
 			}
 			if(row==print_row) std::cout<<"dW* "<<dW<<std::endl<<std::endl;
 			if(row==print_row) std::cout<<"A "<<jacobian_diag<<std::endl<<std::endl;
@@ -414,6 +478,7 @@ void lusgs(
 			//if(row==print_row) abort();
 		} // Row loop
 		std::cout<<"forward i_sweep"<<i_sweep<<" normdw "<<normdw<<std::endl;
+		std::cout<<"backward residual"<<(dRdW*dW_total+residual).norm()<<std::endl;
 
 		// Backward sweep
 		normdw = 0;
@@ -549,10 +614,12 @@ void lusgs(
 			Vector3<dreal> dW = jacobian_diag.fullPivLu().solve(rhs);
 			for (int i_state = 0; i_state < 3; i_state++) {
 				flow_data->W_stage2[row*3+i_state] = dW[i_state];
-				normdw += pow(flow_data->W_stage2[row*3+i_state],2);
+				normdw += dW.dot(dW);
+                dW_total((row-1)*3+i_state) = dW[i_state];
 			}
 		} // Row loop
-		std::cout<<"backward i_sweep"<<i_sweep<<" normdw "<<normdw<<std::endl;
+		std::cout<<"backward i_sweep"<<i_sweep<<" normdw "<<sqrt(normdw)<<std::endl;
+		std::cout<<"backward residual"<<(dRdW*dW_total+residual).norm()<<std::endl;
 		if(print_jac) abort();
 	} // Sweep loop
 	for (int row = 1; row < n_elem+1; row++) {

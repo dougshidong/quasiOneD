@@ -183,8 +183,8 @@ MatrixXd evaldWdDes(
     // Evaluate dRdW
     //SparseMatrix<double> dRdW = evaldRdW(area, flo_opts, flow_data);
     //SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, flow_data);
-    //SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
-    SparseMatrix<double> dRdW = evaldRdW_complexStep(area, flo_opts, flow_data);
+    SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
+    //SparseMatrix<double> dRdW = evaldRdW_complexStep(area, flo_opts, flow_data);
 
     // Solve DWDS
     MatrixXd dWdDes(n_resi, design.n_design_variables);

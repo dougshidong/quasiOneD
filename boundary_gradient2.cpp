@@ -271,7 +271,7 @@ Eigen::Matrix<dreal,3,3> outletBC_gradient(
 	const dreal d_e_b_dw3 = d_e_b_d_rho_b * d_rho_b_dw3 + d_e_b_d_u_b   * d_u_b_dw3;
 
 
-	const dreal mach_d = u_d + c_d;
+	const dreal mach_d = u_d / c_d;
     //if (mach_d > 1.0) {
 	//	flow_data->W[i_b*3+0] = flow_data->W[i_d*3+0];
 	//	flow_data->W[i_b*3+1] = flow_data->W[i_d*3+1];

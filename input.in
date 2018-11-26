@@ -10,9 +10,9 @@ hg          t1g         t2g
 *******************************************
 FLOW SOLVER PARAMETERS
 time_scheme flux_scheme scalar_diss
-2           1           0.5
+0           0           0.5
 cfl_min     cfl_max     cfl_ramp    flow_tol    flow_maxit
-0.1         0.1         0.2         1e-10       2000000
+0.1         0.9         0.3         1e-11       2000000
 print_freq  print_conv  print_sol
 1           1           0
 *******************************************
@@ -20,7 +20,7 @@ FLOW INPUTS
 gam         R
 1.4         1.0
 mach_inlet  tot_in_T    tot_in_p    out_p_ratio
-1.20        1           1           0.92
+0.85        1           1           0.72
 *******************************************
 DESIGN OPTIMIZATION PARAMETERS
 do_design   des_param   cost_func
