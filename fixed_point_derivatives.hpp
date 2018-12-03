@@ -11,5 +11,17 @@ void eval_dGdW_dGdX_adolc(
 	const struct Design<double> &design,
 	SparseMatrix<double> *const dGdW,
 	SparseMatrix<double> *const dGdX);
+VectorXd eval_dGdW_transpose_vec(
+    const std::vector<double> &x,
+	const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
+	const struct Design<double> &design,
+    const VectorXd &vec);
+VectorXd eval_dGdX_transpose_vec(
+    const std::vector<double> &x,
+	const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
+	const struct Design<double> &design,
+    const VectorXd &vec);
 
 #endif

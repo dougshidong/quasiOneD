@@ -101,7 +101,7 @@ void optimizer(
     VectorXd oldGrad(n_dvar); //BFGS
     gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
 
-	bool testJacobian = true;
+	bool testJacobian = false;//true;
 	//testJacobian = false;
 	if (testJacobian) {
 		test_grad(x, dx, area, flo_opts, flow_data, opt_opts, current_design);
@@ -340,7 +340,10 @@ MatrixXd BFGS(
     dx = searchD;
 	const double dgdx = dx.dot(dg);
 
-	if(dgdx < 0) {
+	std::cout<<"BFGS dg: "<<dg.norm()<<std::endl;
+	std::cout<<"BFGS dx: "<<dx.norm()<<std::endl;
+	std::cout<<"BFGS dgdx: "<<dgdx<<std::endl;
+	if(dgdx < 1e-19) {
 		printf("Negative curvature. Not updating BFGS \n");
 		return oldH;
 	}

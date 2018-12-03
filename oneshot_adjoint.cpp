@@ -198,6 +198,7 @@ void oneshot_adjoint(
 
         // Get flow update
 		residual_norm = 1;
+        flow_data.current_CFL = flo_opts.CFL_min;
 		for (int i = 0; i < 10000 && residual_norm > 1e-12; i++) {
 			stepInTime(flo_opts, area, dx, &flow_data);
 
@@ -214,7 +215,7 @@ void oneshot_adjoint(
 
 		double step_size = 1e-0;
 		double adjoint_update_norm = 1;
-		for (int i = 0; i < 10000 && adjoint_update_norm > 1e-5; i++) {
+		for (int i = 0; i < 10000 && adjoint_update_norm > 1e-9; i++) {
 
 			//adjoint_update = pIpW + pGpW.transpose()*adjoint;
 			//adjoint_update = step_size*(adjoint_update-adjoint);

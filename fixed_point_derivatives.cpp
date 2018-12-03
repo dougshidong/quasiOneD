@@ -147,3 +147,188 @@ void eval_dGdW_dGdX_adolc(
 
 	return;
 }
+
+VectorXd eval_dGdW_transpose_vec(
+    const std::vector<double> &x,
+	const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
+	const struct Design<double> &design,
+    const VectorXd &vec)
+{
+	const int n_dvar = design.n_design_variables;
+	const int n_elem = flo_opts.n_elem;
+
+    const int tag = 100;
+    trace_on(tag);
+
+	int n_indep = 0; // Expect n_face + n_elem+2
+	int n_dep   = 0; // Expect n_elem
+
+	const int n_state = 3;
+	const int n_indep_w = n_state*(n_elem);
+	const int n_indep_dvar = n_dvar;
+	const int n_indep_expected = n_indep_w;
+	const int n_dep_expected = n_state*n_elem;
+	double *indep = myalloc1(n_indep_expected); // freed
+	double *dep = myalloc1(n_dep_expected); // freed
+
+    class Flow_data<adouble> aflow_data(n_elem);
+	for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
+		for (int iw_state = 0; iw_state < n_state; iw_state++) {
+			const int ki = iw_elem*n_state + iw_state;
+			indep[n_indep] = flow_data.W[ki];
+			aflow_data.W[ki] <<= indep[n_indep];
+			n_indep++;
+		}
+    }
+	for (int iw_state = 0; iw_state < n_state; iw_state++) {
+		const int iw_elem_first = 0;
+		const int ki_first = iw_elem_first*n_state + iw_state;
+		aflow_data.W[ki_first] = flow_data.W[ki_first];
+		const int iw_elem_last = n_elem+1;
+		const int ki_last = iw_elem_last*n_state + iw_state;
+		aflow_data.W[ki_last] = flow_data.W[ki_last];
+	}
+
+    std::vector<double> dx = eval_dx(x);
+    std::vector<double> area = evalS(design, x, dx);
+    std::vector<adouble> aarea(n_elem+1);
+    for (int i_face = 0; i_face < n_elem+1; i_face++) {
+        aarea[i_face] = area[i_face];
+    }
+	stepInTime(flo_opts, aarea, dx, &aflow_data);
+
+	for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
+		for (int iw_state = 0; iw_state < n_state; iw_state++) {
+			const int ki = iw_elem*n_state + iw_state;
+			aflow_data.W[ki] >>= dep[n_dep];
+			n_dep++;
+		}
+    }
+
+    trace_off(tag);
+
+	assert(n_dep == n_dep_expected);
+	assert(n_indep == n_indep_expected);
+
+    double *jacobian_vector = myalloc1(n_indep); // freed
+
+    double *adolc_vector = myalloc1(n_dep);
+    for (int ir_elem = 0; ir_elem < n_elem; ir_elem++) {
+        for (int ir_state = 0; ir_state < n_state; ir_state++) {
+            const int row = ir_elem*n_state + ir_state;
+            adolc_vector[row] = vec(row);
+        }
+    }
+    vec_jac(tag, n_dep, n_indep, 0, indep, adolc_vector, jacobian_vector);
+    //jac_vec(tag, n_dep, n_indep, indep, adolc_vector, jacobian_vector);
+
+    VectorXd dGdW_times_vec(n_indep);
+    for (int ir_elem = 0; ir_elem < n_elem; ir_elem++) {
+        for (int ir_state = 0; ir_state < n_state; ir_state++) {
+            const int row = ir_elem*n_state + ir_state;
+            dGdW_times_vec(row) = jacobian_vector[row];
+        }
+    }
+	myfree1(indep);
+	myfree1(dep);
+	myfree1(jacobian_vector);
+	myfree1(adolc_vector);
+
+	return dGdW_times_vec;
+}
+
+VectorXd eval_dGdX_transpose_vec(
+    const std::vector<double> &x,
+	const struct Flow_options &flo_opts,
+    const class Flow_data<double> &flow_data,
+	const struct Design<double> &design,
+    const VectorXd &vec)
+{
+	const int n_dvar = design.n_design_variables;
+	const int n_elem = flo_opts.n_elem;
+
+    const int tag = 100;
+    trace_on(tag);
+
+	int n_indep = 0; // Expect n_face + n_elem+2
+	int n_dep   = 0; // Expect n_elem
+
+	const int n_state = 3;
+	const int n_indep_w = n_state*(n_elem);
+	const int n_indep_dvar = n_dvar;
+
+	const int n_indep_expected = n_indep_dvar;
+	const int n_dep_expected = n_state*n_elem;
+
+	double *indep = myalloc1(n_indep_expected); // freed
+	double *dep = myalloc1(n_dep_expected); // freed
+
+    class Flow_data<adouble> aflow_data(n_elem);
+	for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
+		for (int iw_state = 0; iw_state < n_state; iw_state++) {
+			const int ki = iw_elem*n_state + iw_state;
+			aflow_data.W[ki] = flow_data.W[ki];
+		}
+    }
+	for (int iw_state = 0; iw_state < n_state; iw_state++) {
+		const int iw_elem_first = 0;
+		const int ki_first = iw_elem_first*n_state + iw_state;
+		aflow_data.W[ki_first] = flow_data.W[ki_first];
+		const int iw_elem_last = n_elem+1;
+		const int ki_last = iw_elem_last*n_state + iw_state;
+		aflow_data.W[ki_last] = flow_data.W[ki_last];
+	}
+
+	struct Design<adouble> adesign;
+	adesign.h					= design.h;
+	adesign.t1 					= design.t1;
+    adesign.t2 					= design.t2;
+	adesign.spline_degree  		= design.spline_degree;
+	adesign.parametrization  	= design.parametrization;
+	adesign.n_design_variables  = design.n_design_variables;
+	adesign.design_variables.resize(n_dvar);
+
+	for (int i = 0; i < n_dvar; i++) {
+		indep[n_indep] = design.design_variables[i];
+        adesign.design_variables[i] <<= indep[n_indep];
+		n_indep++;
+    }
+
+    std::vector<double> dx = eval_dx(x);
+    std::vector<adouble> aarea = evalS(adesign, x, dx);
+	stepInTime(flo_opts, aarea, dx, &aflow_data);
+
+	for (int iw_elem = 1; iw_elem < n_elem+1; iw_elem++) {
+		for (int iw_state = 0; iw_state < n_state; iw_state++) {
+			const int ki = iw_elem*n_state + iw_state;
+			aflow_data.W[ki] >>= dep[n_dep];
+			n_dep++;
+		}
+    }
+
+    trace_off(tag);
+
+	assert(n_dep == n_dep_expected);
+	assert(n_indep == n_indep_expected);
+
+    double *jacobian_vector = myalloc1(n_indep); // freed
+
+    double *adolc_vector = myalloc1(n_dep);
+    for (int i_dep = 0; i_dep < n_dep; i_dep++) {
+            adolc_vector[i_dep] = vec(i_dep);
+    }
+    vec_jac(tag, n_dep, n_indep, 0, indep, adolc_vector, jacobian_vector);
+    //jac_vec(tag, n_dep, n_indep, indep, adolc_vector, jacobian_vector);
+
+    VectorXd dGdX_times_vec(n_indep);
+    for (int i_indep = 0; i_indep < n_indep; i_indep++) {
+        dGdX_times_vec(i_indep) = jacobian_vector[i_indep];
+    }
+	myfree1(indep);
+	myfree1(dep);
+	myfree1(jacobian_vector);
+	myfree1(adolc_vector);
+
+	return dGdX_times_vec;
+}

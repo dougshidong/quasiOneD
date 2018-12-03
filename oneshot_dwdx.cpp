@@ -126,11 +126,7 @@ void oneshot_dwdx(
     double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
     VectorXd gradient(n_dvar);
     VectorXd oldGrad(n_dvar); //BFGS
-    gradient = getGradient(opt_opts.gradient_type, opt_opts.cost_function, x, dx, area, flo_opts, flow_data, opt_opts, current_design);
-    double gradient_norm = 0;
-    for (int i = 0; i < n_dvar; i++)
-        gradient_norm += pow(gradient[i], 2);
-    gradient_norm = sqrt(gradient_norm);
+    double gradient_norm = 1.0;
 
     int iteration = 0;
     while(
@@ -144,8 +140,18 @@ void oneshot_dwdx(
 
         // Get flow update
 		residual_norm = 1;
-		for (int i = 0; i < 1 && residual_norm > 1e-6; i++) {
-			stepInTime(flo_opts, area, dx, &flow_data);
+		for (int i = 0; i < 1 && residual_norm > 1e-13; i++) {
+            Flow_options flo_opts_temp = flo_opts;
+            double old_CFL = flow_data.current_CFL;
+            flow_data.current_CFL = 5000;
+
+            flo_opts_temp.time_scheme = 3;
+            flo_opts_temp.CFL_min = 1;
+            flo_opts_temp.CFL_max = 1000000;
+
+			stepInTime(flo_opts_temp, area, dx, &flow_data);
+
+            flow_data.current_CFL = old_CFL;
 
 			// Calculating the norm of the density residual
 			residual_norm = 0;
@@ -172,7 +178,7 @@ void oneshot_dwdx(
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		//pGpX = -(*max_dt)/dx[1] * evaldRdArea(flo_opts, flow_data) * dAreadDes;
 
-		eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
+		//eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
 		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpW*pGpX);
 		//gradient = pIpX.transpose() + pIpW.transpose()*(pGpX);
 		gradient = pIpW;
@@ -182,27 +188,29 @@ void oneshot_dwdx(
 		//std::cout<<pGpW.rows()<<" "<<pGpW.cols()<<std::endl;
 		//std::cout<<pIpX.rows()<<" "<<pIpX.cols()<<std::endl;
 		//std::cout<<MatrixXd(pGpW).eigenvalues()<<std::endl;
-		for (int i = 0; i < 0; i++) {
-			Ab = pGpW.transpose() * Ab;
+		for (int i = 0; i < 1; i++) {
+			//Ab = pGpW.transpose() * Ab;
+			Ab = eval_dGdW_transpose_vec( x, flo_opts, flow_data, current_design, Ab);
 			gradient = gradient + Ab;
 			std::cout<<i<<" "<<Ab.norm()<<std::endl<<std::endl;
 			if (Ab.norm() < 1e-5) break;
 		}
-		gradient = pGpX.transpose()*gradient;
+		//gradient = pGpX.transpose()*gradient;
+        gradient = eval_dGdX_transpose_vec(x, flo_opts, flow_data, current_design, gradient);
 		gradient = gradient + pIpX;
 
-		double step_size = 1e+0;
+		double step_size = 2000e+0;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;
 			design_change = step_size*search_direction;
         } else if (opt_opts.descent_type == 2) {
-            if (iteration > 1) {
+            if (iteration > 100) {
                 H_BFGS = BFGS(H, oldGrad, gradient, design_change);
 				double t = 1e-1;
                 H = t*H_BFGS + (1-t)*H;
             }
-            std::cout<<H<<std::endl;
+            //std::cout<<H<<std::endl;
             std::cout<<H.eigenvalues()<<std::endl;
             search_direction = -H * gradient;
 			//design_change = step_size*search_direction;
@@ -212,7 +220,7 @@ void oneshot_dwdx(
 
 		printf("%-15s %-15s %-15s\n", "Current Design", "Gradient","Search Direction");
 		int step = 1;
-		//if(n_dvar/8>=1) step = n_dvar/8;
+		if(n_dvar/8>=1) step = n_dvar/8;
 		if(step!=1) printf("Only printing 1 out of %d variables\n", step);
 		for (int i=0; i<n_dvar; i+=step) {
 			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], design_change[i]);

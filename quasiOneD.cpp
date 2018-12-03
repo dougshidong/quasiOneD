@@ -90,9 +90,9 @@ int quasiOneD(
 					}
 				}
 			}
-            if (flo_opts.print_conv == 1) {
-				std::cout<<"Max loc and residual "<<max_loc<<" "<<max_res<<std::endl;
-            }
+            //if (flo_opts.print_conv == 1) {
+			//	std::cout<<"Max loc and residual "<<max_loc<<" "<<max_res<<std::endl;
+            //}
 
             //toc = clock();
             //elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;

@@ -57,7 +57,12 @@ void evaluate_dt(
     const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data) {
 
-	dreal new_CFL = flow_data->current_CFL * pow((flow_data->old_residual_norm / flow_data->current_residual_norm), flo_opts.CFL_ramp);
+	dreal new_CFL;
+    if (flow_data->old_residual_norm > flow_data->current_residual_norm) {
+        new_CFL = flow_data->current_CFL * pow((flow_data->old_residual_norm / flow_data->current_residual_norm), flo_opts.CFL_ramp);
+    } else { // Faster de-ramping for stabilit
+        new_CFL = flow_data->current_CFL * pow((flow_data->old_residual_norm / flow_data->current_residual_norm), 4*flo_opts.CFL_ramp);
+    }
 	new_CFL = fmax(new_CFL, flo_opts.CFL_min);
 	new_CFL = fmin(new_CFL, flo_opts.CFL_max);
 	flow_data->current_CFL = new_CFL;
@@ -207,6 +212,8 @@ void BackwardEuler(
 	flow_data->old_residual_norm = flow_data->current_residual_norm;
 	flow_data->current_residual_norm = norm2(flow_data->residual);
 	evaluate_dt(flo_opts, dx, flow_data);
+    std::cout<<"Backward Euler CFL: "<<flow_data->current_CFL;
+    std::cout<<" Current residual: "<<flow_data->current_residual_norm<<std::endl;
 
 	//Eigen::SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, *flow_data);
 	Eigen::SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, *flow_data);
@@ -219,7 +226,7 @@ void BackwardEuler(
             dRdW.coeffRef(kim,kim) += dx[i]/flow_data->dt[i];
 		}
 	}
-    Eigen::VectorXd dW = solve_linear(dRdW, minusR, 0, 1e-9);
+    Eigen::VectorXd dW = solve_linear(dRdW, minusR, 3, 1e-1);
 
     for (int k = 0; k < 3; k++){
 		for (int i = 1; i < n_elem+1; i++) {
