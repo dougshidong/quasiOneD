@@ -106,8 +106,9 @@ VectorXd gradient_FD(
 	//pert_flow.residual   = flow_data.residual;
 
     double I0;
+	const bool constFalse = false;
     if (FD_type != -3) {
-        quasiOneD(x, pert_area, flo_opts, &pert_flow);
+        quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
 		I0 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 	}
     for (int i = 0; i < n_design_variables; i++) {
@@ -119,7 +120,7 @@ VectorXd gradient_FD(
         {
 			pert_design.design_variables.at(i) += dh;
             pert_area = evalS(pert_design, x, dx);
-			quasiOneD(x, pert_area, flo_opts, &pert_flow);
+			quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
 
 			double I1 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
             grad[i] = (I1 - I0) / dh;
@@ -128,7 +129,7 @@ VectorXd gradient_FD(
         {
 			pert_design.design_variables.at(i) -= dh;
             pert_area = evalS(pert_design, x, dx);
-			quasiOneD(x, pert_area, flo_opts, &pert_flow);
+			quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
 			double I2 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
             grad[i] = (I0 - I2) / dh;
         }
@@ -136,13 +137,13 @@ VectorXd gradient_FD(
         {
 			pert_design.design_variables.at(i) += dh;
             pert_area = evalS(pert_design, x, dx);
-			quasiOneD(x, pert_area, flo_opts, &pert_flow);
+			quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
 			double I1 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
 			pert_design.design_variables = design.design_variables;
 			pert_design.design_variables.at(i) -= dh;
             pert_area = evalS(pert_design, x, dx);
-			quasiOneD(x, pert_area, flo_opts, &pert_flow);
+			quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
 			double I2 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
             grad[i] = (I1 - I2) / (2 * dh);
         }

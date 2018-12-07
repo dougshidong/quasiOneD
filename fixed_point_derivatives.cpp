@@ -155,7 +155,7 @@ VectorXd eval_dGdW_transpose_vec(
 	const struct Design<double> &design,
     const VectorXd &vec)
 {
-	const int n_dvar = design.n_design_variables;
+	//const int n_dvar = design.n_design_variables;
 	const int n_elem = flo_opts.n_elem;
 
     const int tag = 100;
@@ -166,7 +166,7 @@ VectorXd eval_dGdW_transpose_vec(
 
 	const int n_state = 3;
 	const int n_indep_w = n_state*(n_elem);
-	const int n_indep_dvar = n_dvar;
+	//const int n_indep_dvar = n_dvar;
 	const int n_indep_expected = n_indep_w;
 	const int n_dep_expected = n_state*n_elem;
 	double *indep = myalloc1(n_indep_expected); // freed
@@ -189,6 +189,9 @@ VectorXd eval_dGdW_transpose_vec(
 		const int ki_last = iw_elem_last*n_state + iw_state;
 		aflow_data.W[ki_last] = flow_data.W[ki_last];
 	}
+	aflow_data.current_residual_norm = flow_data.current_residual_norm;
+	aflow_data.old_residual_norm = flow_data.old_residual_norm;
+	aflow_data.current_CFL = flow_data.current_CFL;
 
     std::vector<double> dx = eval_dx(x);
     std::vector<double> area = evalS(design, x, dx);
@@ -255,7 +258,7 @@ VectorXd eval_dGdX_transpose_vec(
 	int n_dep   = 0; // Expect n_elem
 
 	const int n_state = 3;
-	const int n_indep_w = n_state*(n_elem);
+	//const int n_indep_w = n_state*(n_elem);
 	const int n_indep_dvar = n_dvar;
 
 	const int n_indep_expected = n_indep_dvar;
@@ -279,6 +282,9 @@ VectorXd eval_dGdX_transpose_vec(
 		const int ki_last = iw_elem_last*n_state + iw_state;
 		aflow_data.W[ki_last] = flow_data.W[ki_last];
 	}
+	aflow_data.current_residual_norm = flow_data.current_residual_norm;
+	aflow_data.old_residual_norm = flow_data.old_residual_norm;
+	aflow_data.current_CFL = flow_data.current_CFL;
 
 	struct Design<adouble> adesign;
 	adesign.h					= design.h;

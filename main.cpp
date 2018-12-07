@@ -48,7 +48,7 @@ int main(int argc,char **argv)
 
 		struct Flow_options flow_options = *(input_data->flow_options); // Make a copy
 		class Flow_data<double> flow_data(n_elem);
-        quasiOneD(x, area, flow_options, &flow_data);
+        quasiOneD(false, x, area, flow_options, &flow_data);
     }
     else if (abs(input_data->optimization_options->perform_design) == 1) {
 		class Flow_data<double> flow_data(n_elem);
@@ -58,7 +58,7 @@ int main(int argc,char **argv)
 		// Target design with sine parametrization
 		printf("Creating target pressure...\n");
         std::vector<double> area = evalS(*(input_data->optimization_options->target_design), x, dx);
-        quasiOneD(x, area, flow_options, &flow_data);
+        quasiOneD(false, x, area, flow_options, &flow_data);
 
 		input_data->optimization_options->target_pressure.resize(n_elem+2);
 		get_all_p(flow_options.gam, flow_data.W, input_data->optimization_options->target_pressure);
@@ -93,7 +93,7 @@ int main(int argc,char **argv)
 		// Target design with sine parametrization
 		printf("Creating target pressure...\n");
         std::vector<double> area = evalS(*(input_data->optimization_options->target_design), x, dx);
-        quasiOneD(x, area, flow_options, &flow_data);
+        quasiOneD(false, x, area, flow_options, &flow_data);
 
 		input_data->optimization_options->target_pressure.resize(n_elem+2);
 		get_all_p(flow_options.gam, flow_data.W, input_data->optimization_options->target_pressure);

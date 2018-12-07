@@ -61,7 +61,7 @@ void evaluate_dt(
     if (flow_data->old_residual_norm > flow_data->current_residual_norm) {
         new_CFL = flow_data->current_CFL * pow((flow_data->old_residual_norm / flow_data->current_residual_norm), flo_opts.CFL_ramp);
     } else { // Faster de-ramping for stabilit
-        new_CFL = flow_data->current_CFL * pow((flow_data->old_residual_norm / flow_data->current_residual_norm), 4*flo_opts.CFL_ramp);
+        new_CFL = flow_data->current_CFL * pow((flow_data->old_residual_norm / flow_data->current_residual_norm), 2*flo_opts.CFL_ramp);
     }
 	new_CFL = fmax(new_CFL, flo_opts.CFL_min);
 	new_CFL = fmin(new_CFL, flo_opts.CFL_max);
@@ -79,6 +79,9 @@ void evaluate_dt(
 	}
     flow_data->dt[first_cell] = flow_data->dt[first_cell+1];
     flow_data->dt[last_cell] = flow_data->dt[last_cell-1];
+
+    std::cout<<"Current CFL: "<<flow_data->current_CFL;
+    std::cout<<" Current residual: "<<flow_data->current_residual_norm<<" Old residual: "<<flow_data->old_residual_norm<<std::endl;
 }
 template void evaluate_dt( const struct Flow_options &flo_opts, const std::vector<double> &dx, class Flow_data<double>* const flow_data);
 template void evaluate_dt( const struct Flow_options &flo_opts, const std::vector<double> &dx, class Flow_data<adouble>* const flow_data);
@@ -111,41 +114,6 @@ void BackwardEuler(
     const std::vector<double> &dx,
     class Flow_data<dreal>* const flow_data);
 
-template<typename dreal>
-void stepInTime(
-	const struct Flow_options &flo_opts,
-    const std::vector<dreal> &area,
-    const std::vector<double> &dx,
-    class Flow_data<dreal>* const flow_data)
-{
-    //if (flow_data->current_residual_norm > 1e-5) {
-    //    BackwardEuler(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
-    //} else {
-	//	lusgs(flo_opts, area, dx, flow_data);
-    //}
-    //return;
-    if (flo_opts.time_scheme == 0) {
-        EulerExplicitStep(flo_opts, area, dx, flow_data);
-    } else if (flo_opts.time_scheme == 1) {
-		lusgs(flo_opts, area, dx, flow_data);
-    } else if (flo_opts.time_scheme == 2) {
-        jamesonrk(flo_opts, area, dx, flow_data);
-    } else if (flo_opts.time_scheme == 3) {
-        BackwardEuler(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
-    } else if (flo_opts.time_scheme == 4) {
-        abort();//crankNicolson(area, dx, dt, flow_data);
-    }
-}
-template void stepInTime(
-	const struct Flow_options &flo_opts,
-    const std::vector<double> &area,
-    const std::vector<double> &dx,
-    class Flow_data<double>* const flow_data);
-template void stepInTime(
-	const struct Flow_options &flo_opts,
-    const std::vector<adouble> &area,
-    const std::vector<double> &dx,
-    class Flow_data<adouble>* const flow_data);
 
 //void stepInTime2(
 //	const struct Flow_options &flo_opts,
@@ -199,7 +167,6 @@ void EulerExplicitStep(
     return;
 }
 
-template<>
 void BackwardEuler(
 	const struct Flow_options &flo_opts,
     const std::vector<double> &area,
@@ -212,8 +179,6 @@ void BackwardEuler(
 	flow_data->old_residual_norm = flow_data->current_residual_norm;
 	flow_data->current_residual_norm = norm2(flow_data->residual);
 	evaluate_dt(flo_opts, dx, flow_data);
-    std::cout<<"Backward Euler CFL: "<<flow_data->current_CFL;
-    std::cout<<" Current residual: "<<flow_data->current_residual_norm<<std::endl;
 
 	//Eigen::SparseMatrix<double> dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, *flow_data);
 	Eigen::SparseMatrix<double> dRdW = evaldRdW_FD(area, flo_opts, *flow_data);
@@ -291,6 +256,122 @@ void jamesonrk(
 
 double valueof(double a) { return a; }
 double valueof(adouble a) { return a.value(); }
+
+
+template<typename dreal>
+void backward_euler_thomas(
+	const struct Flow_options &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<double> &dx,
+    class Flow_data<dreal>* const flow_data)
+{
+	int n_elem = flo_opts.n_elem;
+
+	const double gam = flo_opts.gam;
+	const dreal half = 0.5;
+	Matrix3<dreal> identity = Matrix3<dreal>::Identity();
+
+	getDomainResi(flo_opts, area, flow_data);
+	flow_data->old_residual_norm = flow_data->current_residual_norm;
+	flow_data->current_residual_norm = norm2(flow_data->residual);
+	evaluate_dt(flo_opts, dx, flow_data);
+    std::cout<<"Backward Euler CFL: "<<flow_data->current_CFL;
+    std::cout<<" Current residual: "<<flow_data->current_residual_norm<<" Old residual: "<<flow_data->old_residual_norm<<std::endl;
+
+	std::vector<Matrix3<dreal>> jac_low(n_elem), jac_dia(n_elem), jac_upp(n_elem);
+	std::vector<Vector3<dreal>> rhs(n_elem);
+
+	// full state vector 0:n_elem+1
+	// interior state vector 1:n_elem
+	// jacobian matrix size n_elem x n_elem
+	for (int row = 0; row < n_elem; row++) { // Thomas algorithm for an n x n matrix, go from i = 1:n-1
+		const int iw   = row+1;
+		const int iw_p = iw+1;
+		const int iw_n = iw-1;
+
+		const int i_face_p = iw;
+		const int i_face_n = iw-1;
+		const dreal area_p = area[i_face_p];
+		const dreal area_n = area[i_face_n];
+
+		Vector3<dreal> Wd, Wn, Wp;
+		for (int iw_state = 0; iw_state < 3; iw_state++) {
+			Wd(iw_state) = flow_data->W[iw*3+iw_state];
+			Wn(iw_state) = flow_data->W[iw_n*3+iw_state];
+			Wp(iw_state) = flow_data->W[iw_p*3+iw_state];
+		}
+		jac_dia[row] = (analytical_flux_jacobian(gam, Wd))*half;
+		jac_dia[row](1,0) = jac_dia[row](1,0) - get_dpdw1(gam, Wd(0), Wd(1), Wd(2));
+		jac_dia[row](1,1) = jac_dia[row](1,1) - get_dpdw2(gam, Wd(0), Wd(1), Wd(2));
+		jac_dia[row](1,2) = jac_dia[row](1,2) - get_dpdw3(gam, Wd(0), Wd(1), Wd(2));
+		jac_dia[row] = (area_p-area_n)*jac_dia[row];
+		
+		Matrix3<dreal> d_lambdaw_dw = get_d_lambdahalfw_dw(gam, 1, Wn(0), Wn(1), Wn(2), Wd(0), Wd(1), Wd(2));
+		jac_dia[row] -= half * flo_opts.scalar_d_eps * (-d_lambdaw_dw) * area_n;
+		d_lambdaw_dw = get_d_lambdahalfw_dw(gam, 0, Wd(0), Wd(1), Wd(2), Wp(0), Wp(1), Wp(2));
+		jac_dia[row] += half * flo_opts.scalar_d_eps * (-d_lambdaw_dw) * area_p;
+
+		if (iw == 1) { // Add boundary contribution
+			Matrix3<dreal> dWndW = inletBC_gradient(flo_opts, flow_data);
+			d_lambdaw_dw = get_d_lambdahalfw_dw(gam, 0, Wn(0), Wn(1), Wn(2), Wd(0), Wd(1), Wd(2));
+			d_lambdaw_dw *= flo_opts.scalar_d_eps;
+			Matrix3<dreal> dRdWn = -area_n * half * (analytical_flux_jacobian(gam, Wn) - d_lambdaw_dw);
+			jac_dia[row] = jac_dia[row] + dRdWn*dWndW;
+		}
+		if (iw == n_elem) { // Add boundary contribution
+			Matrix3<dreal> dWpdW = outletBC_gradient(flo_opts, flow_data);
+			d_lambdaw_dw = get_d_lambdahalfw_dw(gam, 1, Wd(0), Wd(1), Wd(2), Wp(0), Wp(1), Wp(2));
+			d_lambdaw_dw *= flo_opts.scalar_d_eps;
+			Matrix3<dreal> dRdWp = area_p * half * (analytical_flux_jacobian(gam, Wp) - d_lambdaw_dw);
+			jac_dia[row] = jac_dia[row] + dRdWp*dWpdW;
+		}
+		// Add pseudo-timestep
+		dreal diag_identity = dx[iw]/flow_data->dt[iw];
+		jac_dia[row] = jac_dia[row] + diag_identity*identity;
+
+		// Upper
+		if (row!=n_elem-1) {
+			d_lambdaw_dw = get_d_lambdahalfw_dw(gam, 1, Wd(0), Wd(1), Wd(2), Wp(0), Wp(1), Wp(2));
+			d_lambdaw_dw *= flo_opts.scalar_d_eps;
+			jac_upp[row] = area_p * half * (analytical_flux_jacobian(gam, Wp) - d_lambdaw_dw);
+		}
+		// Lower
+		if (row!=0) {
+			d_lambdaw_dw = get_d_lambdahalfw_dw(gam, 0, Wn(0), Wn(1), Wn(2), Wd(0), Wd(1), Wd(2));
+			d_lambdaw_dw *= flo_opts.scalar_d_eps;
+			jac_low[row] = -area_n * half * (analytical_flux_jacobian(gam, Wn) - d_lambdaw_dw);
+		}
+		// RHS
+		for (int i_state = 0; i_state < 3; i_state++) {
+			rhs[row](i_state) = -flow_data->residual[iw*3+i_state];
+		}
+
+		Matrix3<dreal> alpha;
+		if (row == 0){
+			alpha = jac_dia[row];
+		} else {
+			alpha = jac_dia[row] - jac_low[row]*jac_upp[row-1];
+		}
+		jac_upp[row] = alpha.fullPivLu().solve(jac_upp[row]);
+
+		if (row == 0) {
+			rhs[row] = rhs[row];
+		} else {
+			rhs[row] = rhs[row] - jac_low[row]*rhs[row-1];
+		}
+		rhs[row] = alpha.fullPivLu().solve(rhs[row]);
+	} // Row loop
+	for (int row = n_elem-2; row >= 0; row--) { // Thomas algorithm for an n x n matrix, go from i = n-1:1
+		rhs[row] = rhs[row] - jac_upp[row]*rhs[row+1];
+	} // Row loop
+	for (int iw = 1; iw < n_elem+1; iw++) {
+		for (int i_state = 0; i_state < 3; i_state++) {
+			flow_data->W[iw*3+i_state] = flow_data->W[iw*3+i_state] + rhs[iw-1](i_state);
+		}
+	}
+}
+template void backward_euler_thomas( const struct Flow_options &flo_opts, const std::vector<double> &area, const std::vector<double> &dx, class Flow_data<double>* const flow_data);
+template void backward_euler_thomas( const struct Flow_options &flo_opts, const std::vector<adouble> &area, const std::vector<double> &dx, class Flow_data<adouble>* const flow_data);
 
 template<typename dreal>
 void lusgs(
@@ -1145,6 +1226,7 @@ template void lusgs( const struct Flow_options &flo_opts, const std::vector<doub
 //}
 //template void lusgs( const struct Flow_options &flo_opts, const std::vector<double> &area, const std::vector<double> &dx, class Flow_data<double>* const flow_data);
 ////template void lusgs( const struct Flow_options &flo_opts, const std::vector<adouble> &area, const std::vector<double> &dx, class Flow_data<adouble>* const flow_data);
+template<>
 void lusgs(
 	const struct Flow_options &flo_opts,
     const std::vector<adouble> &area,
@@ -1383,3 +1465,32 @@ void lusgs(
 //    }
 //}
 
+template<typename dreal>
+void stepInTime(
+	const struct Flow_options &flo_opts,
+    const std::vector<dreal> &area,
+    const std::vector<double> &dx,
+    class Flow_data<dreal>* const flow_data)
+{
+    //if (flow_data->current_residual_norm > 1e-5) {
+    //    BackwardEuler(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
+    //} else {
+	//	lusgs(flo_opts, area, dx, flow_data);
+    //}
+    //return;
+    if (flo_opts.time_scheme == 0) {
+        EulerExplicitStep(flo_opts, area, dx, flow_data);
+    } else if (flo_opts.time_scheme == 1) {
+		lusgs(flo_opts, area, dx, flow_data);
+    } else if (flo_opts.time_scheme == 2) {
+        jamesonrk(flo_opts, area, dx, flow_data);
+    } else if (flo_opts.time_scheme == 3) {
+        BackwardEuler(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
+    } else if (flo_opts.time_scheme == 4) {
+        backward_euler_thomas(flo_opts, area, dx, flow_data);//eulerImplicit(area, dx, dt, flow_data);
+    } else if (flo_opts.time_scheme == 5) {
+        abort();//crankNicolson(area, dx, dt, flow_data);
+    }
+}
+template void stepInTime( const struct Flow_options &flo_opts, const std::vector<double> &area, const std::vector<double> &dx, class Flow_data<double>* const flow_data);
+template void stepInTime( const struct Flow_options &flo_opts, const std::vector<adouble> &area, const std::vector<double> &dx, class Flow_data<adouble>* const flow_data);

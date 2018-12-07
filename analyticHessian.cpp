@@ -640,7 +640,9 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
     double dhi, dhj;
     double h = 1e-3;
 
-    quasiOneD(x, area, flo_opts, &pert_flow);
+	const bool constFalse = false;
+	const bool constTrue = true;
+    quasiOneD(constFalse, x, area, flo_opts, &pert_flow);
     for (int Wi = 0; Wi<3*n_elem; Wi++) {
         W0[Wi] = pert_flow.W[Wi];
     }
@@ -655,7 +657,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables[i] += dhi;
                 pert_design.design_variables[j] += dhj;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W1[Wi] = pert_flow.W[Wi];
                 }
@@ -663,7 +665,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables = design.design_variables;
                 pert_design.design_variables[i] += dhi;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W2[Wi] = pert_flow.W[Wi];
                 }
@@ -671,7 +673,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables = design.design_variables;
                 pert_design.design_variables[i] -= dhi;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W3[Wi] = pert_flow.W[Wi];
                 }
@@ -680,7 +682,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables[i] -= dhi;
                 pert_design.design_variables[j] -= dhj;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W4[Wi] = pert_flow.W[Wi];
                 }
@@ -696,7 +698,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables[i] += dhi;
                 pert_design.design_variables[j] += dhj;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W1[Wi] = pert_flow.W[Wi];
                 }
@@ -705,7 +707,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables[i] += dhi;
                 pert_design.design_variables[j] -= dhj;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W2[Wi] = pert_flow.W[Wi];
                 }
@@ -714,7 +716,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables[i] -= dhi;
                 pert_design.design_variables[j] += dhj;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W3[Wi] = pert_flow.W[Wi];
                 }
@@ -723,7 +725,7 @@ std::vector <MatrixXd> evalddWdDesdDes_FD(
                 pert_design.design_variables[i] -= dhi;
                 pert_design.design_variables[j] -= dhj;
                 pertArea = evalS(pert_design, x, dx);
-                quasiOneD(x, pertArea, flo_opts, &pert_flow);
+                quasiOneD(constTrue, x, pertArea, flo_opts, &pert_flow);
                 for (int Wi = 0; Wi<3*n_elem; Wi++) {
                     W4[Wi] = pert_flow.W[Wi];
                 }

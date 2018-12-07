@@ -45,14 +45,15 @@ MatrixXd hessian_central_gradient(
 		if(dh == 0) dh = pert;
         pert_design.design_variables[i] += dh;
         pert_area = evalS(pert_design, x, dx);
-        quasiOneD(x, pert_area, flo_opts, &pert_flow);
+		const bool constFalse = false;
+        quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
 		const int gradient_type = 1;
         gradp = getGradient(gradient_type, opt_opts.cost_function, x, dx, pert_area, flo_opts, pert_flow, opt_opts, pert_design);
 
         pert_design.design_variables = design.design_variables;
         pert_design.design_variables[i] -= dh;
         pert_area = evalS(pert_design, x, dx);
-        quasiOneD(x, pert_area, flo_opts, &pert_flow);
+        quasiOneD(constFalse, x, pert_area, flo_opts, &pert_flow);
         gradn = getGradient(gradient_type, opt_opts.cost_function, x, dx, pert_area, flo_opts, pert_flow, opt_opts, pert_design);
         for (int j = 0; j < n_design_variables; j++)
         {
@@ -86,7 +87,9 @@ MatrixXd hessian_central(
 	//pert_flow.fluxes     = flow_data.fluxes;
 	//pert_flow.residual   = flow_data.residual;
 
-	quasiOneD(x, area, flo_opts, &pert_flow);
+	const bool constFalse = false;
+	const bool constTrue  = true;
+	quasiOneD(constFalse, x, area, flo_opts, &pert_flow);
 	double I = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
     int k = 0;
@@ -101,43 +104,43 @@ MatrixXd hessian_central(
         if (i == j) {
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] += dhi; pert_design.design_variables[j] += dhj;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I1 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] += dhi;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I2 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] -= dhi;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I3 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] -= dhi; pert_design.design_variables[j] -= dhj;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I4 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
             Hessian(i, j) = (-I1 + 16*I2 - 30*I + 16*I3 - I4) / (12 * dhi * dhj);
         } else {
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] += dhi; pert_design.design_variables[j] += dhj;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I1 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] += dhi; pert_design.design_variables[j] -= dhj;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I2 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] -= dhi; pert_design.design_variables[j] += dhj;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I3 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             pert_design.design_variables = design.design_variables; pert_design.design_variables[i] -= dhi; pert_design.design_variables[j] -= dhj;
 			pert_area = evalS(pert_design, x, dx);
-            quasiOneD(x, pert_area, flo_opts, &pert_flow);
+            quasiOneD(constTrue, x, pert_area, flo_opts, &pert_flow);
             double I4 = evalFitness(dx, flo_opts, pert_flow.W, opt_opts);
 
             Hessian(i, j) = (I1 - I2 - I3 + I4) / (4 * dhi * dhj);

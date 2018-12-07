@@ -3,16 +3,19 @@
 #include "convert.hpp"
 #include <iostream>
 #include <stdio.h>
+#include <string>
 #include <iomanip>
 #include <math.h>
 #include <vector>
 #include "grid.hpp"
 #include "flux.hpp"
+#include "convert.hpp"
 #include "timestep.hpp"
 #include "output.hpp"
 
 template<typename dreal>
 int quasiOneD(
+	const bool restart,
 	const std::vector<dreal> &x,
 	const std::vector<dreal> &area,
 	const Flow_options &flo_opts,
@@ -29,43 +32,52 @@ int quasiOneD(
     std::vector<dreal> normV;
     std::vector<dreal> timeVec;
 
+	if (!restart) {
+		// Inlet flow properties
+		dreal inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
+		const dreal p_inlet = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
+		dreal p = p_inlet;
+		dreal rho = p / (flo_opts.R * inlet_T);
+		dreal c = sqrt(gam * p / rho);
+		dreal u = flo_opts.inlet_mach * c;
+		dreal e = rho * (flo_opts.Cv * inlet_T + 0.5 * pow(u, 2));
 
-    // Inlet flow properties
-    dreal inlet_T = isenT(gam, flo_opts.inlet_total_T, flo_opts.inlet_mach);
-    const dreal p_inlet = isenP(gam, flo_opts.inlet_total_p, flo_opts.inlet_mach);
-    dreal p = p_inlet;
-    dreal rho = p / (flo_opts.R * inlet_T);
-    dreal c = sqrt(gam * p / rho);
-    dreal u = flo_opts.inlet_mach * c;
-    dreal e = rho * (flo_opts.Cv * inlet_T + 0.5 * pow(u, 2));
+		flow_data->W[0*3+0] = rho;
+		flow_data->W[0*3+1] = rho * u;
+		flow_data->W[0*3+2] = e;
+		// Flow properties initialization with outlet
+		// State Vectors Initialization
+		for (int i = 1; i < n_elem+2; i++) {
+			p = p_inlet + (i/(n_elem+1)) * (flo_opts.outlet_p - p_inlet);
+			const dreal T = flo_opts.inlet_total_T * pow(p/flo_opts.inlet_total_p,(gam-1.0)/gam);
+			//p = flo_opts.outlet_p;
+			rho = p / (flo_opts.R * T);
+			c = sqrt(gam * p / rho);
+			u = c * flo_opts.inlet_mach;
+			e = rho * (flo_opts.Cv * T + 0.5 * pow(u, 2));
 
-	flow_data->W[0*3+0] = rho;
-	flow_data->W[0*3+1] = rho * u;
-	flow_data->W[0*3+2] = e;
-    // Flow properties initialization with outlet
-    // State Vectors Initialization
-    for (int i = 1; i < n_elem+2; i++) {
-        p = p_inlet + (i/(n_elem+1)) * (flo_opts.outlet_p - p_inlet);
-		const dreal T = flo_opts.inlet_total_T * pow(p/flo_opts.inlet_total_p,(gam-1.0)/gam);
-        //p = flo_opts.outlet_p;
-        rho = p / (flo_opts.R * T);
-        c = sqrt(gam * p / rho);
-        u = c * flo_opts.inlet_mach;
-        e = rho * (flo_opts.Cv * T + 0.5 * pow(u, 2));
-
-        flow_data->W[i*3+0] = rho;
-        flow_data->W[i*3+1] = rho * u;
-        flow_data->W[i*3+2] = e;
-    }
+			flow_data->W[i*3+0] = rho;
+			flow_data->W[i*3+1] = rho * u;
+			flow_data->W[i*3+2] = e;
+		}
+	}
 
 
-    //clock_t tic = clock();
-    //clock_t toc;
-    //dreal elapsed;
 
     getDomainResi(flo_opts, area, flow_data);
-    flow_data->current_residual_norm = 1.0;
+    flow_data->current_residual_norm = norm2(flow_data->residual);
     int iterations = 0;
+
+    clock_t tic = clock();
+    clock_t toc = clock();
+	dreal elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;
+	elapsed = (dreal)(toc) / CLOCKS_PER_SEC;
+    FILE *time_residual_file;
+    std::string time_residual_filename = "./Results/"+ flo_opts.case_name + "_flow_convergence.dat";
+	if (restart) time_residual_file = fopen(time_residual_filename.c_str(), "a");
+	if (!restart) time_residual_file = fopen(time_residual_filename.c_str(), "w");
+	fprintf(time_residual_file, "1Flow_Time_Residual %8.3f %14.7e \n", elapsed, flow_data->current_residual_norm);
+
     while(flow_data->current_residual_norm > flo_opts.flow_tol && iterations < flo_opts.flow_maxit) {
         iterations++;
 
@@ -94,8 +106,10 @@ int quasiOneD(
 			//	std::cout<<"Max loc and residual "<<max_loc<<" "<<max_res<<std::endl;
             //}
 
-            //toc = clock();
-            //elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;
+            toc = clock();
+            elapsed = (dreal)(toc-tic) / CLOCKS_PER_SEC;
+            elapsed = (dreal)(toc) / CLOCKS_PER_SEC;
+			fprintf(time_residual_file, "Flow_Time_Residual %8.3f %14.7e \n", elapsed, flow_data->current_residual_norm);
             //timeVec[iterations / flo_opts.print_freq - 1] = elapsed;
 
 			if (flo_opts.print_solution == 1) {
@@ -108,6 +122,7 @@ int quasiOneD(
 			}
         }
     }
+	fclose(time_residual_file);
 
 	std::vector<dreal> p_vec(n_elem+2);
 	for (int i = 0; i < n_elem+2; i++) {
@@ -117,5 +132,5 @@ int quasiOneD(
     std::cout<<"Flow iterations = "<<iterations<<"   Density Residual = "<<flow_data->current_residual_norm<<std::endl;
     return 0;
 }
-template int quasiOneD( const std::vector<double> &x, const std::vector<double> &area, const Flow_options &flo_opts, class Flow_data<double>* const flow_data);
+template int quasiOneD(const bool restart, const std::vector<double> &x, const std::vector<double> &area, const Flow_options &flo_opts, class Flow_data<double>* const flow_data);
 

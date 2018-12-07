@@ -114,7 +114,10 @@ void oneshot_dwdx(
     //    H = invertHessian(H);
     //}
 
-	quasiOneD(x, area, flo_opts, &flow_data); // Start with converged flow
+    clock_t toc = clock();
+	double elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+	elapsed = (double)(toc) / CLOCKS_PER_SEC;
+	quasiOneD(false, x, area, flo_opts, &flow_data); // Start with converged flow
     double residual_norm = 0.0;
 	for (int k = 0; k < n_elem; k++) {
 		for (int i = 0; i < n_elem; i++) {
@@ -122,6 +125,17 @@ void oneshot_dwdx(
 		}
 	}
 	residual_norm = sqrt(residual_norm);
+    FILE *time_residual_file;
+    std::string time_residual_filename = "./Results/"+ flo_opts.case_name + "_flow_convergence.dat";
+	time_residual_file = fopen(time_residual_filename.c_str(), "a");
+
+
+    FILE *time_gradient_file;
+    std::string time_gradient_filename = "./Results/"+ flo_opts.case_name + "_gradient_convergence.dat";
+	time_gradient_file = fopen(time_gradient_filename.c_str(), "w");
+
+    toc = clock();
+	fprintf(time_residual_file, "Flow_Time_Residual %8.3f %14.7e \n", elapsed, flow_data.current_residual_norm);
 
     double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
     VectorXd gradient(n_dvar);
@@ -129,6 +143,8 @@ void oneshot_dwdx(
     double gradient_norm = 1.0;
 
     int iteration = 0;
+	double last_newton_CFL = 5000;
+
     while(
 		(iteration < opt_opts.opt_maxit) &&
 
@@ -139,19 +155,24 @@ void oneshot_dwdx(
         iteration++ ;
 
         // Get flow update
-		residual_norm = 1;
-		for (int i = 0; i < 1 && residual_norm > 1e-13; i++) {
+		residual_norm = 2;
+		//for (int i = 0; i < 1 && residual_norm > 1e-13; i++) {
+		for (int i = 0; i < 1 && residual_norm > gradient_norm; i++) {
             Flow_options flo_opts_temp = flo_opts;
             double old_CFL = flow_data.current_CFL;
-            flow_data.current_CFL = 5000;
+            flow_data.current_CFL = last_newton_CFL;
 
-            flo_opts_temp.time_scheme = 3;
-            flo_opts_temp.CFL_min = 1;
+            flo_opts_temp.time_scheme = 4;
+            flo_opts_temp.CFL_min = 500;
             flo_opts_temp.CFL_max = 1000000;
+            flo_opts_temp.CFL_ramp = 0.5;
 
 			stepInTime(flo_opts_temp, area, dx, &flow_data);
 
+            last_newton_CFL = flow_data.current_CFL;
             flow_data.current_CFL = old_CFL;
+
+			//stepInTime(flo_opts, area, dx, &flow_data);
 
 			// Calculating the norm of the density residual
 			residual_norm = 0;
@@ -161,6 +182,9 @@ void oneshot_dwdx(
 				}
 			}
 			residual_norm = sqrt(residual_norm);
+			toc = clock();
+			elapsed = (double)(toc) / CLOCKS_PER_SEC;
+			fprintf(time_residual_file, "Flow_Time_Residual %8.3f %14.7e \n", elapsed, residual_norm);
 		}
 
 		// Get adjoint update
@@ -188,30 +212,32 @@ void oneshot_dwdx(
 		//std::cout<<pGpW.rows()<<" "<<pGpW.cols()<<std::endl;
 		//std::cout<<pIpX.rows()<<" "<<pIpX.cols()<<std::endl;
 		//std::cout<<MatrixXd(pGpW).eigenvalues()<<std::endl;
+
 		for (int i = 0; i < 1; i++) {
 			//Ab = pGpW.transpose() * Ab;
 			Ab = eval_dGdW_transpose_vec( x, flo_opts, flow_data, current_design, Ab);
 			gradient = gradient + Ab;
-			std::cout<<i<<" "<<Ab.norm()<<std::endl<<std::endl;
-			if (Ab.norm() < 1e-5) break;
+			std::cout<<i<<"Gradient terms "<<Ab.norm()<<std::endl<<std::endl;
+			if (Ab.norm() < gradient_norm) break;
 		}
 		//gradient = pGpX.transpose()*gradient;
         gradient = eval_dGdX_transpose_vec(x, flo_opts, flow_data, current_design, gradient);
 		gradient = gradient + pIpX;
 
 		double step_size = 2000e+0;
+		//step_size = 100e+0;
 
         if (opt_opts.descent_type == 1) {
             search_direction =  -gradient;
 			design_change = step_size*search_direction;
         } else if (opt_opts.descent_type == 2) {
-            if (iteration > 100) {
+            if (iteration > 1) {
                 H_BFGS = BFGS(H, oldGrad, gradient, design_change);
+                //H = H_BFGS;
 				double t = 1e-1;
                 H = t*H_BFGS + (1-t)*H;
+				std::cout<<H.eigenvalues()<<std::endl;
             }
-            //std::cout<<H<<std::endl;
-            std::cout<<H.eigenvalues()<<std::endl;
             search_direction = -H * gradient;
 			//design_change = step_size*search_direction;
 			design_change = search_direction;
@@ -243,17 +269,25 @@ void oneshot_dwdx(
         for (int i = 0; i < n_dvar; i++) {
             gradient_norm += pow(gradient[i], 2);
 		}
+
         gradient_norm = sqrt(gradient_norm);
         gradient_norm_list.push_back(gradient_norm);
 
-		clock_t toc = clock();
-        double elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+		toc = clock();
+		elapsed = (double)(toc) / CLOCKS_PER_SEC;
+		fprintf(time_gradient_file, "Opt_Time_Gradient %8.3f %14.7e \n", elapsed, gradient_norm);
+
+
+		toc = clock();
+        elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
         timeVec.push_back(elapsed);
         std::cout<<"Time: "<<elapsed<<std::endl;
 
 		printf("Iteration: %d, Flow Residual %23.14e Cost Function %23.14e Gradient Norm: %23.14e \n", iteration, residual_norm, current_cost, gradient_norm);
         std::cout<<"End of Design Iteration: "<<iteration<<std::endl<<std::endl<<std::endl;
     }
+	fclose(time_residual_file);
+	fclose(time_gradient_file);
 
     std::cout<<"Final Gradient:"<<std::endl;
     std::cout<<gradient<<std::endl;

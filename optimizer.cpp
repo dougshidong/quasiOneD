@@ -2,6 +2,7 @@
 #include "structures.hpp"
 #include<iostream>
 #include<fstream>
+#include <stdio.h>
 #include<math.h>
 #include<vector>
 #include<iomanip>
@@ -92,7 +93,7 @@ void optimizer(
     myfile.open("convergence.dat");
     myfile << " Iteration \t Cost Function \t Gradient Norm \t Average Error \n";
 
-	quasiOneD(x, area, flo_opts, &flow_data);
+	quasiOneD(false, x, area, flo_opts, &flow_data);
     double current_cost = evalFitness(dx, flo_opts, flow_data.W, opt_opts);
 
     VectorXd psi(3 * n_elem);
@@ -124,11 +125,20 @@ void optimizer(
         H = invertHessian(H);
     }
 
+
     double gradient_norm = 0;
     for (int i = 0; i < n_dvar; i++)
         gradient_norm += pow(gradient[i], 2);
     gradient_norm = sqrt(gradient_norm);
     int it_design = 0;
+
+    clock_t toc = clock();
+	double elapsed = (double)(toc) / CLOCKS_PER_SEC;
+    FILE *time_gradient_file;
+    std::string time_gradient_filename = "./Results/"+ flo_opts.case_name + "_gradient_convergence.dat";
+	time_gradient_file = fopen(time_gradient_filename.c_str(), "w");
+    toc = clock();
+	fprintf(time_gradient_file, "Gradient_Time_Residual %8.3f %14.7e \n", elapsed, gradient_norm);
 
     // Design Loop
     while(gradient_norm > opt_opts.opt_tol && it_design < opt_opts.opt_maxit)
@@ -205,13 +215,18 @@ void optimizer(
         gradient_norm = sqrt(gradient_norm);
         gradient_norm_list.push_back(gradient_norm);
 
-		clock_t toc = clock();
-        double elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
+		toc = clock();
+        elapsed = (double)(toc) / CLOCKS_PER_SEC;
+		fprintf(time_gradient_file, "Gradient_Time_Residual %8.3f %14.7e \n", elapsed, gradient_norm);
+
+		toc = clock();
+        elapsed = (double)(toc-tic) / CLOCKS_PER_SEC;
         timeVec.push_back(elapsed);
         std::cout<<"Time: "<<elapsed<<std::endl;
 
         std::cout<<"End of Design Iteration: "<<it_design<<std::endl<<std::endl<<std::endl;
     }
+	fclose(time_gradient_file);
 
     std::cout<<"Final Gradient:"<<std::endl;
     std::cout<<gradient<<std::endl;
@@ -261,7 +276,7 @@ double linesearch_backtrack_unconstrained(
     }
 
     std::vector<double> tempA = evalS(new_design, x, dx);
-	quasiOneD(x, tempA, flo_opts, flow_data);
+	quasiOneD(true, x, tempA, flo_opts, flow_data);
     double new_cost = evalFitness(dx, flo_opts, flow_data->W, opt_opts);
 	while(new_cost > (current_cost + alpha * c_pk_grad))
     {
@@ -275,7 +290,7 @@ double linesearch_backtrack_unconstrained(
             new_design.design_variables[i] = current_design->design_variables[i] + alpha * pk[i];
 		}
         tempA = evalS(new_design, x, dx);
-		quasiOneD(x, tempA, flo_opts, flow_data);
+		quasiOneD(true, x, tempA, flo_opts, flow_data);
 		new_cost = evalFitness(dx, flo_opts, flow_data->W, opt_opts);
         std::cout<<"new_cost: "<<new_cost<<std::endl;
         printf("current_cost + alpha/2.0 * c_pk_grad: %e\n", current_cost + alpha/ 2.0 * c_pk_grad);
@@ -340,10 +355,10 @@ MatrixXd BFGS(
     dx = searchD;
 	const double dgdx = dx.dot(dg);
 
-	std::cout<<"BFGS dg: "<<dg.norm()<<std::endl;
-	std::cout<<"BFGS dx: "<<dx.norm()<<std::endl;
-	std::cout<<"BFGS dgdx: "<<dgdx<<std::endl;
-	if(dgdx < 1e-19) {
+	//std::cout<<"BFGS dg: "<<dg.norm()<<std::endl;
+	//std::cout<<"BFGS dx: "<<dx.norm()<<std::endl;
+	//std::cout<<"BFGS dgdx: "<<dgdx<<std::endl;
+	if(dgdx < 0.0) {
 		printf("Negative curvature. Not updating BFGS \n");
 		return oldH;
 	}

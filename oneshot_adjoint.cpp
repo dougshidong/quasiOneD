@@ -21,6 +21,7 @@
 #include"parametrization.hpp"
 #include"analyticHessian.hpp"
 #include"output.hpp"
+#include"solve_linear.hpp"
 #include<time.h>
 #include<stdlib.h>     /* srand, rand */
 
@@ -125,7 +126,7 @@ void oneshot_adjoint(
     int iteration = 0;
 
     // Design Loop
-	quasiOneD(x, area, flo_opts, &flow_data); // Start with converged flow
+	quasiOneD(false, x, area, flo_opts, &flow_data); // Start with converged flow
 	// Calculating the norm of the density residual
 
 	//for (int i = 1; i < flo_opts.flow_maxit && residual_norm > flo_opts.flow_tol; i++) {
@@ -148,22 +149,17 @@ void oneshot_adjoint(
 	pGpW = identity - (*max_dt)/dx[1] * dRdW;
 
 
-	eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
+	//eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
 
 	double adjoint_update_norm = 1;
 	for (int i = 0; i < 1 && adjoint_update_norm > 1e-12; i++) {
-		adjoint = pIpW + pGpW.transpose()*adjoint;
-
-		//const double step_size = 1.0;
-		//adjoint_update = pIpW + pGpW.transpose()*adjoint - adjoint;
-		//adjoint = (1-step_size)*adjoint - step_size*adjoint_update;
-		//adjoint_update_norm = adjoint_update.norm();
-
 		//VectorXd old_adj = adjoint;
 		//adjoint = pIpW + pGpW.transpose()*adjoint;
 		//adjoint_update = adjoint - old_adj;
 		//adjoint_update_norm = adjoint_update.norm();
-		VectorXd residual = adjoint - (adjoint.transpose()*pGpW).transpose() - pIpW;
+		VectorXd pGpW_adjoint = eval_dGdW_transpose_vec( x, flo_opts, flow_data, current_design, adjoint);
+		VectorXd residual = adjoint - pGpW_adjoint + pIpW;
+		adjoint = -pIpW + pGpW_adjoint;
 		printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, residual.norm());
 	}
 	VectorXd residual = adjoint - (adjoint.transpose()*pGpW).transpose() - pIpW;
@@ -199,8 +195,20 @@ void oneshot_adjoint(
         // Get flow update
 		residual_norm = 1;
         flow_data.current_CFL = flo_opts.CFL_min;
-		for (int i = 0; i < 10000 && residual_norm > 1e-12; i++) {
-			stepInTime(flo_opts, area, dx, &flow_data);
+		for (int i = 0; i < 10 && residual_norm > 1e-12; i++) {
+			//stepInTime(flo_opts, area, dx, &flow_data);
+
+            Flow_options flo_opts_temp = flo_opts;
+            double old_CFL = flow_data.current_CFL;
+            flow_data.current_CFL = 5000;
+
+            flo_opts_temp.time_scheme = 3;
+            flo_opts_temp.CFL_min = 1;
+            flo_opts_temp.CFL_max = 1000000;
+
+			stepInTime(flo_opts_temp, area, dx, &flow_data);
+
+            flow_data.current_CFL = old_CFL;
 
 			residual_norm = norm2(flow_data.residual);
 		}
@@ -211,23 +219,34 @@ void oneshot_adjoint(
 		//dRdW = eval_dRdW_dRdX_adolc(flo_opts, area, flow_data);
 		//pGpW = identity - (*max_dt)/dx[1] * dRdW;
 
-		eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
 
 		double step_size = 1e-0;
 		double adjoint_update_norm = 1;
-		for (int i = 0; i < 10000 && adjoint_update_norm > 1e-9; i++) {
+		for (int i = 0; i < 1 && adjoint_update_norm > 1e-9; i++) {
 
 			//adjoint_update = pIpW + pGpW.transpose()*adjoint;
 			//adjoint_update = step_size*(adjoint_update-adjoint);
 			//adjoint_update_norm = (adjoint_update).norm();
 			//adjoint = adjoint + adjoint_update;
 
-			adjoint_update = pIpW + pGpW.transpose()*adjoint;
-			adjoint_update_norm = (adjoint_update - adjoint).norm();
-			adjoint = adjoint_update;
+			//VectorXd pGpW_adjoint = eval_dGdW_transpose_vec( x, flo_opts, flow_data, current_design, adjoint);
+			//adjoint_update = pIpW + pGpW_adjoint;
+			//adjoint_update_norm = (adjoint_update - adjoint).norm();
+			//adjoint = adjoint_update;
 			//std::cout<<i<<" "<<adjoint_update_norm<<std::endl<<std::endl;
+
+			VectorXd pGpW_adjoint = eval_dGdW_transpose_vec( x, flo_opts, flow_data, current_design, adjoint);
+			VectorXd residual = adjoint - pGpW_adjoint - pIpW;
+			adjoint = pIpW + pGpW_adjoint;
+			adjoint_update_norm = residual.norm();
+			printf("Iteration: %d, Adjoint_update norm %23.14e\n", i, adjoint_update_norm);
 		}
-		step_size = 1e+0;
+		eval_dGdW_dGdX_adolc(x, flo_opts, flow_data, current_design, &pGpW, &pGpX);
+		SparseMatrix<double> identity_minus_pGpW = identity-pGpW;
+		SparseMatrix<double> identity_minus_pGpW_T = identity_minus_pGpW.transpose();
+		adjoint = solve_linear(identity_minus_pGpW_T, pIpW, 3, 1e-11);
+		step_size = 1e-0;
+		step_size = 1.0;
 
 		// Get design update
 		dAreadDes = evaldAreadDes(x, dx, current_design);
@@ -235,7 +254,8 @@ void oneshot_adjoint(
 		//dCostdDes = dCostdArea.transpose() * dAreadDes; //0
 		pIpX = dCostdDes;
 		//pGpX = -(*max_dt)/dx[1]*evaldRdArea(flo_opts, flow_data) * dAreadDes;
-		gradient = pIpX + pGpX.transpose()*adjoint;
+        VectorXd pGpX_adjoint = eval_dGdX_transpose_vec(x, flo_opts, flow_data, current_design, adjoint);
+		gradient = pIpX + pGpX_adjoint;
 
         if (opt_opts.descent_type == 1) {
             search_direction = -gradient;
@@ -255,6 +275,7 @@ void oneshot_adjoint(
 
 		printf("%-15s %-15s %-15s\n", "Current Design", "Gradient","Search Direction");
 		int step = 1;
+		if(n_dvar/8>=1) step = n_dvar/8;
 		if(step!=1) printf("Only printing 1 out of %d variables\n", step);
 		for (int i=0; i<n_dvar; i+=step) {
 			printf("%15.5e %15.5e %15.5e\n", current_design.design_variables[i], gradient[i], search_direction[i]);

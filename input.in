@@ -1,4 +1,4 @@
-temp
+one_shot_dwdwx_100dvar_subsonic
 *******************************************
 GRID SIZE
 n_elem      xend        xstart
@@ -12,9 +12,9 @@ FLOW SOLVER PARAMETERS
 time_scheme flux_scheme scalar_diss
 2           0           0.5
 cfl_min     cfl_max     cfl_ramp    flow_tol    flow_maxit
-0.10        0.4         0.3         1e-11       2000000
+0.10        0.1         0.3         1e-11       2000000
 print_freq  print_conv  print_sol
-25          1           0
+1           1           0
 *******************************************
 FLOW INPUTS
 gam         R
@@ -36,3 +36,13 @@ hg          t1g         t2g
 SPLINE PARAMETERS (n_control_pts = n_dvar + 2)
 n_dvar      degree
 100         4
+
+time_scheme flux_scheme scalar_diss
+3           0           0.5
+cfl_min     cfl_max     cfl_ramp    flow_tol    flow_maxit
+100.        10000000.   0.4         1e-11       2000000
+
+time_scheme flux_scheme scalar_diss
+2           0           0.5
+cfl_min     cfl_max     cfl_ramp    flow_tol    flow_maxit
+0.10        0.4         0.3         1e-11       2000000
